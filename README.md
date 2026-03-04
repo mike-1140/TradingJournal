@@ -1,59 +1,105 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# TradingJournal2
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Persönliches Trading-Journal zur Auswertung von IBKR-Trades (Interactive Brokers).
 
-## About Laravel
+## Stack
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- **Backend:** Laravel 11 + Livewire 3
+- **Frontend:** Bootstrap 5 + Bootstrap Icons
+- **Datenbank:** MySQL (mehrere Verbindungen, Schema via Python verwaltet)
+- **Datenimport:** Python-Skript (`reset_IBKR_DB.py`)
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Features
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+- Auswertung geschlossener und offener Positionen (Stocks, Options)
+- Campaign-Tracking (gruppierte Trades pro Symbol)
+- Tag-System zur Strategie-Klassifizierung
+- Zeitraumfilter: 13 Wochen, 6 Monate, YTD, Alle
+- Mehrere Trading-Environments: Money, Paper, Test, Autom_Money, Autom_Paper
+- EUR-Basiswährung (FX-Umrechnung durch Python vorberechnet)
+- Statistik-Dashboard mit Wochen-/Monats-/Jahresnavigation
 
-## Learning Laravel
+## Voraussetzungen
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+- PHP 8.2+
+- Composer
+- Node.js + npm
+- MySQL
+- Python 3.x (für Datenimport)
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## Installation
 
-## Laravel Sponsors
+```bash
+git clone <repo-url>
+cd TradingJournal2
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+composer install
+npm install
 
-### Premium Partners
+cp .env.example .env
+php artisan key:generate
+```
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+### .env konfigurieren
 
-## Contributing
+Die App nutzt mehrere Datenbankverbindungen. In `.env` müssen folgende Verbindungen eingetragen werden:
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+```env
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=trading_money
+DB_USERNAME=...
+DB_PASSWORD=...
 
-## Code of Conduct
+DB_MONEY_DATABASE=trading_money
+DB_PAPER_DATABASE=trading_paper
+DB_TEST_DATABASE=trading_test
+DB_AUTOM_MONEY_DATABASE=trading_autom_money
+DB_AUTOM_PAPER_DATABASE=trading_autom_paper
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+### Datenbank einrichten
 
-## Security Vulnerabilities
+Das Schema wird durch das Python-Skript verwaltet — **keine Laravel-Migrations** für die Trading-Tabellen:
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+```bash
+python python/reset_IBKR_DB.py
+```
 
-## License
+Laravel-eigene Tabellen (users, cache, sessions):
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+```bash
+php artisan migrate
+php artisan db:seed
+```
+
+### Assets bauen
+
+```bash
+npm run build
+# oder für Entwicklung:
+npm run dev
+```
+
+## Datenbankstruktur
+
+| Environment | DB-Verbindung       |
+|-------------|---------------------|
+| MONEY       | trading_money       |
+| PAPER       | trading_paper       |
+| TEST        | trading_test        |
+| AUTOM_MONEY | trading_autom_money |
+| AUTOM_PAPER | trading_autom_paper |
+
+Haupttabellen: `trades_close`, `trades_open`, `trades_raw`, `campaigns`, `campaign_ledger`, `symbols`, `tags`
+
+## Entwicklung auf mehreren Rechnern
+
+Nach dem Clone ist kein weiterer Setup-Schritt nötig. Claude Code liest `CLAUDE.md` automatisch für Projektkontext.
+
+```bash
+git pull
+composer install
+npm install
+```
