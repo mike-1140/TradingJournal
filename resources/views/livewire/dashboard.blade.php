@@ -7,20 +7,6 @@
 
         <div class="d-flex flex-wrap gap-3 align-items-end">
             <div>
-                <label class="d-block small text-muted mb-1">Zeitraum:</label>
-                <div class="btn-group" role="group">
-                    <button wire:click="setTimeRange('13w')" class="btn btn-sm btn-{{ $timeRange === '13w' ? 'secondary' : 'outline-secondary' }}">13W</button>
-                    <button wire:click="setTimeRange('6m')" class="btn btn-sm btn-{{ $timeRange === '6m' ? 'secondary' : 'outline-secondary' }}">6M</button>
-                    <button wire:click="setTimeRange('ytd')" class="btn btn-sm btn-{{ $timeRange === 'ytd' ? 'secondary' : 'outline-secondary' }}">YTD</button>
-                    <button wire:click="setTimeRange('all')" class="btn btn-sm btn-{{ $timeRange === 'all' ? 'secondary' : 'outline-secondary' }}">ALL</button>
-                </div>
-            </div>
-            <div class="text-muted small mt-1">
-
-                    <span>Daten seit: {{ $this->startDate ? $this->startDate->format('d.m.Y') : 'Anbeginn' }}</span>
-            </div>
-
-            <div>
                 <label class="d-block small text-muted mb-1">Environment:</label>
                 <div class="btn-group" role="group">
                     @foreach ($environments as $env)
