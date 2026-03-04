@@ -27,8 +27,14 @@ class SpreadsList extends Component
         'filterStatus' => ['except' => 'closed'],
     ];
 
+    protected $listeners = [
+        'environment-changed' => '$refresh',
+        'time-range-changed'  => '$refresh',
+    ];
+
     public function mount()
     {
+        $this->mountFilterableByTime();
         $this->mountManagesEnvironment();
     }
 

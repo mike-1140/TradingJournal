@@ -129,6 +129,18 @@ app/
     UsesTradingDatabase.php
 ```
 
+## Zeitraumfilter (DB-basiert, seit 2026-03-04)
+
+Filter wird in `users`-Tabelle gespeichert: `filter_preset` (13w/6m/ytd/null), `filter_from`, `filter_to` (DATE).
+- Preset aktiv → `filter_preset` gesetzt, from/to = NULL (dynamisch berechnet)
+- Jahr aktiv → preset=NULL, from=01.01.YYYY, to=31.12.YYYY
+- Custom → preset=NULL, from/to = gewählte Daten
+- Broadcast `time-range-changed` hat **keinen Payload** mehr — Komponenten lesen aus DB
+- Alle Komponenten: Listener `'time-range-changed' => '$refresh'`
+- Navigation: `setPreset()`, `setYear()`, `applyCustomRange()` — speichern in DB, dispatch Event
+- Modal in Navigation-Blade: 3 Sektionen (Schnellauswahl, Jahr, Custom)
+- `applyTimeFilter()`: `whereBetween` wenn endDate gesetzt, sonst `where >=`
+
 ## Stand Globalisierung Betrachtungszeitraum
 **Fertig:** Dashboard, Campaigns, SpreadsList, ClosedStocks, ClosedOptions, SymbolList
 **Offen:** TagStatistics, ClosedTrades (hat eigenen Datumsfilter – Designentscheidung nötig)

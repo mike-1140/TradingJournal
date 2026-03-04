@@ -20,8 +20,14 @@ class SpreadDetail extends Component
     public $perPage = 20;
     public $status = 'closed'; // open or closed
 
+    protected $listeners = [
+        'environment-changed' => '$refresh',
+        'time-range-changed'  => '$refresh',
+    ];
+
     public function mount($opt_strategyID)
     {
+        $this->mountFilterableByTime();
         $this->mountManagesEnvironment();
         $this->opt_strategyID = $opt_strategyID;
 

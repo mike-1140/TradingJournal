@@ -31,7 +31,7 @@ class Dashboard extends Component
     public $users;
     protected $listeners = [
         'environment-changed' => '$refresh',
-        'time-range-changed' => 'updateTimeRangeFromEvent'
+        'time-range-changed'  => 'onTimeRangeChanged',
     ];
 
     public function switchUser($id)
@@ -43,13 +43,13 @@ class Dashboard extends Component
         return redirect()->route('dashboard');
     }
 
-    // Diese Methode wird aufgerufen, wenn das Signal kommt
-    public function updateTimeRangeFromEvent($range)
+    public function onTimeRangeChanged()
     {
-        $this->timeRange = $range; // Den lokalen Wert im Dashboard syncen
-        $this->loadStatistics();   // Die Karten (Profit, Winrate) neu berechnen
-        // Ein $refresh passiert automatisch nach Methodenaufruf in Livewire
+        unset($this->startDate);
+        unset($this->endDate);
+        $this->loadStatistics();
     }
+
     public function mount()
     {
         // ZUERST den Zeitraum aus der Session holen (via Trait Methode)
@@ -67,13 +67,6 @@ class Dashboard extends Component
 
         // Sende das Event an alle Livewire-Komponenten
         $this->dispatch('environment-changed', environment: $environment);
-    }
-
-    // Im Dashboard.php
-    public function setTimeRange($range)
-    {
-        $this->timeRange = $range;
-        $this->loadStatistics(); // Manuelles Update der Stats
     }
 
     public function loadStatistics()

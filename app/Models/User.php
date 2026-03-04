@@ -13,11 +13,19 @@ class User extends Authenticatable
         'email',
         'password',
         'table_prefix',
+        'filter_preset',
+        'filter_from',
+        'filter_to',
     ];
 
     protected $hidden = [
         'password',
         'remember_token',
+    ];
+
+    protected $casts = [
+        'filter_from' => 'date',
+        'filter_to'   => 'date',
     ];
 
     /**

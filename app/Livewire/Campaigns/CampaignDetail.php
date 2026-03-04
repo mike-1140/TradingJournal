@@ -22,9 +22,15 @@ class CampaignDetail extends Component
         'ledgerPage' => ['except' => 1, 'as' => 'lp'],
     ];
 
+    protected $listeners = [
+        'environment-changed' => '$refresh',
+        'time-range-changed'  => '$refresh',
+    ];
+
     public function mount($campaignId)
     {
         // flow_log('Mount - LedgerPage:', [$campaignId]);
+        $this->mountFilterableByTime();
         $this->mountManagesEnvironment();
         $this->campaignId = $campaignId;
         $this->campaign = Campaign::findOrFail($campaignId);

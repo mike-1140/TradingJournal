@@ -19,8 +19,14 @@ class GlobalSymbolDetail extends Component
         'globalPage' => ['except' => 1, 'as' => 'gp'],
     ];
 
+    protected $listeners = [
+        'environment-changed' => '$refresh',
+        'time-range-changed'  => '$refresh',
+    ];
+
     public function mount($symbol)
     {
+        $this->mountFilterableByTime();
         $this->mountManagesEnvironment();
         $this->symbol = strtoupper($symbol);
         $this->resetPage('globalPage');

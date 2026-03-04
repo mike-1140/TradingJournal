@@ -6,56 +6,55 @@ use Livewire\Attributes\Computed;
 
 trait FilterableByTime
 {
-    // Wir initialisieren die Property in der mount-Methode
-    public $timeRange;
-
-    /**
-     * Diese Methode wird von Livewire automatisch aufgerufen,
-     * wenn die Komponente geladen wird.
-     */
     public function mountFilterableByTime()
     {
-        // Hole Wert aus Session oder nimm Standard 'ytd'
-        $this->timeRange = session('trading_time_range', 'ytd');
-    }
-
-    /**
-     * Jedes Mal, wenn $timeRange geändert wird, speichern wir in die Session.
-     */
-    public function updatedTimeRange($value)
-    {
-        session(['trading_time_range' => $value]);
-
-        // WICHTIG: Sende ein Signal an alle anderen Komponenten
-        $this->dispatch('time-range-changed', range: $value);
-
-        if (method_exists($this, 'loadStatistics')) {
-            $this->loadStatistics();
-        }
+        // Kein lokaler State nötig — Werte kommen direkt aus auth()->user()
     }
 
     #[Computed]
-    public function startDate()
+    public function startDate(): ?Carbon
     {
-        // Wir nutzen den Wert aus der Session, falls die Property noch nicht gesetzt ist
-        $range = $this->timeRange ?? session('trading_time_range', 'ytd');
+        $user = auth()->user();
+        $preset = $user?->filter_preset ?? 'ytd';
 
-        return match($range) {
+        return match($preset) {
             '13w' => now()->subWeeks(13)->startOfDay(),
             '6m'  => now()->subMonths(6)->startOfDay(),
             'ytd' => now()->startOfYear(),
-            'all' => null,
-            default => now()->startOfYear(),
+            default => $user?->filter_from
+                ? Carbon::parse($user->filter_from)->startOfDay()
+                : now()->startOfYear(),
         };
     }
 
-    public function applyTimeFilter($query, $dateColumn = 'close_date')
+    #[Computed]
+    public function endDate(): ?Carbon
     {
-        $startDate = $this->startDate();
+        $user = auth()->user();
+        $preset = $user?->filter_preset;
 
-        if ($startDate) {
-            return $query->where($dateColumn, '>=', $startDate);
+        if ($preset) {
+            return null; // Presets haben kein Enddatum
         }
+
+        return $user?->filter_to
+            ? Carbon::parse($user->filter_to)->endOfDay()
+            : null;
+    }
+
+    public function applyTimeFilter($query, $dateColumn = 'dateTimeClose')
+    {
+        $start = $this->startDate;
+        $end   = $this->endDate;
+
+        if ($start && $end) {
+            return $query->whereBetween($dateColumn, [$start, $end]);
+        }
+
+        if ($start) {
+            return $query->where($dateColumn, '>=', $start);
+        }
+
         return $query;
     }
 }

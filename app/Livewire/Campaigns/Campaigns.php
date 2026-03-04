@@ -28,19 +28,13 @@ class Campaigns extends Component
 
     protected $listeners = [
         'environment-changed' => '$refresh',
-        'time-range-changed'  => 'updateTimeRangeFromEvent',
+        'time-range-changed'  => '$refresh',
     ];
 
     public function mount()
     {
         $this->mountFilterableByTime();
         $this->mountManagesEnvironment();
-    }
-
-    public function updateTimeRangeFromEvent($range)
-    {
-        $this->timeRange = $range;
-        $this->resetPage();
     }
 
     public function updatingSearch()
