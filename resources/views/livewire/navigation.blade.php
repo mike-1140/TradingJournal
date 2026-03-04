@@ -1,3 +1,4 @@
+<div>
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark" id="main-navigation">
     <div class="container-fluid">
         <a class="navbar-brand" href="{{ route('dashboard') }}">
@@ -172,3 +173,4 @@
     </div>
 </div>
 @endif
+</div>

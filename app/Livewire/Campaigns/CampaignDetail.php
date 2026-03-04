@@ -65,7 +65,7 @@ class CampaignDetail extends Component
         // 1. Die Basis-Query für diese Kampagne
         $query = CampaignLedger::where('campaign_id', $this->campaignId)
             ->where('environment', $this->selectedEnvironment);
-        $query = $this->applyTimeFilter($query, 'dateTimeClose');
+        $query = $this->applyTimeFilter($query, 'dateTime');
 
         // 2. Metriken berechnen
         // Wir nutzen SUM(CASE WHEN...) für die spezifischen Asset-Kategorien

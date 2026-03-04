@@ -46,7 +46,7 @@ class GlobalSymbolDetail extends Component
     {
         // Query über das Symbol (via Relationship zur Campaign)
         $query = CampaignLedger::where('environment', $this->selectedEnvironment);
-        $query = $this->applyTimeFilter($query, 'dateTimeClose');
+        $query = $this->applyTimeFilter($query, 'dateTime');
 
         $query = $query->whereHas('campaign', function($q) {
                 $q->where('symbol', $this->symbol);

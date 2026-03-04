@@ -21,10 +21,10 @@
 - Property: `$selectedEnvironment`
 - Session-Key: `trading_environment`
 
-## Datenbankfeld für Close-Datum
-- Model: `TradeClose` → Tabelle: `trades_close`
-- Feld: `dateTimeClose` (cast: `'date'`)
-- Immer `applyTimeFilter($query, 'dateTimeClose')` verwenden
+## Datenbankfeld für applyTimeFilter
+- `TradeClose` → `applyTimeFilter($query, 'dateTimeClose')`
+- `Campaign` → `applyTimeFilter($query, 'end_date')`
+- `CampaignLedger` → `applyTimeFilter($query, 'dateTime')` ← NICHT dateTimeClose!
 
 ## Standard-Pattern für neue Komponenten mit Zeitfilter
 ```php
