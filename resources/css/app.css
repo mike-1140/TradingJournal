@@ -1,0 +1,58 @@
+/* Bootstrap CSS */
+@import 'bootstrap/dist/css/bootstrap.min.css';
+@import 'bootstrap-icons/font/bootstrap-icons.css';
+
+/* Deine eigenen Styles */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+.table {
+    font-size: 0.9rem;
+}
+
+.card {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.bg-purple {
+    background-color: #6f42c1 !important;
+}
+
+.border-purple {
+    border-color: #6f42c1 !important;
+}
+
+.text-purple {
+    color: #6f42c1 !important;
+}
+
+.btn-outline-purple {
+    color: #6f42c1;
+    border-color: #6f42c1;
+}
+
+.btn-outline-purple:hover {
+    color: #fff;
+    background-color: #6f42c1;
+    border-color: #6f42c1;
+}
+
+.closed-stocks-table thead tr:first-child th {
+    padding-bottom: 0 !important;
+    /* border-bottom: none !important; */
+}
+.closed-stocks-table thead tr:first-child th[colspan] {
+    text-align: center !important;
+    border-bottom: none !important;
+}
+.closed-stocks-table thead tr:nth-child(2) th {
+    padding-top: 0 !important;
+    /* color: #6c757d !important; /* Bootstrap text-secondary */
+    font-weight: lighter;
+}
+.closed-stocks-table thead th {
+    vertical-align: top !important;
+    white-space: nowrap;
+    line-height: 1.2; /* kompakter text */
+}
