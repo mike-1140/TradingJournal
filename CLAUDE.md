@@ -153,7 +153,7 @@ Python berechnet EUR-Werte vor — Laravel zeigt sie nur an, keine Berechnung in
 
 **`TradeClose.php`**: `fxRateToBase_open`, `fxRateToBase_close` (decimal:6), `netCashOpen_EUR`, `netCashClose_EUR`, `ibCommission_EUR`, `profit_EUR` (decimal:4)
 
-**`CampaignLedger.php`**: `fxRateToBase` (decimal:6), `netcash_eur`, `proceeds_eur`, `commission_eur` (decimal:4)
+**`CampaignLedger.php`**: `fxRateToBase` (decimal:6), `netcash_eur`, `proceeds_eur`, `commission_eur` (decimal:4), `tradePrice`, `strike`, `multiplier` (decimal:4), `expiry` (date), `putCall` (VARCHAR 5), `buySell` (VARCHAR 10)
 
 ## Bekannte Bugs (behoben)
 - `campaigns-index.blade.php` nutzte `$this->startDateProperty` statt `$this->startDate`

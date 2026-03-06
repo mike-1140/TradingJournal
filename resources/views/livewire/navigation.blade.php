@@ -113,7 +113,7 @@
                 <div class="mb-3">
                     <div class="text-muted small mb-1">Schnellauswahl</div>
                     <div class="btn-group btn-group-sm w-100" role="group">
-                        @foreach(['13w' => '13W', '6m' => '6M', 'ytd' => 'YTD'] as $key => $label)
+                        @foreach(['13w' => '13W', '6m' => '6M', 'ytd' => 'YTD', 'all' => 'Alle'] as $key => $label)
                             <button type="button"
                                     wire:click="setPreset('{{ $key }}')"
                                     class="btn {{ (auth()->user()?->filter_preset === $key) ? 'btn-primary' : 'btn-outline-secondary' }}">

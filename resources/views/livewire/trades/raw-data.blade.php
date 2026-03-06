@@ -223,7 +223,7 @@
 
             <!-- Pagination -->
             <div class="mt-3">
-                {{ $trades->links() }}
+                {{ $trades->links('components.pagination') }}
             </div>
         </div>
     </div>

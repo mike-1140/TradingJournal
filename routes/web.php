@@ -55,7 +55,7 @@ Route::get('/symbols', SymbolList::class)->name('symbols');
 
 // Campains
 Route::get('/campaigns/campaigns', Campaigns::class)->name('campaigns.campaigns');
-Route::get('/campaigns/campaign/detail/{id}', CampaignDetail::class)->name('campaigns.campaign.detail');
+Route::get('/campaigns/{campaignId}', CampaignDetail::class)->name('campaigns.campaign.detail');
 
 // Spreads
 Route::get('/spreads', SpreadsList::class)->name('spreads.list');

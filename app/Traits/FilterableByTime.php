@@ -15,15 +15,16 @@ trait FilterableByTime
     public function startDate(): ?Carbon
     {
         $user = auth()->user();
-        $preset = $user?->filter_preset ?? 'ytd';
+        $preset = $user?->filter_preset;
 
         return match($preset) {
-            '13w' => now()->subWeeks(13)->startOfDay(),
-            '6m'  => now()->subMonths(6)->startOfDay(),
-            'ytd' => now()->startOfYear(),
+            'all'  => null,
+            '13w'  => now()->subWeeks(13)->startOfDay(),
+            '6m'   => now()->subMonths(6)->startOfDay(),
+            'ytd'  => now()->startOfYear(),
             default => $user?->filter_from
                 ? Carbon::parse($user->filter_from)->startOfDay()
-                : now()->startOfYear(),
+                : null,
         };
     }
 

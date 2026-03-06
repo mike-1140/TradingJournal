@@ -20,10 +20,13 @@ class RawData extends Component
     public $filterBuySell = '';
 
     protected $queryString = [
-        'search' => ['except' => ''],
-        'selectedEnvironment' => ['except' => 'MONEY'],
-        'sortField' => ['except' => 'dateTime'],
+        'search'        => ['except' => ''],
+        'sortField'     => ['except' => 'dateTime'],
         'sortDirection' => ['except' => 'desc'],
+    ];
+
+    protected $listeners = [
+        'environment-changed' => '$refresh',
     ];
 
     public function mount()
@@ -31,27 +34,11 @@ class RawData extends Component
         $this->mountManagesEnvironment();
     }
 
-    public function changeEnvironment($environment)
-    {
-        $this->selectedEnvironment = $environment;
-        session(['trading_environment' => $environment]);
-
-        // Globales Event
-        $this->dispatch('environmentChanged', environment: $environment);
-
-        $this->resetPage();
-    }
-
-    public function updatingSearch()
-    {
-        $this->resetPage();
-    }
-
-    public function updatedSelectedEnvironment()
-    {
-        session(['trading_environment' => $this->selectedEnvironment]);
-        $this->resetPage();
-    }
+    public function updatingSearch()           { $this->resetPage(); }
+    public function updatingFilterProcessed()  { $this->resetPage(); }
+    public function updatingFilterAssetCategory() { $this->resetPage(); }
+    public function updatingFilterBuySell()    { $this->resetPage(); }
+    public function updatingPerPage()          { $this->resetPage(); }
 
     public function sortBy($field)
     {

@@ -33,12 +33,13 @@ class Navigation extends Component
     public function currentLabel(): string
     {
         $user   = auth()->user();
-        $preset = $user?->filter_preset ?? 'ytd';
+        $preset = $user?->filter_preset;
 
         return match($preset) {
-            '13w' => '13 Wochen',
-            '6m'  => '6 Monate',
-            'ytd' => 'YTD ' . now()->year,
+            'all'  => 'Alle Daten',
+            '13w'  => '13 Wochen',
+            '6m'   => '6 Monate',
+            'ytd'  => 'YTD ' . now()->year,
             default => $this->buildCustomLabel($user),
         };
     }

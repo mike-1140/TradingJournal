@@ -31,15 +31,73 @@ class GlobalSymbolDetail extends Component
         $this->symbol = strtoupper($symbol);
         $this->resetPage('globalPage');
     }
-    public function getActionBadgeClass($action)
+    public function getActionBadgeClass($action): string
     {
         return match($action) {
-            'BUY'        => 'bg-primary text-white',
-            'SELL'       => 'bg-warning text-dark',
-            'ASSIGNMENT' => 'bg-purple text-white',
-            'EXPIRATION' => 'bg-secondary text-white',
-            'VIRTUAL'    => 'bg-info text-dark',
-            default      => 'bg-light text-dark border',
+            'TRADE_OPEN'          => 'bg-primary text-white',
+            'TRADE_CLOSE_FULL'    => 'bg-success text-white',
+            'TRADE_REVERSAL_OPEN' => 'bg-warning text-dark',
+            'OPTION_EXPIRATION'   => 'bg-secondary text-white',
+            'OPTION_EXERCISE'     => 'bg-purple text-white',
+            'CASH_SETTLEMENT'     => 'bg-info text-dark',
+            default               => 'bg-light text-dark border',
+        };
+    }
+
+    public function buildNarrative($entry): string
+    {
+        $qty    = abs((float) $entry->inventory_delta);
+        $qtyFmt = number_format($qty, 0, ',', '.');
+        $symbol = ($entry->assetCategory === 'OPT')
+            ? $this->symbol
+            : ($entry->symbol ?? '');
+        $dir    = $entry->buySell ?? '';
+
+        $optDetail = '';
+        if ((float)($entry->strike ?? 0) > 0) {
+            $strike    = number_format((float) $entry->strike, 0);
+            $putCall   = $entry->putCall ?? '';
+            $expiryStr = ($entry->expiry && $entry->expiry->year > 1900)
+                         ? $entry->expiry->format('d.m.y') : '';
+            $optDetail = " {$strike}{$putCall}" . ($expiryStr ? " {$expiryStr}" : '');
+        } elseif (!empty($entry->symbol) && preg_match('/^\S+\s+(\d{2})(\d{2})(\d{2})([PC])(\d{8})$/', $entry->symbol, $m)) {
+            $parsedStrike  = number_format((int) $m[5] / 1000, 0);
+            $parsedPutCall = $m[4];
+            $parsedExpiry  = \Carbon\Carbon::createFromDate('20' . $m[1], $m[2], $m[3])->format('d.m.y');
+            $optDetail     = " {$parsedStrike}{$parsedPutCall} {$parsedExpiry}";
+        }
+
+        $priceDesc = ($entry->tradePrice && (float) $entry->tradePrice != 0)
+            ? ' @ ' . number_format((float) $entry->tradePrice, 2, ',', '.')
+            : '';
+
+        return match ($entry->action) {
+            'TRADE_OPEN' => match ($entry->assetCategory) {
+                'STK' => $dir === 'BUY'
+                    ? "Kauf {$qtyFmt} {$symbol} Aktien{$priceDesc}"
+                    : "Short {$qtyFmt} {$symbol} Aktien{$priceDesc}",
+                'OPT' => $dir === 'SELL'
+                    ? "Prämie kassiert: {$symbol}{$optDetail}{$priceDesc}"
+                    : "Kauf {$qtyFmt} {$symbol}{$optDetail}{$priceDesc}",
+                default => ($dir === 'BUY' ? 'Kauf' : 'Verkauf') . " {$symbol}{$priceDesc}",
+            },
+            'TRADE_CLOSE_FULL' => match ($entry->assetCategory) {
+                'STK' => $dir === 'SELL'
+                    ? "Verkauf {$qtyFmt} {$symbol} Aktien{$priceDesc}"
+                    : "Cover {$qtyFmt} {$symbol} Aktien{$priceDesc}",
+                'OPT' => "Rückkauf {$symbol}{$optDetail}{$priceDesc}",
+                default => "Schließen {$symbol}{$priceDesc}",
+            },
+            'TRADE_REVERSAL_OPEN' => match ($entry->assetCategory) {
+                'STK' => $dir === 'SELL'
+                    ? "Reversal → Short {$qtyFmt} {$symbol}{$priceDesc}"
+                    : "Reversal → Long {$qtyFmt} {$symbol}{$priceDesc}",
+                default => "Reversal {$symbol}{$priceDesc}",
+            },
+            'OPTION_EXPIRATION' => "{$symbol}{$optDetail} verfallen wertlos",
+            'OPTION_EXERCISE'   => "Option ausgeübt: {$symbol}{$optDetail}",
+            'CASH_SETTLEMENT'   => "Cash Settlement: {$symbol}{$optDetail}",
+            default             => ($entry->action ?? '?') . ' ' . $symbol,
         };
     }
     public function render()
@@ -64,7 +122,7 @@ class GlobalSymbolDetail extends Component
             COUNT(DISTINCT campaign_id) as campaign_count
         ')->first();
 
-        $ledgerEntries = $query->orderBy('dateTime', 'desc')
+        $ledgerEntries = $query->orderBy('dateTime', 'asc')
             // ->paginate($this->perPage, ['*'], 'globalPage');
             ->paginate(100, ['*'], 'ledgerPage');
 

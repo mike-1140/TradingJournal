@@ -40,15 +40,7 @@
         </div>
     </div>
 
-    <div class="text-muted small mt-1">
-        @if($this->startDate)
-            <i class="bi bi-calendar3"></i>
-            Daten seit dem {{ $this->startDate->format('d.m.Y') }}
-        @else
-            <i class="bi bi-calendar3"></i>
-            Alle historischen Daten
-        @endif
-    </div>
+    <x-date-range-info :startDate="$this->startDate" :endDate="$this->endDate" />
 
     <!-- Statistiken -->
     @if($filterStatus === 'closed')

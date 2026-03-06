@@ -2,15 +2,7 @@
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
             <h5 class="mb-0"><i class="bi bi-graph-up"></i> Tag Performance Analysis</h5>
-            <span class="text-muted small">
-                @if($this->startDate)
-                    <i class="bi bi-calendar3"></i>
-                    Daten seit dem {{ $this->startDate->format('d.m.Y') }}
-                @else
-                    <i class="bi bi-calendar3"></i>
-                    Alle historischen Daten
-                @endif
-            </span>
+            <x-date-range-info :startDate="$this->startDate" :endDate="$this->endDate" />
         </div>
         <div class="card-body">
             @if($tagStats->count() > 0)

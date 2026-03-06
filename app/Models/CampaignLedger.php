@@ -16,12 +16,18 @@ class CampaignLedger extends BaseTradingModel
         'source_table', // 'trades_open', 'trades_closed', 'system_migration'
         'source_id',
         'linkID',
+        'tradePrice',
+        'strike',
+        'expiry',
+        'multiplier',
+        'putCall',
+        'buySell',
         'netcash',
         'proceeds',
         'commission',
         'realized_pnl',
         'inventory_delta',
-        'action', // 'OPEN', 'CLOSE', 'PCU', 'REV', 'CARRY_OVER'
+        'action',
         'dateTime',
         'created_at',
         'environment',
@@ -31,10 +37,14 @@ class CampaignLedger extends BaseTradingModel
         'commission_eur',
     ];
     protected $casts = [
-        'created_at' => 'date',
-        'fxRateToBase' => 'decimal:6',
-        'netcash_eur' => 'decimal:4',
-        'proceeds_eur' => 'decimal:4',
+        'tradePrice'     => 'decimal:4',
+        'strike'         => 'decimal:4',
+        'expiry'         => 'date',
+        'multiplier'     => 'decimal:4',
+        'created_at'     => 'date',
+        'fxRateToBase'   => 'decimal:6',
+        'netcash_eur'    => 'decimal:4',
+        'proceeds_eur'   => 'decimal:4',
         'commission_eur' => 'decimal:4',
     ];
 
