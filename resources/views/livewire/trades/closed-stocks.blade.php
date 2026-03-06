@@ -138,7 +138,7 @@
                     <th rowspan="2" class="text-end">Daysheld</th>
                     <th rowspan="2" class="text-end">Buy/Sell</th>
                     <th colspan="2" class="text-end">NetCash</th>
-                    <th  rowspan="2"class="text-end" wire:click="sortBy('profit')" style="cursor: pointer;">
+                    <th  rowspan="2" class="text-end" wire:click="sortBy('profit')" style="cursor: pointer;">
                         PnL
                         @if($sortField === 'profit')
                             <i class="bi bi-arrow-{{ $sortDirection === 'asc' ? 'up' : 'down' }}"></i>
