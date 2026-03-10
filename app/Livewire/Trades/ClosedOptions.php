@@ -14,7 +14,7 @@ class ClosedOptions extends Component
 
     public $search = '';
     public $sortField = 'dateTimeClose';
-    public $sortDirection = 'asc';
+    public $sortDirection = 'desc';
     public $perPage = 25;
     public $filterPutCall = '';
     public $filterStrategy = '';
@@ -22,7 +22,7 @@ class ClosedOptions extends Component
     protected $queryString = [
         'search' => ['except' => ''],
         'sortField' => ['except' => 'dateTimeClose'],
-        'sortDirection' => ['except' => 'asc'],
+        'sortDirection' => ['except' => 'desc'],
     ];
 
     protected $listeners = [
@@ -48,13 +48,23 @@ class ClosedOptions extends Component
         $this->resetPage();
     }
 
+    public function resetFilters()
+    {
+        $this->search = '';
+        $this->filterPutCall = '';
+        $this->filterStrategy = '';
+        $this->resetPage();
+    }
+
     public function sortBy($field)
     {
+        $defaultDesc = ['dateTimeOpen', 'dateTimeClose', 'profit'];
+
         if ($this->sortField === $field) {
             $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
         } else {
             $this->sortField = $field;
-            $this->sortDirection = 'asc';
+            $this->sortDirection = in_array($field, $defaultDesc) ? 'desc' : 'asc';
         }
     }
 

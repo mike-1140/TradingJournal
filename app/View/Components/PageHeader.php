@@ -17,7 +17,7 @@ class PageHeader extends Component
         $subtitle = null,
         $icon = null,
         $backRoute = null,
-        $backText = 'Back'
+        $backText = 'Zurück'
     ) {
         $this->title = $title;
         $this->subtitle = $subtitle;

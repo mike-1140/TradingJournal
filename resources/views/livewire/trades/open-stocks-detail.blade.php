@@ -4,8 +4,7 @@
         title="Offene Position - {{ $trade->symbol }}"
         subtitle="eröffnet am {{ $trade->tradeDate->format('d.m.Y H:i') }}"
         icon="box-arrow-in-right"
-        back-route="trades.open.stocks"
-        back-text="zurück">
+        back-route="trades.open.stocks">
     </x-page-header>
 
     {{-- Flash Messages

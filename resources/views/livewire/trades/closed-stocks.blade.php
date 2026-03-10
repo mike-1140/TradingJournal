@@ -1,112 +1,64 @@
 <div>
-    {{-- 1. BREADCRUMBS
-    <x-breadcrumbs :items="[
-        ['label' => 'Dashboard', 'route' => 'dashboard', 'icon' => 'speedometer2'],
-        ['label' => 'Closed Trades', 'icon' => 'check-circle']
-    ]" />--}}
-
-    {{-- 2. PAGE HEADER mit Environment Switcher --}}
     <x-page-header
         title="Geschlossene STK-Positionen"
         subtitle="geschlossene Positionen"
         icon="check-circle">
-
-        <x-slot:actions>
-            {{-- Environment Switcher
-            <div class="btn-group me-2" role="group">
-                @foreach($environments as $env)
-                    <button
-                        type="button"
-                        class="btn btn-{{ $selectedEnvironment === $env ? 'primary' : 'outline-primary' }}"
-                        wire:click="changeEnvironment('{{ $env }}')">
-                        {{ $env }}
-                    </button>
-                @endforeach
-            </div>
-            --}}
-            {{-- Export Button
-            <button wire:click="$set('showExportModal', true)" class="btn btn-outline-primary">
-                <i class="bi bi-download"></i> Export
-            </button>--}}
-        </x-slot:actions>
     </x-page-header>
 
     <x-date-range-info :startDate="$this->startDate" :endDate="$this->endDate" />
 
-    <!-- Statistiken -->
+    {{-- Statistiken --}}
     <div class="row g-3 mb-4">
         <div class="col-md-4">
-            <div class="card">
-                <div class="card-body">
-                    <h6 class="text-muted">Anzahl Stock Positionen</h6>
-                    <h3>{{ number_format($totalTrades) }}</h3>
-                </div>
-            </div>
+            <x-stat-card
+                title="Anzahl Stock Positionen"
+                :value="number_format($totalTrades)"
+                color="primary"
+                icon="hash" />
         </div>
         <div class="col-md-4">
-            <div class="card">
-                <div class="card-body">
-                    <h6 class="text-muted">Gebundenes Kapital</h6>
-                    <h3>{{ number_format($totalValue ?? 0, 2, ',', '') }}</h3>
-                </div>
-            </div>
+            <x-stat-card
+                title="Gebundenes Kapital"
+                :value="number_format($totalValue ?? 0, 2, ',', '') . ' $'"
+                color="info"
+                icon="cash-stack" />
         </div>
         <div class="col-md-4">
-            <div class="card">
-                <div class="card-body">
-                    <h6 class="text-muted">Gesamte Kommissionen</h6>
-                    <h3>{{ number_format($totalCommissions, 2, ',', '') }}</h3>
+            <x-stat-card
+                title="Gesamte Kommissionen"
+                :value="number_format($totalCommissions, 2, ',', '') . ' $'"
+                color="secondary"
+                icon="receipt" />
+        </div>
+    </div>
+
+    {{-- Filter --}}
+    <div class="card mb-4">
+        <div class="card-body py-2">
+            <div class="d-flex flex-wrap align-items-end gap-3">
+                <div>
+                    <label class="form-label form-label-sm mb-1">Symbol</label>
+                    <input type="text" class="form-control form-control-sm"
+                           wire:model.live.debounce.300ms="search"
+                           placeholder="Symbol, Beschreibung...">
+                </div>
+                <div>
+                    <label class="form-label form-label-sm mb-1">Strategie</label>
+                    <select class="form-select form-select-sm" wire:model.live="filterStrategy">
+                        <option value="">Alle</option>
+                        @foreach($strategies as $strat)
+                            <option value="{{ $strat }}">{{ $strat }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="ms-auto">
+                    <button wire:click="resetFilters" class="btn btn-sm btn-outline-secondary">
+                        <i class="bi bi-arrow-clockwise"></i> Reset
+                    </button>
                 </div>
             </div>
         </div>
     </div>
-
-    {{-- 3. FILTER BAR --}}
-    <x-filter-bar title="Filter Trades" collapsed>
-        <div class="row g-3">
-            <div class="col-md-3">
-                <label class="form-label">Symbol</label>
-                <input type="text"
-                       class="form-control"
-                       wire:model.live.debounce.300ms="search"
-                       placeholder="Symbol, Beschreibung...">
-            </div>
-            <div class="col-md-3">
-                <label class="form-label">Strategie</label>
-                <select class="form-select" wire:model.live="filterStrategy">
-                    <option value="">Alle</option>
-                    @foreach($strategies as $strat)
-                        <option value="{{ $strat }}">{{ $strat }}</option>
-                    @endforeach
-                </select>
-            </div>
-            {{-- not used at this time
-            <div class="col-md-3">
-                <label class="form-label">From Date</label>
-                <input type="date"
-                       class="form-control"
-                       wire:model.live="filterStartDate">
-            </div>
-
-            <div class="col-md-3">
-                <label class="form-label">To Date</label>
-                <input type="date"
-                       class="form-control"
-                       wire:model.live="filterEndDate">
-            </div>
-
-            <div class="col-md-3">
-                <label class="form-label">Days Held</label>
-                <select class="form-select" wire:model.live="filterDaysHeld">
-                    <option value="">All</option>
-                    <option value="0-7">0-7 days</option>
-                    <option value="8-30">8-30 days</option>
-                    <option value="31-90">31-90 days</option>
-                    <option value="90+">90+ days</option>
-                </select>
-            </div>--}}
-        </div>
-    </x-filter-bar>
 
     {{-- 4. TRADES TABLE in TradeCard --}}
     <x-trade-card title="geschlossene STK-Positionen" icon="list-ul">
@@ -221,24 +173,26 @@
                         </td>
                         <td>
                             <a href="{{ route('trades.closed.stocks.detail', $trade->id) }}" class="btn btn-sm btn-outline-primary">
-                                <i class="bi bi-eye"> Details</i>
+                                <i class="bi bi-eye"></i>
                             </a>
                         </td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="10" class="text-center text-muted py-4">
-                            Keine offenen Stock Trades gefunden
+                        <td colspan="17">
+                            <x-empty-state
+                                icon="inbox"
+                                title="Keine geschlossenen Stock-Positionen gefunden"
+                                message="Für den gewählten Zeitraum und Filter wurden keine Positionen gefunden." />
                         </td>
                     </tr>
                 @endforelse
                 </tbody>
             </table>
         </div>
-        {{-- 7. PAGINATION --}}
-        <div class="card-footer bg-white">
+        <x-slot:footer>
             {{ $trades->links('components.pagination') }}
-        </div>
+        </x-slot:footer>
     </x-trade-card>
 
 </div>

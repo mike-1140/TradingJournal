@@ -1,33 +1,33 @@
 <div>
     {{-- Header --}}
     <div class="d-flex align-items-center justify-content-between mb-3">
-        <div class="d-flex align-items-center gap-3">
+        <div>
+            <h2 class="mb-0 fw-bold">
+                {{ $campaign->symbol }}
+                <span class="text-muted fw-normal fs-5 ms-2">{{ $campaign->name }}</span>
+            </h2>
+            <small class="text-muted">
+                <i class="bi bi-calendar3"></i>
+                Eröffnet am {{ $campaign->start_date->format('d.m.Y') }}
+                @if($campaign->status === 'CLOSED' && $campaign->closed_at)
+                    &nbsp;·&nbsp; Geschlossen am {{ \Carbon\Carbon::parse($campaign->closed_at)->format('d.m.Y') }}
+                @endif
+            </small>
+        </div>
+        <div class="d-flex gap-2 align-items-center">
+            <span class="badge fs-6 bg-{{ $campaign->status === 'ACTIVE' ? 'success' : ($campaign->status === 'PENDING' ? 'warning text-dark' : 'secondary') }}">
+                {{ $campaign->status }}
+            </span>
             <a href="{{ route('campaigns.campaigns') }}" class="btn btn-outline-secondary btn-sm">
                 <i class="bi bi-arrow-left"></i> Zurück
             </a>
-            <div>
-                <h2 class="mb-0 fw-bold">
-                    {{ $campaign->symbol }}
-                    <span class="text-muted fw-normal fs-5 ms-2">{{ $campaign->name }}</span>
-                </h2>
-                <small class="text-muted">
-                    <i class="bi bi-calendar3"></i>
-                    Eröffnet am {{ $campaign->start_date->format('d.m.Y') }}
-                    @if($campaign->status === 'CLOSED' && $campaign->closed_at)
-                        &nbsp;·&nbsp; Geschlossen am {{ \Carbon\Carbon::parse($campaign->closed_at)->format('d.m.Y') }}
-                    @endif
-                </small>
-            </div>
         </div>
-        <span class="badge fs-6 bg-{{ $campaign->status === 'ACTIVE' ? 'success' : ($campaign->status === 'PENDING' ? 'warning text-dark' : 'secondary') }}">
-            {{ $campaign->status }}
-        </span>
     </div>
 
     {{-- Metriken --}}
     <div class="card mb-4 border-start border-primary border-4 border-top-0 border-end-0 border-bottom-0">
         <div class="card-body bg-light">
-            <div class="row g-3 text-center row-cols-2 row-cols-md-6">
+            <div class="row g-3 text-center row-cols-2 row-cols-md-5">
                 <div class="col">
                     <small class="text-muted d-block text-uppercase" style="font-size: 0.7rem;">Aktien-Bestand</small>
                     <span class="fs-5 fw-bold">{{ number_format($metrics->shares_balance ?? 0, 0, ',', '.') }}</span>
@@ -37,12 +37,8 @@
                     <span class="fs-5 fw-bold">{{ number_format($metrics->options_balance ?? 0, 0, ',', '.') }}</span>
                 </div>
                 <div class="col">
-                    <small class="text-muted d-block text-uppercase" style="font-size: 0.7rem;">Net Cash</small>
-                    <x-currency-value :value="$metrics->total_netcash ?? 0" :currency="'USD'" class="fs-5" />
-                </div>
-                <div class="col">
-                    <small class="text-muted d-block text-uppercase" style="font-size: 0.7rem;">Proceeds</small>
-                    <x-currency-value :value="$metrics->total_proceeds ?? 0" :currency="'USD'" class="fs-5" />
+                    <small class="text-muted d-block text-uppercase" style="font-size: 0.7rem;">Cashflow</small>
+                    <x-currency-value :value="$metrics->total_cashflow ?? 0" :currency="'USD'" class="fs-5" />
                 </div>
                 <div class="col">
                     <small class="text-muted d-block text-uppercase" style="font-size: 0.7rem;">Commission</small>
@@ -75,8 +71,7 @@
                         <th style="width: 140px;">Ereignis</th>
                         <th>Beschreibung</th>
                         <th class="text-end" style="width: 80px;">Δ Menge</th>
-                        <th class="text-end" style="width: 110px;">Net Cash</th>
-                        <th class="text-end" style="width: 100px;">Proceeds</th>
+                        <th class="text-end" style="width: 110px;">Cashflow</th>
                         <th class="text-end" style="width: 100px;">Commission</th>
                         <th class="text-end" style="width: 100px;">PnL</th>
                         <th class="text-end" style="width: 90px;">
@@ -118,13 +113,18 @@
                             $narrative  = $this->buildNarrative($entry);
                             $deltaPos   = (float) $entry->inventory_delta > 0;
                             $deltaNeg   = (float) $entry->inventory_delta < 0;
+
+                            // Effektiver Cashflow: bei CASH_SETTLEMENT proceeds nehmen, sonst netcash
+                            $effectiveCashflow = $entry->action === 'CASH_SETTLEMENT'
+                                ? $entry->proceeds
+                                : $entry->netcash;
                         @endphp
 
                         {{-- Tages-Trennzeile --}}
                         @if($dateKey !== $currentDateKey)
                             @php $currentDateKey = $dateKey; @endphp
                             <tr class="date-separator">
-                                <td colspan="9">
+                                <td colspan="8">
                                     <i class="bi bi-calendar3 me-1"></i>
                                     {{ $entryDt->locale('de')->isoFormat('dddd, D. MMMM YYYY') }}
                                 </td>
@@ -151,10 +151,10 @@
                                 {{ $deltaPos ? '+' : '' }}{{ number_format((float) $entry->inventory_delta, 0, ',', '.') }}
                             </td>
                             <td class="text-end">
-                                <x-currency-value :value="$entry->netcash" :currency="$entry->currency" />
-                            </td>
-                            <td class="text-end">
-                                <x-currency-value :value="$entry->proceeds" :currency="$entry->currency" />
+                                <x-currency-value :value="$effectiveCashflow" :currency="$entry->currency" />
+                                @if($entry->action === 'CASH_SETTLEMENT')
+                                    <br><small class="text-muted" style="font-size: 0.7rem;">Settlement</small>
+                                @endif
                             </td>
                             <td class="text-end">
                                 <x-currency-value :value="$entry->commission" :currency="$entry->currency" />
@@ -181,7 +181,7 @@
 
                     @empty
                         <tr>
-                            <td colspan="9" class="text-center text-muted py-5">
+                            <td colspan="8" class="text-center text-muted py-5">
                                 Keine Buchungen für diesen Zeitraum.
                             </td>
                         </tr>
@@ -198,10 +198,12 @@
                                 </td>
                                 <td></td>
                                 <td class="text-end">
-                                    <x-currency-value :value="$ledgerEntries->sum('netcash')" :currency="'USD'" />
-                                </td>
-                                <td class="text-end">
-                                    <x-currency-value :value="$ledgerEntries->sum('proceeds')" :currency="'USD'" />
+                                    @php
+                                        $pageCashflow = $ledgerEntries->getCollection()->sum(
+                                            fn($e) => $e->action === 'CASH_SETTLEMENT' ? $e->proceeds : $e->netcash
+                                        );
+                                    @endphp
+                                    <x-currency-value :value="$pageCashflow" :currency="'USD'" />
                                 </td>
                                 <td class="text-end">
                                     <x-currency-value :value="$ledgerEntries->sum('commission')" :currency="'USD'" />
@@ -216,10 +218,7 @@
                             <td colspan="3" class="text-uppercase">Gesamtergebnis Kampagne:</td>
                             <td></td>
                             <td class="text-end">
-                                <x-currency-value :value="$metrics->total_netcash ?? 0" :currency="'USD'" />
-                            </td>
-                            <td class="text-end">
-                                <x-currency-value :value="$metrics->total_proceeds ?? 0" :currency="'USD'" />
+                                <x-currency-value :value="$metrics->total_cashflow ?? 0" :currency="'USD'" />
                             </td>
                             <td class="text-end">
                                 <x-currency-value :value="$metrics->total_commission ?? 0" :currency="'USD'" />

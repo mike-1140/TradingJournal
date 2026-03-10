@@ -4,8 +4,7 @@
         title="Open Trade - {{ $trade->symbol }}"
         subtitle="Opened on {{ $trade->dateTime->format('d.m.Y H:i') }}"
         icon="box-arrow-in-right"
-        back-route="trades.open.all"
-        back-text="Back to Open Trades">
+        back-route="trades.open.options">
 
         <x-slot:actions>
             @if($trade->assetCategory === 'OPT')

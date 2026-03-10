@@ -41,6 +41,14 @@ class OpenOptions extends Component
         $this->resetPage();
     }
 
+    public function resetFilters()
+    {
+        $this->search = '';
+        $this->filterPutCall = '';
+        $this->filterStrategy = '';
+        $this->resetPage();
+    }
+
     public function sortBy($field)
     {
         if ($this->sortField === $field) {
@@ -55,6 +63,7 @@ class OpenOptions extends Component
     {
         $query = TradeOpen::onEnvironment($this->selectedEnvironment)
             ->with('symbol')
+            ->where('processed', 0)
             ->where('environment', $this->selectedEnvironment)
             ->whereIn('assetCategory', ['OPT', 'FOP']);
 
@@ -76,28 +85,15 @@ class OpenOptions extends Component
         $query->orderBy($this->sortField, $this->sortDirection);
         $trades = $query->paginate($this->perPage);
 
-        $totalTrades = TradeOpen::onEnvironment($this->selectedEnvironment)
+        $baseQuery = fn() => TradeOpen::onEnvironment($this->selectedEnvironment)
+            ->where('processed', 0)
             ->where('environment', $this->selectedEnvironment)
-            ->whereIn('assetCategory', ['OPT', 'FOP'])
-            ->count();
+            ->whereIn('assetCategory', ['OPT', 'FOP']);
 
-        $totalPremium = TradeOpen::onEnvironment($this->selectedEnvironment)
-            ->where('environment', $this->selectedEnvironment)
-            ->whereIn('assetCategory', ['OPT', 'FOP'])
-            ->sum('netCash');
-
-        $totalCommissions = TradeOpen::onEnvironment($this->selectedEnvironment)
-            ->where('environment', $this->selectedEnvironment)
-            ->whereIn('assetCategory', ['OPT', 'FOP'])
-            ->sum('ibCommission');
-
-        $strategies = TradeOpen::onEnvironment($this->selectedEnvironment)
-            ->where('environment', $this->selectedEnvironment)
-            ->whereIn('assetCategory', ['OPT', 'FOP'])
-            ->distinct()
-            ->whereNotNull('strategy')
-            ->pluck('strategy')
-            ->filter();
+        $totalTrades       = $baseQuery()->count();
+        $totalPremium      = $baseQuery()->sum('netCash');
+        $totalCommissions  = $baseQuery()->sum('ibCommission');
+        $strategies        = $baseQuery()->distinct()->whereNotNull('strategy')->pluck('strategy')->filter();
 
         return view('livewire.trades.open-options', [
             'trades' => $trades,

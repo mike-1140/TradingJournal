@@ -108,8 +108,7 @@ class CampaignDetail extends Component
         $query = $this->applyTimeFilter($query, 'dateTime');
 
         $metrics = (clone $query)->selectRaw('
-            SUM(netcash) as total_netcash,
-            SUM(proceeds) as total_proceeds,
+            SUM(CASE WHEN action = "CASH_SETTLEMENT" THEN proceeds ELSE netcash END) as total_cashflow,
             SUM(commission) as total_commission,
             SUM(realized_pnl) as total_pnl,
             SUM(CASE WHEN assetCategory = "STK" THEN inventory_delta ELSE 0 END) as shares_balance,

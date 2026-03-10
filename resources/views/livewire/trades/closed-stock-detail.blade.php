@@ -4,8 +4,7 @@
         title="Trade Details - {{ $trade->symbol }}"
         subtitle="{{ $trade->assetCategory }} • Closed {{ $trade->dateTimeClose->format('d.m.Y') }}"
         icon="check-circle"
-        back-route="trades.closed.stocks"
-        back-text="zurück">
+        back-route="trades.closed.stocks">
     </x-page-header>
 
     {{-- KPI Cards --}}

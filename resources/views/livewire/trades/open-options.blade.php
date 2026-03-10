@@ -1,91 +1,81 @@
 <div>
-    {{-- 1. BREADCRUMBS
-    <x-breadcrumbs :items="[
-        ['label' => 'Dashboard', 'route' => 'dashboard', 'icon' => 'speedometer2'],
-        ['label' => 'Closed Trades', 'icon' => 'check-circle']
-    ]" />--}}
-
-    {{-- 2. PAGE HEADER mit Environment Switcher --}}
     <x-page-header
         title="Offene Options-Positionen"
         subtitle="Offene Positionen"
         icon="graph-up">
     </x-page-header>
 
-    <!-- Statistiken -->
+    {{-- Statistiken --}}
     <div class="row g-3 mb-4">
         <div class="col-md-4">
-            <div class="card">
-                <div class="card-body">
-                    <h6 class="text-muted">Anzahl Options Positionen</h6>
-                    <h3>{{ number_format($totalTrades) }}</h3>
-                </div>
-            </div>
+            <x-stat-card
+                title="Anzahl Options Positionen"
+                :value="number_format($totalTrades)"
+                color="primary"
+                icon="hash" />
         </div>
         <div class="col-md-4">
-            <div class="card">
-                <div class="card-body">
-                    <h6 class="text-muted">Total Premium</h6>
-                    <h3 class="text-{{ $totalPremium >= 0 ? 'success' : 'danger' }}">
-                        {{ number_format($totalPremium, 2, ',', '') }} $
-                    </h3>
-                </div>
-            </div>
+            <x-stat-card
+                title="Total Premium"
+                :value="number_format($totalPremium, 2, ',', '') . ' $'"
+                :color="$totalPremium >= 0 ? 'success' : 'danger'"
+                icon="graph-up" />
         </div>
         <div class="col-md-4">
-            <div class="card">
-                <div class="card-body">
-                    <h6 class="text-muted">Gesamte Kommissionen</h6>
-                    <h3>{{ number_format($totalCommissions, 2, ',', '') }} $</h3>
-                </div>
-            </div>
+            <x-stat-card
+                title="Gesamte Kommissionen"
+                :value="number_format($totalCommissions, 2, ',', '') . ' $'"
+                color="secondary"
+                icon="receipt" />
         </div>
     </div>
 
-    <!-- Filter -->
+    {{-- Filter --}}
     <div class="card mb-4">
-        <div class="card-body">
-            <div class="row g-3">
-                <div class="col-md-4">
-                    <label class="form-label">Suche</label>
-                    <input
-                        type="text"
-                        class="form-control"
-                        placeholder="Symbol, Underlying..."
-                        wire:model.live.debounce.300ms="search">
+        <div class="card-body py-2">
+            <div class="d-flex flex-wrap align-items-end gap-3">
+                <div>
+                    <label class="form-label form-label-sm mb-1">Suche</label>
+                    <input type="text" class="form-control form-control-sm"
+                           placeholder="Symbol, Underlying..."
+                           wire:model.live.debounce.300ms="search">
                 </div>
-                <div class="col-md-2">
-                    <label class="form-label">Put/Call</label>
-                    <select class="form-select" wire:model.live="filterPutCall">
+                <div>
+                    <label class="form-label form-label-sm mb-1">Put/Call</label>
+                    <select class="form-select form-select-sm" wire:model.live="filterPutCall">
                         <option value="">Alle</option>
                         <option value="CALL">CALL</option>
                         <option value="PUT">PUT</option>
                     </select>
                 </div>
-                <div class="col-md-3">
-                    <label class="form-label">Strategie</label>
-                    <select class="form-select" wire:model.live="filterStrategy">
+                <div>
+                    <label class="form-label form-label-sm mb-1">Strategie</label>
+                    <select class="form-select form-select-sm" wire:model.live="filterStrategy">
                         <option value="">Alle</option>
                         @foreach($strategies as $strat)
                             <option value="{{ $strat }}">{{ $strat }}</option>
                         @endforeach
                     </select>
                 </div>
-                <div class="col-md-3">
-                    <label class="form-label">Pro Seite</label>
-                    <select class="form-select" wire:model.live="perPage">
+                <div>
+                    <label class="form-label form-label-sm mb-1">Pro Seite</label>
+                    <select class="form-select form-select-sm" wire:model.live="perPage">
                         <option value="10">10</option>
                         <option value="25">25</option>
                         <option value="50">50</option>
                         <option value="100">100</option>
                     </select>
                 </div>
+                <div class="ms-auto">
+                    <button wire:click="resetFilters" class="btn btn-sm btn-outline-secondary">
+                        <i class="bi bi-arrow-clockwise"></i> Reset
+                    </button>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Tabelle -->
-    {{-- 4. TRADES TABLE in TradeCard --}}
+    {{-- Tabelle --}}
     <x-trade-card title="offene OPT-Positionen" icon="list-ul">
         <x-slot:actions>
             <span class="badge bg-primary">{{ $trades->total() }}</span>
@@ -116,7 +106,6 @@
                             <i class="bi bi-arrow-{{ $sortDirection === 'asc' ? 'up' : 'down' }}"></i>
                         @endif
                     </th>
-
                     <th wire:click="sortBy('expiry')" style="cursor: pointer;">
                         Expiry
                         @if($sortField === 'expiry')
@@ -124,6 +113,7 @@
                         @endif
                     </th>
                     <th class="text-end">Premium</th>
+                    <th class="text-end">50% Ziel</th>
                     <th>Strategie</th>
                     <th></th>
                 </tr>
@@ -164,9 +154,15 @@
                                 @endif
                             @endif
                         </td>
-                        <td class="text-end">{{ number_format($trade->netCash, 2, ',', '') }} $</td>
+                        <td class="text-end"><x-currency-value :value="$trade->netCash" currency="USD" :colored="true" /></td>
                         <td class="text-end">
-                            <strong>{{ number_format($trade->netCash, 2, ',', '') }} $</strong>
+                            @if($trade->buySell === 'SELL' && $trade->netCash > 0)
+                                <span class="text-success fw-bold">
+                                    {{ number_format($trade->netCash * 0.5, 2, ',', '') }} $
+                                </span>
+                            @else
+                                <small class="text-muted">—</small>
+                            @endif
                         </td>
                         <td>
                             @if($trade->strategy)
@@ -183,11 +179,10 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="10">
-                            {{-- 6. EMPTY STATE --}}
+                        <td colspan="11">
                             <x-empty-state
                                 icon="inbox"
-                                title="keine offenen Positionen gefunden"
+                                title="Keine offenen Options-Positionen gefunden"
                                 message="" />
                         </td>
                     </tr>
@@ -196,9 +191,8 @@
             </table>
         </div>
 
-        {{-- 7. PAGINATION --}}
-        <div class="card-footer bg-white">
+        <x-slot:footer>
             {{ $trades->links('components.pagination') }}
-        </div>
+        </x-slot:footer>
     </x-trade-card>
 </div>

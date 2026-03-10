@@ -56,19 +56,15 @@ class SpreadDetail extends Component
         if ($this->status === 'open') {
             $legsQuery = TradeOpen::onEnvironment($this->selectedEnvironment)
                 ->where('environment', $this->selectedEnvironment)
+                ->where('processed', 0)
                 ->where('opt_strategyID', $this->opt_strategyID);
-            $legsQuery = $this->applyTimeFilter($legsQuery, 'dateTimeClose');
-            $legs = $legsQuery
-                ->paginate($this->perPage)
-                ->get();
+            $legs = $legsQuery->get();
         } else {
             $legsQuery = TradeClose::onEnvironment($this->selectedEnvironment)
                 ->where('environment', $this->selectedEnvironment)
                 ->where('opt_strategyID', $this->opt_strategyID);
             $legsQuery = $this->applyTimeFilter($legsQuery, 'dateTimeClose');
-            $legs = $legsQuery
-                ->paginate($this->perPage)
-                ->get();
+            $legs = $legsQuery->get();
         }
 
         if ($legs->isEmpty()) {

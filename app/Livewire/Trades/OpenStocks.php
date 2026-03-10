@@ -47,6 +47,13 @@ class OpenStocks extends Component
         $this->resetPage();
     }
 
+    public function resetFilters()
+    {
+        $this->search = '';
+        $this->filterStrategy = '';
+        $this->resetPage();
+    }
+
     public function updatedFilterAssetCategory()
     {
         $this->resetPage();

@@ -1,23 +1,5 @@
 <div>
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1><i class="bi bi-tag"></i> Symbole</h1>
-
-        <!-- Environment Filter -->
-        <div>
-            <label class="me-2">Environment:</label>
-            <div class="btn-group" role="group">
-                @foreach($environments as $env)
-                    <button
-                        type="button"
-                        class="btn btn-{{ $selectedEnvironment === $env ? 'primary' : 'outline-primary' }}"
-                        wire:click="changeEnvironment('{{ $env }}')"
-                        onclick="window.dispatchEvent(new CustomEvent('environment-changed', { detail: { environment: '{{ $env }}' } }))">
-                        {{ $env }}
-                    </button>
-                @endforeach
-            </div>
-        </div>
-    </div>
+    <x-page-header title="Symbole" icon="tag" />
 
     <x-date-range-info :startDate="$this->startDate" :endDate="$this->endDate" />
 

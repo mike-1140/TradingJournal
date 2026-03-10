@@ -1,101 +1,53 @@
 <div>
-    {{-- 1. BREADCRUMBS
-    <x-breadcrumbs :items="[
-        ['label' => 'Dashboard', 'route' => 'dashboard', 'icon' => 'speedometer2'],
-        ['label' => 'Closed Trades', 'icon' => 'check-circle']
-    ]" />--}}
-
-    {{-- 2. PAGE HEADER mit Environment Switcher --}}
     <x-page-header
         title="Offene STK-Positionen"
         subtitle="Offene Positionen"
         icon="graph-up">
-
-        <x-slot:actions>
-            {{-- Environment Switcher
-            <div class="btn-group me-2" role="group">
-                @foreach($environments as $env)
-                    <button
-                        type="button"
-                        class="btn btn-{{ $selectedEnvironment === $env ? 'primary' : 'outline-primary' }}"
-                        wire:click="changeEnvironment('{{ $env }}')">
-                        {{ $env }}
-                    </button>
-                @endforeach
-            </div>
-            --}}
-            {{-- Export Button
-            <button wire:click="$set('showExportModal', true)" class="btn btn-outline-primary">
-                <i class="bi bi-download"></i> Export
-            </button>--}}
-        </x-slot:actions>
     </x-page-header>
 
-        <!-- Statistiken -->
+    {{-- Statistiken --}}
     <div class="row g-3 mb-4">
         <div class="col-md-4">
-            <div class="card">
-                <div class="card-body">
-                    <h6 class="text-muted">Anzahl STK Positionen</h6>
-                    <h3>{{ number_format($totalTrades) }}</h3>
-                </div>
-            </div>
+            <x-stat-card
+                title="Anzahl STK Positionen"
+                :value="number_format($totalTrades)"
+                color="primary"
+                icon="hash" />
         </div>
         <div class="col-md-4">
-            <div class="card">
-                <div class="card-body">
-                    <h6 class="text-muted">Gebundenes Kapital</h6>
-                    <h3>{{ number_format($totalValue, 2, ',', '') }}</h3>
-                </div>
-            </div>
+            <x-stat-card
+                title="Gebundenes Kapital"
+                :value="number_format($totalValue, 2, ',', '') . ' $'"
+                color="info"
+                icon="cash-stack" />
         </div>
         <div class="col-md-4">
-            <div class="card">
-                <div class="card-body">
-                    <h6 class="text-muted">Summe Kommissionen</h6>
-                    <h3>{{ number_format($totalCommissions, 2, ',', '') }}</h3>
+            <x-stat-card
+                title="Summe Kommissionen"
+                :value="number_format($totalCommissions, 2, ',', '') . ' $'"
+                color="secondary"
+                icon="receipt" />
+        </div>
+    </div>
+
+    {{-- Filter --}}
+    <div class="card mb-4">
+        <div class="card-body py-2">
+            <div class="d-flex flex-wrap align-items-end gap-3">
+                <div>
+                    <label class="form-label form-label-sm mb-1">Symbol</label>
+                    <input type="text" class="form-control form-control-sm"
+                           wire:model.live.debounce.300ms="search"
+                           placeholder="Symbol, Beschreibung...">
+                </div>
+                <div class="ms-auto">
+                    <button wire:click="resetFilters" class="btn btn-sm btn-outline-secondary">
+                        <i class="bi bi-arrow-clockwise"></i> Reset
+                    </button>
                 </div>
             </div>
         </div>
     </div>
-
-    {{-- 3. FILTER BAR --}}
-    <x-filter-bar title="Filter Trades">
-        <div class="row g-3">
-            <div class="col-md-3">
-                <label class="form-label">Symbol</label>
-                <input type="text"
-                       class="form-control"
-                       wire:model.live.debounce.300ms="search"
-                       placeholder="Symbol, Beschreibung...">
-            </div>
-            {{-- not used at this time
-            <div class="col-md-3">
-                <label class="form-label">From Date</label>
-                <input type="date"
-                       class="form-control"
-                       wire:model.live="filterStartDate">
-            </div>
-
-            <div class="col-md-3">
-                <label class="form-label">To Date</label>
-                <input type="date"
-                       class="form-control"
-                       wire:model.live="filterEndDate">
-            </div>
-
-            <div class="col-md-3">
-                <label class="form-label">Days Held</label>
-                <select class="form-select" wire:model.live="filterDaysHeld">
-                    <option value="">All</option>
-                    <option value="0-7">0-7 days</option>
-                    <option value="8-30">8-30 days</option>
-                    <option value="31-90">31-90 days</option>
-                    <option value="90+">90+ days</option>
-                </select>
-            </div>--}}
-        </div>
-    </x-filter-bar>
 
 
 
@@ -141,7 +93,8 @@
                 @forelse($trades as $trade)
                     <tr>
                         <td><strong class="fs-5">{{ $trade->symbol }}</strong>
-                        <br><small>{{ $trade->description }}</small>
+                            <br><small>{{ $trade->description }}</small>
+                        </td>
                         <td>
                             {{ $trade->dateTime?->format('d.m.Y') }}
                             <br><small class="text-muted">{{ $trade->dateTime?->diffForHumans() }}</small>
@@ -182,7 +135,7 @@
                         </td>
                         <td>
                             <a href="{{ route('trades.open.stocks.detail', $trade->id) }}" class="btn btn-sm btn-outline-primary">
-                                <i class="bi bi-eye"> Details</i>
+                                <i class="bi bi-eye"></i>
                             </a>
                         </td>
                     </tr>

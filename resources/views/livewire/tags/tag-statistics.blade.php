@@ -54,7 +54,7 @@
                                 <td>
                                     <a href="{{ route('trades.closed') }}?filterTags[]={{ $stat->tag->id }}"
                                        class="btn btn-sm btn-outline-primary">
-                                        <i class="bi bi-eye"></i> View
+                                        <i class="bi bi-eye"></i>
                                     </a>
                                 </td>
                             </tr>

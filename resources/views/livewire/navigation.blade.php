@@ -9,21 +9,68 @@
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav">
+
+                {{-- Aktien Dropdown --}}
+                @php
+                    $aktienActive = request()->routeIs('trades.open.stocks*') || request()->routeIs('trades.closed.stocks*');
+                @endphp
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle {{ $aktienActive ? 'active' : '' }}"
+                       href="#" id="aktienDropdown" role="button"
+                       data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-bar-chart-line"></i> Aktien
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="aktienDropdown">
+                        <li>
+                            <a class="dropdown-item {{ request()->routeIs('trades.open.stocks*') ? 'active' : '' }}"
+                               href="{{ route('trades.open.stocks') }}">
+                                <i class="bi bi-unlock"></i> Offene Positionen
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item {{ request()->routeIs('trades.closed.stocks*') ? 'active' : '' }}"
+                               href="{{ route('trades.closed.stocks') }}">
+                                <i class="bi bi-check-circle"></i> Geschlossene Positionen
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+
+                {{-- Optionen Dropdown --}}
+                @php
+                    $optionenActive = request()->routeIs('trades.open.options*') || request()->routeIs('trades.closed.options*');
+                @endphp
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle {{ $optionenActive ? 'active' : '' }}"
+                       href="#" id="optionenDropdown" role="button"
+                       data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-layers"></i> Optionen
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="optionenDropdown">
+                        <li>
+                            <a class="dropdown-item {{ request()->routeIs('trades.open.options*') ? 'active' : '' }}"
+                               href="{{ route('trades.open.options') }}">
+                                <i class="bi bi-unlock"></i> Offene Positionen
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item {{ request()->routeIs('trades.closed.options*') ? 'active' : '' }}"
+                               href="{{ route('trades.closed.options') }}">
+                                <i class="bi bi-check-circle"></i> Geschlossene Positionen
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+
+                {{-- Kampagnen --}}
                 <li class="nav-item">
-                    <a class="nav-link {{ request()->routeIs('trades.open.stocks') ? 'active' : '' }}" href="{{ route('trades.open.stocks') }}">
-                        <i class="bi bi-database"></i> Open Stocks
+                    <a class="nav-link {{ request()->routeIs('campaigns.*') ? 'active' : '' }}"
+                       href="{{ route('campaigns.campaigns') }}">
+                        <i class="bi bi-currency-exchange"></i> Kampagnen
                     </a>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link {{ request()->routeIs('trades.closed.stocks') ? 'active' : '' }}" href="{{ route('trades.closed.stocks') }}">
-                        <i class="bi bi-list"></i> Closed Stocks
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link {{ request()->routeIs('campaigns.campaigns') ? 'active' : '' }}" href="{{ route('campaigns.campaigns') }}">
-                        <i class="bi bi-currency-exchange"></i> Campaigns
-                    </a>
-                </li>
+
+                {{-- Spreads Dropdown --}}
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle {{ request()->routeIs('spreads.*') ? 'active' : '' }}"
                        href="#" id="spreadsDropdown" role="button"
@@ -31,48 +78,70 @@
                         <i class="bi bi-bezier2"></i> Spreads
                     </a>
                     <ul class="dropdown-menu" aria-labelledby="spreadsDropdown">
-                        <li><a class="dropdown-item {{ request()->routeIs('spreads.list') ? 'active' : '' }}" href="{{ route('spreads.list') }}">
-                            <i class="bi bi-list"></i> Alle Spreads
-                        </a></li>
+                        <li>
+                            <a class="dropdown-item {{ request()->routeIs('spreads.list') ? 'active' : '' }}"
+                               href="{{ route('spreads.list') }}">
+                                <i class="bi bi-list"></i> Alle Spreads
+                            </a>
+                        </li>
                         <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="{{ route('spreads.list', ['filterStrategy' => 'Vertical Spread']) }}">
-                            <i class="bi bi-bar-chart-line"></i> Vertical Spreads
-                        </a></li>
-                        <li><a class="dropdown-item" href="{{ route('spreads.list', ['filterStrategy' => 'Iron Condor']) }}">
-                            <i class="bi bi-diagram-3"></i> Iron Condors
-                        </a></li>
+                        <li>
+                            <a class="dropdown-item"
+                               href="{{ route('spreads.list', ['filterStrategy' => 'Vertical Spread']) }}">
+                                <i class="bi bi-bar-chart-line"></i> Vertical Spreads
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item"
+                               href="{{ route('spreads.list', ['filterStrategy' => 'Iron Condor']) }}">
+                                <i class="bi bi-diagram-3"></i> Iron Condors
+                            </a>
+                        </li>
                     </ul>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link {{ request()->routeIs('trades.open.options') ? 'active' : '' }}" href="{{ route('trades.open.options') }}">
-                        <i class="bi bi-database"></i> Open Options
+
+                {{-- Analyse Dropdown --}}
+                @php
+                    $analyseActive = request()->routeIs('symbols')
+                        || request()->routeIs('tags.*')
+                        || request()->routeIs('stats.*')
+                        || request()->routeIs('trades.raw*');
+                @endphp
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle {{ $analyseActive ? 'active' : '' }}"
+                       href="#" id="analyseDropdown" role="button"
+                       data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-speedometer2"></i> Analyse
                     </a>
+                    <ul class="dropdown-menu" aria-labelledby="analyseDropdown">
+                        <li>
+                            <a class="dropdown-item {{ request()->routeIs('symbols') ? 'active' : '' }}"
+                               href="{{ route('symbols') }}">
+                                <i class="bi bi-tag"></i> Symbole
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item {{ request()->routeIs('tags.*') ? 'active' : '' }}"
+                               href="{{ route('tags.manage') }}">
+                                <i class="bi bi-tags"></i> Tags
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item {{ request()->routeIs('stats.*') ? 'active' : '' }}"
+                               href="{{ route('stats.dashboard') }}">
+                                <i class="bi bi-graph-up"></i> Stats
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <a class="dropdown-item {{ request()->routeIs('trades.raw*') ? 'active' : '' }}"
+                               href="{{ route('trades.raw') }}">
+                                <i class="bi bi-database"></i> Raw Data
+                            </a>
+                        </li>
+                    </ul>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link {{ request()->routeIs('trades.closed.options') ? 'active' : '' }}" href="{{ route('trades.closed.options') }}">
-                        <i class="bi bi-database"></i> Closed Options
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link {{ request()->routeIs('trades.raw*') ? 'active' : '' }}" href="{{ route('trades.raw') }}">
-                        <i class="bi bi-database"></i> Raw Data
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link {{ request()->routeIs('symbols') ? 'active' : '' }}" href="{{ route('symbols') }}">
-                        <i class="bi bi-tag"></i> Symbole
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{{ route('tags.manage') }}">
-                        <i class="bi bi-tags"></i> Tags
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{{ route('stats.dashboard') }}">
-                        <i class="bi bi-speedometer2"></i> Stats
-                    </a>
-                </li>
+
             </ul>
 
             <ul class="navbar-nav ms-auto align-items-center">
@@ -88,7 +157,16 @@
                 {{-- Environment Badge --}}
                 <li class="nav-item">
                     <span class="navbar-text">
-                        <span class="badge bg-{{ $selectedEnvironment === 'MONEY' ? 'success' : ($selectedEnvironment === 'PAPER' ? 'warning' : 'secondary') }} fs-6">
+                        @php
+                            $envColor = match($selectedEnvironment) {
+                                'MONEY'       => 'success',
+                                'PAPER'       => 'warning',
+                                'AUTOM_MONEY' => 'danger',
+                                'AUTOM_PAPER' => 'info',
+                                default       => 'secondary',
+                            };
+                        @endphp
+                        <span class="badge bg-{{ $envColor }} fs-6">
                             <i class="bi bi-database"></i> {{ $selectedEnvironment }}
                         </span>
                     </span>

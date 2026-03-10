@@ -1,232 +1,216 @@
 <div>
-    <!-- Header -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <a href="{{ route('trades.raw') }}" class="btn btn-outline-secondary btn-sm mb-2">
-                <i class="bi bi-arrow-left"></i> Zurück zu Raw Data
-            </a>
-            <h1>
-                <i class="bi bi-database"></i> Raw Trade Details: {{ $trade->symbol }}
-            </h1>
-        </div>
-        <span class="badge bg-{{ $trade->processed ? 'success' : 'warning' }} fs-5">
-            {{ $trade->processed ? 'Verarbeitet' : 'Unverarbeitet' }}
-        </span>
-    </div>
+    <x-page-header
+        title="Raw Trade: {{ $trade->symbol }}"
+        :subtitle="$trade->description"
+        icon="database"
+        backRoute="trades.raw">
+        <x-slot:actions>
+            @php
+                $envColor = match($trade->environment) {
+                    'MONEY'       => 'success',
+                    'PAPER'       => 'warning',
+                    'AUTOM_MONEY' => 'danger',
+                    'AUTOM_PAPER' => 'info',
+                    default       => 'secondary',
+                };
+            @endphp
+            <span class="badge bg-{{ $trade->processed ? 'success' : 'warning' }} fs-6 me-1">
+                <i class="bi bi-{{ $trade->processed ? 'check-circle' : 'clock' }}"></i>
+                {{ $trade->processed ? 'Verarbeitet' : 'Unverarbeitet' }}
+            </span>
+            <span class="badge bg-{{ $envColor }} fs-6">
+                <i class="bi bi-database"></i> {{ $trade->environment }}
+            </span>
+        </x-slot:actions>
+    </x-page-header>
 
     <div class="row g-4">
+
+        {{-- Hauptbereich --}}
         <div class="col-md-8">
-            <!-- Basis-Informationen -->
+
+            {{-- Instrument --}}
             <div class="card mb-4">
                 <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0"><i class="bi bi-info-circle"></i> Basis-Informationen</h5>
+                    <h6 class="mb-0"><i class="bi bi-info-circle"></i> Instrument</h6>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-4 text-muted">Symbol</dt>
+                        <dd class="col-sm-8"><strong class="fs-5">{{ $trade->symbol }}</strong></dd>
+
+                        <dt class="col-sm-4 text-muted">Beschreibung</dt>
+                        <dd class="col-sm-8">{{ $trade->description ?: '—' }}</dd>
+
+                        <dt class="col-sm-4 text-muted">Asset Category</dt>
+                        <dd class="col-sm-8">
+                            <span class="badge bg-secondary">{{ $trade->assetCategory }}</span>
+                            @if($trade->subCategory)
+                                <span class="badge bg-light text-dark ms-1">{{ $trade->subCategory }}</span>
+                            @endif
+                        </dd>
+
+                        <dt class="col-sm-4 text-muted">Buy/Sell</dt>
+                        <dd class="col-sm-8">
+                            <span class="badge bg-{{ $trade->buySell === 'BUY' ? 'success' : 'danger' }}">
+                                {{ $trade->buySell }}
+                            </span>
+                        </dd>
+
+                        <dt class="col-sm-4 text-muted">Status</dt>
+                        <dd class="col-sm-8">{{ $trade->status ?: '—' }}</dd>
+
+                        <dt class="col-sm-4 text-muted">Currency</dt>
+                        <dd class="col-sm-8">{{ $trade->currency ?: '—' }}</dd>
+
+                        <dt class="col-sm-4 text-muted">Conid</dt>
+                        <dd class="col-sm-8"><code>{{ $trade->conid ?: '—' }}</code></dd>
+                    </dl>
+                </div>
+            </div>
+
+            {{-- Finanzdaten --}}
+            <div class="card mb-4">
+                <div class="card-header bg-dark text-white">
+                    <h6 class="mb-0"><i class="bi bi-cash-stack"></i> Finanzdaten</h6>
                 </div>
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-6">
-                            <table class="table table-sm">
-                                <tr>
-                                    <th width="40%">Symbol:</th>
-                                    <td><strong class="fs-4">{{ $trade->symbol }}</strong></td>
-                                </tr>
-                                <tr>
-                                    <th>Beschreibung:</th>
-                                    <td>{{ $trade->description }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Asset Category:</th>
-                                    <td><span class="badge bg-secondary">{{ $trade->assetCategory }}</span></td>
-                                </tr>
-                                @if($trade->subCategory)
-                                    <tr>
-                                        <th>Sub Category:</th>
-                                        <td>{{ $trade->subCategory }}</td>
-                                    </tr>
-                                @endif
-                                <tr>
-                                    <th>Buy/Sell:</th>
-                                    <td>
-                                        <span class="badge bg-{{ $trade->buySell === 'BUY' ? 'success' : 'danger' }}">
-                                            {{ $trade->buySell }}
-                                        </span>
-                                    </td>
-                                </tr>
-                            </table>
+                            <dl class="row mb-0">
+                                <dt class="col-sm-5 text-muted">Datum / Zeit</dt>
+                                <dd class="col-sm-7">{{ $trade->dateTime?->format('d.m.Y H:i:s') ?: '—' }}</dd>
+
+                                <dt class="col-sm-5 text-muted">Quantity</dt>
+                                <dd class="col-sm-7"><strong>{{ number_format($trade->quantity, 2, ',', '') }}</strong></dd>
+
+                                <dt class="col-sm-5 text-muted">Trade Preis</dt>
+                                <dd class="col-sm-7"><strong>{{ number_format($trade->tradePrice, 2, ',', '') }}</strong></dd>
+
+                                <dt class="col-sm-5 text-muted">Proceeds</dt>
+                                <dd class="col-sm-7">{{ number_format($trade->proceeds ?? 0, 2, ',', '') }}</dd>
+                            </dl>
                         </div>
                         <div class="col-md-6">
-                            <table class="table table-sm">
-                                <tr>
-                                    <th width="40%">Trade Datum:</th>
-                                    <td>{{ $trade->dateTime?->format('d.m.Y') }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Trade Zeit:</th>
-                                    <td>{{ $trade->tradeTime ? substr($trade->tradeTime, 0, 8) : '-' }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Quantity:</th>
-                                    <td><strong>{{ number_format($trade->quantity, 2, ',', '') }}</strong></td>
-                                </tr>
-                                <tr>
-                                    <th>Trade Preis:</th>
-                                    <td><strong>{{ number_format($trade->tradePrice, 2, ',', '') }} $</strong></td>
-                                </tr>
-                                <tr>
-                                    <th>Net Cash:</th>
-                                    <td>{{ number_format($trade->netCash, 2, ',', '') }} $</td>
-                                </tr>
-                                <tr>
-                                    <th>IB Commission:</th>
-                                    <td>{{ number_format($trade->ibCommission, 2, ',', '') }} $</td>
-                                </tr>
-                            </table>
+                            <dl class="row mb-0">
+                                <dt class="col-sm-5 text-muted">Net Cash</dt>
+                                <dd class="col-sm-7">{{ number_format($trade->netCash, 2, ',', '') }}</dd>
+
+                                <dt class="col-sm-5 text-muted">IB Commission</dt>
+                                <dd class="col-sm-7">{{ number_format($trade->ibCommission, 2, ',', '') }}</dd>
+
+                                <dt class="col-sm-5 text-muted">FX Rate Base</dt>
+                                <dd class="col-sm-7">{{ $trade->fxRateToBase ? number_format($trade->fxRateToBase, 6, ',', '') : '—' }}</dd>
+
+                                <dt class="col-sm-5 text-muted">Closed By</dt>
+                                <dd class="col-sm-7">{{ $trade->closedBy ?: '—' }}</dd>
+                            </dl>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Options Details -->
-            @if($trade->assetCategory === 'OPT' || $trade->assetCategory === 'FOP')
+            {{-- Options-Details --}}
+            @if(in_array($trade->assetCategory, ['OPT', 'FOP']))
                 <div class="card mb-4">
                     <div class="card-header bg-info text-white">
-                        <h5 class="mb-0"><i class="bi bi-graph-up"></i> Options Details</h5>
+                        <h6 class="mb-0"><i class="bi bi-layers"></i> Options-Details</h6>
                     </div>
                     <div class="card-body">
                         <div class="row">
                             <div class="col-md-6">
-                                <table class="table table-sm">
-                                    <tr>
-                                        <th width="40%">Underlying Symbol:</th>
-                                        <td><strong>{{ $trade->underlyingSymbol }}</strong></td>
-                                    </tr>
-                                    <tr>
-                                        <th>Underlying Conid:</th>
-                                        <td>{{ $trade->underlyingConid }}</td>
-                                    </tr>
-                                    <tr>
-                                        <th>Put/Call:</th>
-                                        <td>
+                                <dl class="row mb-0">
+                                    <dt class="col-sm-6 text-muted">Underlying</dt>
+                                    <dd class="col-sm-6"><strong>{{ $trade->underlyingSymbol ?: '—' }}</strong></dd>
+
+                                    <dt class="col-sm-6 text-muted">Underlying Conid</dt>
+                                    <dd class="col-sm-6"><code>{{ $trade->underlyingConid ?: '—' }}</code></dd>
+
+                                    <dt class="col-sm-6 text-muted">Put/Call</dt>
+                                    <dd class="col-sm-6">
                                         <span class="badge bg-{{ $trade->putCall === 'CALL' ? 'success' : 'danger' }}">
                                             {{ $trade->putCall }}
                                         </span>
-                                        </td>
-                                    </tr>
-                                </table>
+                                    </dd>
+
+                                    <dt class="col-sm-6 text-muted">Opt. Strategy</dt>
+                                    <dd class="col-sm-6">{{ $trade->opt_strategy ?: '—' }}</dd>
+                                </dl>
                             </div>
                             <div class="col-md-6">
-                                <table class="table table-sm">
-                                    <tr>
-                                        <th width="40%">Strike:</th>
-                                        <td><strong>{{ number_format($trade->strike, 2, ',', '') }} $</strong></td>
-                                    </tr>
-                                    <tr>
-                                        <th>Expiry:</th>
-                                        <td>{{ $trade->expiry?->format('d.m.Y') }}</td>
-                                    </tr>
-                                    <tr>
-                                        <th>Multiplier:</th>
-                                        <td>{{ $trade->multiplier }}</td>
-                                    </tr>
-                                </table>
+                                <dl class="row mb-0">
+                                    <dt class="col-sm-5 text-muted">Strike</dt>
+                                    <dd class="col-sm-7"><strong>{{ number_format($trade->strike, 2, ',', '') }}</strong></dd>
+
+                                    <dt class="col-sm-5 text-muted">Expiry</dt>
+                                    <dd class="col-sm-7">{{ $trade->expiry?->format('d.m.Y') ?: '—' }}</dd>
+
+                                    <dt class="col-sm-5 text-muted">Multiplier</dt>
+                                    <dd class="col-sm-7">{{ $trade->multiplier }}</dd>
+
+                                    <dt class="col-sm-5 text-muted">Strategy Name</dt>
+                                    <dd class="col-sm-7">{{ $trade->opt_strategyName ?: '—' }}</dd>
+
+                                    <dt class="col-sm-5 text-muted">Strategy ID</dt>
+                                    <dd class="col-sm-7"><code>{{ $trade->opt_strategyID ?: '—' }}</code></dd>
+                                </dl>
                             </div>
                         </div>
                     </div>
                 </div>
             @endif
 
-            <!-- Processing Details -->
-            <div class="card mb-4">
-                <div class="card-header bg-secondary text-white">
-                    <h5 class="mb-0"><i class="bi bi-gear"></i> Verarbeitungs-Details</h5>
-                </div>
-                <div class="card-body">
-                    <table class="table table-sm">
-                        <tr>
-                            <th width="30%">Source:</th>
-                            <td>{{ $trade->source }}</td>
-                        </tr>
-                        <tr>
-                            <th>Status:</th>
-                            <td>{{ $trade->status }}</td>
-                        </tr>
-                        <tr>
-                            <th>Processed:</th>
-                            <td>
-                                @if($trade->processed)
-                                    <span class="badge bg-success">Ja</span>
-                                @else
-                                    <span class="badge bg-warning">Nein</span>
-                                @endif
-                            </td>
-                        </tr>
-                        <tr>
-                            <th>Is Split:</th>
-                            <td>{{ $trade->is_split ? 'Ja' : 'Nein' }}</td>
-                        </tr>
-                        @if($trade->split_type)
-                            <tr>
-                                <th>Split Type:</th>
-                                <td>{{ $trade->split_type }}</td>
-                            </tr>
-                        @endif
-                        @if($trade->actionID)
-                            <tr>
-                                <th>Action ID:</th>
-                                <td><code>{{ $trade->actionID }}</code></td>
-                            </tr>
-                        @endif
-                    </table>
-                </div>
-            </div>
-
-            <!-- Strategie -->
+            {{-- Strategie --}}
             @if($trade->strategy || $trade->is_strategy)
                 <div class="card mb-4">
                     <div class="card-header bg-warning">
-                        <h5 class="mb-0"><i class="bi bi-diagram-3"></i> Strategie</h5>
+                        <h6 class="mb-0"><i class="bi bi-diagram-3"></i> Strategie</h6>
                     </div>
                     <div class="card-body">
-                        <table class="table table-sm">
-                            <tr>
-                                <th width="30%">Strategie:</th>
-                                <td>{{ $trade->strategy ?: '-' }}</td>
-                            </tr>
-                            <tr>
-                                <th>Is Strategy:</th>
-                                <td>{{ $trade->is_strategy ? 'Ja' : 'Nein' }}</td>
-                            </tr>
+                        <dl class="row mb-0">
+                            <dt class="col-sm-4 text-muted">Strategie</dt>
+                            <dd class="col-sm-8">{{ $trade->strategy ?: '—' }}</dd>
+
+                            <dt class="col-sm-4 text-muted">Is Strategy</dt>
+                            <dd class="col-sm-8">
+                                <span class="badge bg-{{ $trade->is_strategy ? 'success' : 'secondary' }}">
+                                    {{ $trade->is_strategy ? 'Ja' : 'Nein' }}
+                                </span>
+                            </dd>
+
                             @if($trade->opt_strategyName)
-                                <tr>
-                                    <th>Strategy Name:</th>
-                                    <td>{{ $trade->opt_strategyName }}</td>
-                                </tr>
+                                <dt class="col-sm-4 text-muted">Strategy Name</dt>
+                                <dd class="col-sm-8">{{ $trade->opt_strategyName }}</dd>
                             @endif
-                            @if($trade->strategyID)
-                                <tr>
-                                    <th>Strategy ID:</th>
-                                    <td><code>{{ $trade->strategyID }}</code></td>
-                                </tr>
+
+                            @if($trade->opt_strategyID)
+                                <dt class="col-sm-4 text-muted">Strategy ID</dt>
+                                <dd class="col-sm-8"><code>{{ $trade->opt_strategyID }}</code></dd>
                             @endif
-                        </table>
+                        </dl>
                     </div>
                 </div>
             @endif
 
-            <!-- Related Raw Trades -->
+            {{-- Verbundene Raw Trades --}}
             @if($relatedRawTrades->count() > 0)
                 <div class="card">
-                    <div class="card-header bg-dark text-white">
-                        <h5 class="mb-0"><i class="bi bi-link"></i> Verbundene Raw Trades</h5>
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="bi bi-link"></i> Verbundene Raw Trades
+                            <span class="badge bg-secondary ms-1">{{ $relatedRawTrades->count() }}</span>
+                        </h6>
                     </div>
-                    <div class="card-body">
+                    <div class="card-body p-0">
                         <div class="table-responsive">
-                            <table class="table table-sm">
-                                <thead>
+                            <table class="table table-sm table-hover mb-0">
+                                <thead class="table-light">
                                 <tr>
                                     <th>Datum</th>
                                     <th>Buy/Sell</th>
                                     <th class="text-end">Qty</th>
                                     <th class="text-end">Preis</th>
+                                    <th class="text-end">Net Cash</th>
                                     <th>Trade ID</th>
                                     <th></th>
                                 </tr>
@@ -234,15 +218,16 @@
                                 <tbody>
                                 @foreach($relatedRawTrades as $rel)
                                     <tr>
-                                        <td>{{ $rel->tradeDate?->format('d.m.Y H:i') }}</td>
+                                        <td>{{ $rel->dateTime?->format('d.m.Y H:i') }}</td>
                                         <td>
-                                        <span class="badge bg-{{ $rel->buySell === 'BUY' ? 'success' : 'danger' }}">
-                                            {{ $rel->buySell }}
-                                        </span>
+                                            <span class="badge bg-{{ $rel->buySell === 'BUY' ? 'success' : 'danger' }}">
+                                                {{ $rel->buySell }}
+                                            </span>
                                         </td>
                                         <td class="text-end">{{ number_format($rel->quantity, 2, ',', '') }}</td>
                                         <td class="text-end">{{ number_format($rel->tradePrice, 2, ',', '') }}</td>
-                                        <td><small>{{ $rel->tradeID }}</small></td>
+                                        <td class="text-end">{{ number_format($rel->netCash, 2, ',', '') }}</td>
+                                        <td><code class="small">{{ $rel->tradeID }}</code></td>
                                         <td>
                                             <a href="{{ route('trades.raw.detail', $rel->id) }}" class="btn btn-sm btn-outline-primary">
                                                 <i class="bi bi-eye"></i>
@@ -256,69 +241,85 @@
                     </div>
                 </div>
             @endif
+
         </div>
 
-        <!-- Sidebar -->
+        {{-- Sidebar --}}
         <div class="col-md-4">
-            <!-- IDs -->
+
+            {{-- IDs & Referenzen --}}
             <div class="card mb-4">
                 <div class="card-header">
                     <h6 class="mb-0"><i class="bi bi-hash"></i> IDs & Referenzen</h6>
                 </div>
                 <div class="card-body">
-                    <table class="table table-sm small">
-                        <tr>
-                            <th>Database ID:</th>
-                            <td><code>{{ $trade->id }}</code></td>
-                        </tr>
-                        <tr>
-                            <th>Symbol ID:</th>
-                            <td><code>{{ $trade->symID }}</code></td>
-                        </tr>
-                        <tr>
-                            <th>Trade ID:</th>
-                            <td><code class="small">{{ $trade->tradeID }}</code></td>
-                        </tr>
+                    <dl class="row mb-0 small">
+                        <dt class="col-sm-5 text-muted">DB ID</dt>
+                        <dd class="col-sm-7"><code>{{ $trade->id }}</code></dd>
+
+                        <dt class="col-sm-5 text-muted">Sym ID</dt>
+                        <dd class="col-sm-7"><code>{{ $trade->symID }}</code></dd>
+
+                        <dt class="col-sm-5 text-muted">Trade ID</dt>
+                        <dd class="col-sm-7"><code class="text-break">{{ $trade->tradeID ?: '—' }}</code></dd>
+
                         @if($trade->ibOrderID)
-                            <tr>
-                                <th>IB Order ID:</th>
-                                <td><code class="small">{{ $trade->ibOrderID }}</code></td>
-                            </tr>
+                            <dt class="col-sm-5 text-muted">IB Order ID</dt>
+                            <dd class="col-sm-7"><code class="text-break">{{ $trade->ibOrderID }}</code></dd>
                         @endif
+
                         @if($trade->linkID)
-                            <tr>
-                                <th>Link ID:</th>
-                                <td><code class="small">{{ $trade->linkID }}</code></td>
-                            </tr>
+                            <dt class="col-sm-5 text-muted">Link ID</dt>
+                            <dd class="col-sm-7"><code class="text-break">{{ $trade->linkID }}</code></dd>
                         @endif
+
+                        @if($trade->actionID)
+                            <dt class="col-sm-5 text-muted">Action ID</dt>
+                            <dd class="col-sm-7"><code class="text-break">{{ $trade->actionID }}</code></dd>
+                        @endif
+
                         @if($trade->checksum)
-                            <tr>
-                                <th>Checksum:</th>
-                                <td><code class="small">{{ $trade->checksum }}</code></td>
-                            </tr>
+                            <dt class="col-sm-5 text-muted">Checksum</dt>
+                            <dd class="col-sm-7"><code class="text-break">{{ $trade->checksum }}</code></dd>
                         @endif
-                    </table>
+                    </dl>
                 </div>
             </div>
 
-            <!-- Environment -->
+            {{-- Verarbeitung --}}
             <div class="card">
                 <div class="card-header">
-                    <h6 class="mb-0"><i class="bi bi-flag"></i> Environment</h6>
+                    <h6 class="mb-0"><i class="bi bi-gear"></i> Verarbeitung</h6>
                 </div>
                 <div class="card-body">
-                    <table class="table table-sm">
-                        <tr>
-                            <th>Environment:</th>
-                            <td>
-                                <span class="badge bg-{{ $trade->environment === 'MONEY' ? 'success' : ($trade->environment === 'PAPER' ? 'warning' : 'secondary') }}">
-                                    {{ $trade->environment }}
-                                </span>
-                            </td>
-                        </tr>
-                    </table>
+                    <dl class="row mb-0">
+                        <dt class="col-sm-6 text-muted">Processed</dt>
+                        <dd class="col-sm-6">
+                            <span class="badge bg-{{ $trade->processed ? 'success' : 'warning' }}">
+                                {{ $trade->processed ? 'Ja' : 'Nein' }}
+                            </span>
+                        </dd>
+
+                        <dt class="col-sm-6 text-muted">Source</dt>
+                        <dd class="col-sm-6">{{ $trade->source ?: '—' }}</dd>
+
+                        <dt class="col-sm-6 text-muted">Is Split</dt>
+                        <dd class="col-sm-6">
+                            @if($trade->is_split)
+                                <span class="badge bg-info">Ja</span>
+                            @else
+                                <span class="text-muted">Nein</span>
+                            @endif
+                        </dd>
+
+                        @if($trade->split_type)
+                            <dt class="col-sm-6 text-muted">Split Type</dt>
+                            <dd class="col-sm-6">{{ $trade->split_type }}</dd>
+                        @endif
+                    </dl>
                 </div>
             </div>
+
         </div>
     </div>
 </div>

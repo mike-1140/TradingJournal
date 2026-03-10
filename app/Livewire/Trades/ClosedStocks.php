@@ -47,13 +47,22 @@ class ClosedStocks extends Component
         $this->resetPage();
     }
 
+    public function resetFilters()
+    {
+        $this->search = '';
+        $this->filterStrategy = '';
+        $this->resetPage();
+    }
+
     public function sortBy($field)
     {
+        $defaultDesc = ['dateTimeOpen', 'dateTimeClose', 'profit', 'ROI'];
+
         if ($this->sortField === $field) {
             $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
         } else {
             $this->sortField = $field;
-            $this->sortDirection = 'asc';
+            $this->sortDirection = in_array($field, $defaultDesc) ? 'desc' : 'asc';
         }
     }
 

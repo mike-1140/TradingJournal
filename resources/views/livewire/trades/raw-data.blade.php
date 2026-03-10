@@ -206,7 +206,7 @@
                             </td>
                             <td>
                                 <a href="{{ route('trades.raw.detail', $trade->id) }}" class="btn btn-sm btn-outline-primary">
-                                    <i class="bi bi-eye"></i> Details
+                                    <i class="bi bi-eye"></i>
                                 </a>
                             </td>
                         </tr>
