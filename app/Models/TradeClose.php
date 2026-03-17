@@ -68,7 +68,7 @@ class TradeClose extends BaseTradingModel
 
     protected $casts = [
         'dateTimeOpen' => 'datetime',
-        'dateTimeClose' => 'date',
+        'dateTimeClose' => 'datetime',
         'expiry' => 'date',
         'tradePriceOpen' => 'decimal:2',
         'tradePriceClose' => 'decimal:2',

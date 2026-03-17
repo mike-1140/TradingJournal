@@ -1,188 +1,154 @@
 <div>
     {{-- Header --}}
     <x-page-header
-        title="Open Trade - {{ $trade->symbol }}"
-        subtitle="Opened on {{ $trade->dateTime->format('d.m.Y H:i') }}"
+        title="Offene Option - {{ $trade->symbol }}"
+        subtitle="OPT • Eröffnet am {{ $trade->dateTime?->format('d.m.Y H:i') }}"
         icon="box-arrow-in-right"
         back-route="trades.open.options">
-
-        <x-slot:actions>
-            @if($trade->assetCategory === 'OPT')
-                <button class="btn btn-outline-warning">
-                    <i class="bi bi-lightning"></i> Close Position
-                </button>
-            @endif
-        </x-slot:actions>
     </x-page-header>
-
-    {{-- Flash Messages --}}
-    @if(session('message'))
-        <x-alert-message type="success">{{ session('message') }}</x-alert-message>
-    @endif
-
-    @if(session('error'))
-        <x-alert-message type="danger">{{ session('error') }}</x-alert-message>
-    @endif
 
     {{-- KPI Cards --}}
     <div class="row g-3 mb-4">
         <div class="col-md-3">
             <x-stat-card
-                title="Unrealized P/L"
-                :value="number_format($trade->unrealizedPL ?? 0, 2) . ' $'"
-                icon="graph-up-arrow"
-                :color="($trade->unrealizedPL ?? 0) >= 0 ? 'success' : 'danger'"
-                :subtitle="'Current value'"
-                :trend="($trade->unrealizedPL ?? 0) >= 0 ? 'up' : 'down'" />
-        </div>
-
-        <div class="col-md-3">
-            <x-stat-card
-                title="Days Open"
-                :value="$trade->dateTime ? (int)abs(now()->diffInDays($trade->dateTime)) : '-'"
-                subtitle="Days in position"
-                icon="calendar3"
+                title="Eröffnungspreis"
+                :value="number_format($trade->tradePrice, 2, ',', '.') . ' $'"
+                icon="currency-dollar"
                 color="primary" />
         </div>
-
         <div class="col-md-3">
             <x-stat-card
-                title="Position Size"
+                title="Contracts"
                 :value="number_format(abs($trade->quantity), 0)"
-                subtitle="Shares/Contracts"
                 icon="box"
                 color="info" />
         </div>
-
         <div class="col-md-3">
             <x-stat-card
-                title="Cost Basis"
-                :value="number_format($trade->costBasis ?? 0, 2) . ' $'"
-                subtitle="Initial investment"
+                title="Net Cash"
+                :value="number_format($trade->netCash, 2, ',', '.') . ' $'"
                 icon="wallet2"
+                :color="$trade->netCash >= 0 ? 'success' : 'danger'" />
+        </div>
+        <div class="col-md-3">
+            <x-stat-card
+                title="Days Open"
+                :value="$trade->dateTime ? (int)abs(now()->diffInDays($trade->dateTime)) : '—'"
+                icon="calendar3"
                 color="secondary" />
         </div>
     </div>
 
     {{-- Main Content --}}
-    <div class="row">
+    <div class="row g-4">
         <div class="col-lg-8">
-            {{-- Trade Information --}}
-            <x-trade-card title="Position Details" icon="info-circle" class="mb-4">
-                <div class="row">
-                    <div class="col-md-6">
-                        <x-data-row label="Symbol" :value="$trade->symbol" icon="currency-dollar" />
-                        <x-data-row label="Asset Type" :value="$trade->assetCategory" badge badge-color="primary" />
-                        <x-data-row label="Underlying" :value="$trade->underlyingSymbol ?? '-'" />
 
-                        @if($trade->strike)
-                            <x-data-row label="Strike">
-                                {{ $trade->strike }}
-                                <span class="badge bg-{{ $trade->putCall === 'C' ? 'success' : 'danger' }}">
-                                    {{ $trade->putCall }}
+            {{-- 1. Identifikation --}}
+            <x-trade-card title="Identifikation" icon="fingerprint" class="mb-4">
+                <table class="table table-sm mb-0">
+                    <tbody>
+                        <tr><th style="width:40%">ID</th><td><code>{{ $trade->id }}</code></td></tr>
+                        <tr><th>Symbol</th><td><strong>{{ $trade->symbol }}</strong></td></tr>
+                        <tr><th>Underlying Symbol</th><td><strong>{{ $trade->underlyingSymbol ?? '—' }}</strong></td></tr>
+                        <tr><th>Description</th><td>{{ $trade->description ?? '—' }}</td></tr>
+                        <tr><th>Asset Category</th><td><span class="badge bg-primary">{{ $trade->assetCategory }}</span></td></tr>
+                        <tr><th>Sub Category</th><td>{{ $trade->subCategory ?? '—' }}</td></tr>
+                        <tr><th>Conid</th><td><code>{{ $trade->conid ?? '—' }}</code></td></tr>
+                        <tr><th>Underlying Conid</th><td><code>{{ $trade->underlyingConid ?? '—' }}</code></td></tr>
+                        <tr><th>Sym ID</th><td><code>{{ $trade->symID ?? '—' }}</code></td></tr>
+                        <tr><th>Environment</th><td><span class="badge bg-secondary">{{ $trade->environment }}</span></td></tr>
+                    </tbody>
+                </table>
+            </x-trade-card>
+
+            {{-- 2. Option Details --}}
+            <x-trade-card title="Option Details" icon="graph-up-arrow" class="mb-4">
+                <table class="table table-sm mb-0">
+                    <tbody>
+                        <tr><th style="width:40%">Put/Call</th><td>
+                            @if($trade->putCall)
+                                <span class="badge bg-{{ $trade->putCall === 'P' ? 'success' : 'danger' }}">
+                                    {{ $trade->putCall === 'P' ? 'PUT' : 'CALL' }}
                                 </span>
-                            </x-data-row>
-                        @endif
-
-                        @if($trade->expiry)
-                            <x-data-row label="Expiry" :value="$trade->expiry" icon="calendar-event" />
-                        @endif
-                    </div>
-
-                    <div class="col-md-6">
-                        <x-data-row label="Trade Date" :value="$trade->dateTime?->format('d.m.Y H:i')" icon="calendar" />
-                        <x-data-row label="Quantity" :value="$trade->quantity" />
-                        <x-data-row label="Open Price" :value="number_format($trade->tradePrice, 2) . ' $'" />
-                        <x-data-row label="Current Price">
-                            <span class="text-muted">-</span>
-                            <small class="text-muted">(Live price)</small>
-                        </x-data-row>
-                        <x-data-row label="Direction">
-                            <span class="badge bg-{{ $trade->quantity > 0 ? 'success' : 'danger' }}">
-                                {{ $trade->quantity > 0 ? 'LONG' : 'SHORT' }}
-                            </span>
-                        </x-data-row>
-                    </div>
-                </div>
+                            @else
+                                —
+                            @endif
+                        </td></tr>
+                        <tr><th>Strike</th><td><strong>{{ $trade->strike ? number_format($trade->strike, 2) : '—' }}</strong></td></tr>
+                        <tr><th>Expiry</th><td>{{ $trade->expiry ? $trade->expiry->format('d.m.Y') : '—' }}</td></tr>
+                        <tr><th>Multiplier</th><td>{{ $trade->multiplier ?? '—' }}</td></tr>
+                    </tbody>
+                </table>
             </x-trade-card>
 
-            {{-- Financial Details --}}
-            <x-trade-card title="Financial Details" icon="calculator" class="mb-4">
-                <div class="row">
-                    <div class="col-md-6">
-                        <x-data-row label="Cost Basis" :value="number_format($trade->costBasis ?? 0, 2) . ' $'" />
-                        <x-data-row label="Commission" :value="number_format($trade->commission ?? 0, 2) . ' $'" />
-                        <x-data-row label="Unrealized P/L">
-                            <strong class="text-{{ ($trade->unrealizedPL ?? 0) >= 0 ? 'success' : 'danger' }}">
-                                {{ number_format($trade->unrealizedPL ?? 0, 2) }} $
-                            </strong>
-                        </x-data-row>
-                    </div>
-
-                    <div class="col-md-6">
-                        <x-data-row label="Current Value">
-                            <span class="text-muted">{{ number_format($trade->marketValue ?? 0, 2) }} $</span>
-                        </x-data-row>
-                        <x-data-row label="Unrealized ROI">
-                            <span class="badge bg-{{ ($trade->unrealizedROI ?? 0) >= 0 ? 'success' : 'danger' }}">
-                                {{ number_format($trade->unrealizedROI ?? 0, 2) }}%
-                            </span>
-                        </x-data-row>
-                        <x-data-row label="Days Open" :value="($trade->dateTime ? (int)abs(now()->diffInDays($trade->tradeDate)) : '-') . ' days'" />
-                    </div>
-                </div>
+            {{-- 3. Trade Information --}}
+            <x-trade-card title="Trade Information" icon="info-circle" class="mb-4">
+                <table class="table table-sm mb-0">
+                    <tbody>
+                        <tr><th style="width:40%">Buy/Sell</th><td>
+                            <span class="badge bg-{{ $trade->buySell === 'BUY' ? 'success' : 'danger' }}">{{ $trade->buySell ?? '—' }}</span>
+                        </td></tr>
+                        <tr><th>Quantity</th><td>{{ number_format(abs($trade->quantity), 0) }}</td></tr>
+                        <tr><th>Status</th><td><span class="badge bg-info">{{ $trade->status ?? '—' }}</span></td></tr>
+                        <tr><th>Strategie</th><td>{{ $trade->strategy ?? '—' }}</td></tr>
+                        <tr><th>Opt. Strategie</th><td>{{ $trade->opt_strategy ?? '—' }}</td></tr>
+                        <tr><th>Opt. Strategie Name</th><td>{{ $trade->opt_strategyName ?? '—' }}</td></tr>
+                        <tr><th>Opt. Strategie ID</th><td><code>{{ $trade->opt_strategyID ?? '—' }}</code></td></tr>
+                        <tr><th>Link ID</th><td><code>{{ $trade->linkID ?? '—' }}</code></td></tr>
+                        <tr><th>Processed</th><td>{{ $trade->processed ?? '—' }}</td></tr>
+                        <tr><th>Checksum</th><td><small><code>{{ $trade->checksum ?? '—' }}</code></small></td></tr>
+                    </tbody>
+                </table>
             </x-trade-card>
 
-            {{-- Risk Management (Collapsible) --}}
-            <x-trade-card title="Risk Management" icon="shield-exclamation" collapsible collapsed class="mb-4">
-                <x-alert-message type="info" :dismissible="false">
-                    <strong>Risk Analysis:</strong> Set your stop loss and take profit targets.
-                </x-alert-message>
-
-                <div class="row">
-                    <div class="col-md-6">
-                        <x-data-row label="Stop Loss">
-                            <span class="text-muted">Not set</span>
-                            <button class="btn btn-sm btn-outline-danger ms-2">Set Stop</button>
-                        </x-data-row>
-                    </div>
-                    <div class="col-md-6">
-                        <x-data-row label="Take Profit">
-                            <span class="text-muted">Not set</span>
-                            <button class="btn btn-sm btn-outline-success ms-2">Set Target</button>
-                        </x-data-row>
-                    </div>
-                </div>
+            {{-- 4. Zeitinformation --}}
+            <x-trade-card title="Zeitinformation" icon="clock-history" class="mb-4">
+                <table class="table table-sm mb-0">
+                    <tbody>
+                        <tr><th style="width:40%">Eröffnet</th><td>
+                            {{ $trade->dateTime?->format('d.m.Y H:i:s') }}
+                            <small class="text-muted ms-2">{{ $trade->dateTime?->diffForHumans() }}</small>
+                        </td></tr>
+                        <tr><th>Days Open</th><td>{{ $trade->dateTime ? (int)abs(now()->diffInDays($trade->dateTime)) : '—' }}</td></tr>
+                    </tbody>
+                </table>
             </x-trade-card>
 
-            {{-- IDs (Collapsible) --}}
-            <x-trade-card title="Trade IDs" icon="hash" collapsible collapsed class="mb-4">
-                <x-data-row label="Trade ID">
-                    <code>{{ $trade->tradeID }}</code>
-                </x-data-row>
-                <x-data-row label="Order ID">
-                    <code>{{ $trade->orderID ?? '-' }}</code>
-                </x-data-row>
-                <x-data-row label="Environment" :value="$trade->environment" badge badge-color="info" />
+            {{-- 5. Preise & Cashflows --}}
+            <x-trade-card title="Preise & Cashflows" icon="cash-coin" class="mb-4">
+                <table class="table table-sm mb-0">
+                    <tbody>
+                        <tr><th style="width:40%">Trade Price</th><td>{{ number_format($trade->tradePrice, 2, ',', '.') }} $</td></tr>
+                        <tr><th>Net Cash</th><td><x-currency-value :value="$trade->netCash" currency="USD" :colored="true" /></td></tr>
+                        <tr><th>Proceeds</th><td><x-currency-value :value="$trade->proceeds" currency="USD" /></td></tr>
+                        <tr><th>Kommission</th><td><x-currency-value :value="$trade->ibCommission" currency="USD" /></td></tr>
+                    </tbody>
+                </table>
             </x-trade-card>
+
+            {{-- 6. Währung --}}
+            <x-trade-card title="Währung" icon="currency-exchange" class="mb-4">
+                <table class="table table-sm mb-0">
+                    <tbody>
+                        <tr><th style="width:40%">Currency</th><td>{{ $trade->currency ?? '—' }}</td></tr>
+                        <tr><th>FX Rate to Base</th><td><code>{{ $trade->fxRateToBase ?? '—' }}</code></td></tr>
+                    </tbody>
+                </table>
+            </x-trade-card>
+
+            {{-- 7. Trade IDs --}}
+            <x-trade-card title="Trade IDs" icon="hash" class="mb-4">
+                <table class="table table-sm mb-0">
+                    <tbody>
+                        <tr><th style="width:40%">Trade ID</th><td><code>{{ $trade->tradeID ?? '—' }}</code></td></tr>
+                        <tr><th>IB Order ID</th><td><code>{{ $trade->ibOrderID ?? '—' }}</code></td></tr>
+                    </tbody>
+                </table>
+            </x-trade-card>
+
         </div>
 
         <div class="col-lg-4">
-            {{-- Quick Actions --}}
-            <x-trade-card title="Quick Actions" icon="lightning" class="mb-4">
-                <div class="d-grid gap-2">
-                    <button class="btn btn-outline-primary">
-                        <i class="bi bi-arrow-clockwise"></i> Refresh Price
-                    </button>
-                    <button class="btn btn-outline-warning">
-                        <i class="bi bi-x-circle"></i> Close Position
-                    </button>
-                    <button class="btn btn-outline-info">
-                        <i class="bi bi-graph-up"></i> View Chart
-                    </button>
-                </div>
-            </x-trade-card>
-
             {{-- Tags --}}
             <x-trade-card title="Trade Tags" icon="tags" class="mb-4">
                 @livewire('tags.trade-tagger', [

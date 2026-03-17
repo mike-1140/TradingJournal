@@ -52,6 +52,73 @@
         </div>
     </div>
 
+    {{-- Cashflow-Chart --}}
+    @if(count($chartData) > 0)
+    <div class="card mb-4 border-0 shadow-sm">
+        <div class="card-header bg-white py-2 d-flex justify-content-between align-items-center">
+            <h6 class="mb-0"><i class="bi bi-graph-up me-2 text-primary"></i>Cashflow-Verlauf</h6>
+            <small class="text-muted">Balken = je Buchung · Linie = kumulativer Saldo</small>
+        </div>
+        <div class="card-body py-2 px-3">
+            <canvas id="cashflowChart" style="height: 190px; max-height: 190px;"></canvas>
+        </div>
+    </div>
+    @endif
+
+    {{-- Tages-Übersicht --}}
+    @if($dailySummaries->count() > 0)
+    <div class="card mb-4 border-0 shadow-sm">
+        <div class="card-header bg-white py-2">
+            <h6 class="mb-0"><i class="bi bi-calendar3-week me-2 text-secondary"></i>Tages-Übersicht</h6>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0" style="font-size: 0.82rem;">
+                <thead class="table-light">
+                    <tr class="text-uppercase text-muted" style="font-size: 0.68rem;">
+                        <th>Datum</th>
+                        <th class="text-center">Buchungen</th>
+                        <th class="text-end">Cashflow</th>
+                        <th class="text-end">Commission</th>
+                        <th class="text-end">PnL</th>
+                        <th>Ereignisse</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($dailySummaries as $day)
+                    <tr>
+                        <td class="fw-bold text-nowrap">
+                            {{ $day['date']->locale('de')->isoFormat('dd, D.M.YY') }}
+                        </td>
+                        <td class="text-center text-muted">{{ $day['count'] }}</td>
+                        <td class="text-end">
+                            <x-currency-value :value="$day['cashflow']" :currency="'USD'" :colored="true" />
+                        </td>
+                        <td class="text-end">
+                            <x-currency-value :value="$day['commission']" :currency="'USD'" />
+                        </td>
+                        <td class="text-end">
+                            @if($day['pnl'] != 0)
+                                <x-currency-value :value="$day['pnl']" :currency="'USD'" :colored="true" />
+                            @else
+                                <span class="text-muted">—</span>
+                            @endif
+                        </td>
+                        <td>
+                            @if($day['has_settlement'])
+                                <span class="badge bg-info text-dark" style="font-size: 0.65rem;">Settlement</span>
+                            @endif
+                            @if($day['has_expiration'])
+                                <span class="badge bg-secondary" style="font-size: 0.65rem;">Expiration</span>
+                            @endif
+                        </td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    </div>
+    @endif
+
     {{-- Ledger-Tabelle --}}
     <div class="card border-0 shadow-sm">
         <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
@@ -241,6 +308,103 @@
             </div>
         @endif
     </div>
+
+    @assets
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+    @endassets
+
+    @script
+    <script>
+        (function () {
+            let chart = null;
+
+            function buildChart() {
+                if (chart) { chart.destroy(); chart = null; }
+
+                const canvas = document.getElementById('cashflowChart');
+                if (!canvas) return;
+
+                const raw = @json($chartData);
+                if (!raw.length) return;
+
+                const labels     = raw.map(d => d.label);
+                const deltas     = raw.map(d => d.delta);
+                const cumuls     = raw.map(d => d.cumul);
+                const barColors  = deltas.map(v => v >= 0
+                    ? 'rgba(25, 135, 84, 0.75)'
+                    : 'rgba(220, 53, 69, 0.75)');
+
+                chart = new Chart(canvas, {
+                    data: {
+                        labels,
+                        datasets: [
+                            {
+                                type: 'bar',
+                                label: 'Cashflow je Buchung',
+                                data: deltas,
+                                backgroundColor: barColors,
+                                borderColor: barColors,
+                                yAxisID: 'yDelta',
+                                order: 2,
+                            },
+                            {
+                                type: 'line',
+                                label: 'Kumulativer Saldo',
+                                data: cumuls,
+                                borderColor: '#0d6efd',
+                                backgroundColor: 'rgba(13,110,253,0.07)',
+                                fill: true,
+                                tension: 0.3,
+                                pointRadius: 3,
+                                pointHoverRadius: 5,
+                                yAxisID: 'yCumul',
+                                order: 1,
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: { mode: 'index', intersect: false },
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: { font: { size: 11 }, boxWidth: 12 }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: ctx => {
+                                        const v = ctx.parsed.y;
+                                        return ` ${ctx.dataset.label}: ${v >= 0 ? '+' : ''}${v.toFixed(2)} $`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                ticks: { font: { size: 10 }, maxRotation: 45, maxTicksLimit: 20 }
+                            },
+                            yDelta: {
+                                type: 'linear',
+                                position: 'right',
+                                grid: { drawOnChartArea: false },
+                                ticks: { font: { size: 10 }, callback: v => v.toFixed(0) + ' $' }
+                            },
+                            yCumul: {
+                                type: 'linear',
+                                position: 'left',
+                                ticks: { font: { size: 10 }, callback: v => v.toFixed(0) + ' $' }
+                            }
+                        }
+                    }
+                });
+            }
+
+            buildChart();
+            document.addEventListener('livewire:update', buildChart);
+        })();
+    </script>
+    @endscript
 
     <style>
         /* Tages-Trennzeile */

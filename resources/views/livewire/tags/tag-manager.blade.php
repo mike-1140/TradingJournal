@@ -6,6 +6,12 @@
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     @endif
+    @if (session()->has('error'))
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle"></i> {{ session('error') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    @endif
 
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">

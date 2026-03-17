@@ -13,7 +13,7 @@ class StatsDashboard extends Component
 
     public $viewType = 'month';
     public $offset = 0;
-    public $limit = 6; // Standardwert: 6 Monate
+    public $limit = 6;
 
     public function mount()
     {
@@ -22,9 +22,10 @@ class StatsDashboard extends Component
 
     public function changeOffset($delta)
     {
-        $newOffset = $this->offset + $delta;
+        // Tagesansicht: immer 7 Tage (1 Woche) vor/zurück
+        $step = $this->viewType === 'day' ? 7 : 1;
+        $newOffset = $this->offset + ($delta * $step);
 
-        // Verhindert Vorwärtsblättern über den aktuellen Zeitpunkt hinaus
         if ($newOffset > 0) {
             $this->offset = 0;
         } else {
@@ -34,13 +35,13 @@ class StatsDashboard extends Component
 
     public function setViewType($type)
     {
-        if (in_array($type, ['week', 'month', 'year'])) {
+        if (in_array($type, ['day', 'week', 'month', 'year'])) {
             $this->viewType = $type;
-            $this->offset = 0; // Zurück zum aktuellen Zeitraum bei Ansichtswechsel
+            $this->offset = 0;
         }
 
-        // Automatisches Setzen des Limits je nach Typ
         $this->limit = match($type) {
+            'day'   => 21,
             'week'  => 13,
             'month' => 6,
             'year'  => 3,
@@ -48,18 +49,23 @@ class StatsDashboard extends Component
         };
     }
 
-// Falls du den "Heute" Button nutzt:
     public function resetOffset()
     {
         $this->offset = 0;
     }
 
-    public function getViewTypeLabel()
+    public function loadMore()
+    {
+        $this->limit += 7;
+    }
+
+    public function getViewTypeLabel(): string
     {
         return match($this->viewType) {
-            'week' => 'Woche',
+            'day'   => 'Woche',
+            'week'  => 'Woche',
             'month' => 'Monat',
-            'year' => 'Jahr',
+            'year'  => 'Jahr',
             default => $this->viewType
         };
     }
@@ -68,58 +74,94 @@ class StatsDashboard extends Component
     {
         $periods = [];
         $totalSum = [
-            'pnl' => 0,
-            'proceeds' => 0,
-            'commission' => 0,
-            'turnover' => 0,
-            'trade_count' => 0
+            'pnl'              => 0,
+            'proceeds'         => 0,
+            'commission'       => 0,
+            'turnover'         => 0,
+            'trade_count'      => 0,
+            'win_count'        => 0,
+            'loss_count'       => 0,
+            'active_day_count' => 0,
         ];
         $totalToFetch = $this->limit + 1;
 
-        // Wir laden 4 Zeiträume, um für den 3. Zeitraum auch einen Vergleich zum 4. zu haben
         for ($i = 0; $i > -$totalToFetch; $i--) {
             $currentOffset = $this->offset + $i;
-            $date = Carbon::now()->add($currentOffset, $this->viewType . 's');
+            $date  = Carbon::now()->add($currentOffset, $this->viewType . 's');
             $start = (clone $date)->startOf($this->viewType);
-            $end = (clone $date)->endOf($this->viewType);
+            $end   = (clone $date)->endOf($this->viewType);
 
             $periods[] = [
                 'metrics' => $this->getMetrics($start, $end),
-                'label' => $this->getPeriodLabel($start, $end),
-                'offset' => $currentOffset
+                'label'   => $this->getPeriodLabel($start, $end),
+                'offset'  => $currentOffset,
+                'end'     => $end,
             ];
         }
 
-        // Jetzt berechnen wir die Trends für die ersten 3
         $displayPeriods = [];
         for ($j = 0; $j < $this->limit; $j++) {
-            $current = $periods[$j];
-            $previous = $periods[$j + 1]; // Der Zeitraum davor
+            $current  = $periods[$j];
+            $previous = $periods[$j + 1];
 
-            // Summen-Logik (nur für die sichtbaren Zeiträume)
-            $totalSum['pnl'] += $current['metrics']->pnl;
-            $totalSum['proceeds'] += $current['metrics']->proceeds;
-            $totalSum['commission'] += $current['metrics']->commission;
-            $totalSum['turnover'] += $current['metrics']->turnover;
-            $totalSum['trade_count'] += $current['metrics']->trade_count;
+            $isWeekend   = $this->viewType === 'day' && $current['end']->isWeekend();
+            $hasNoTrades = (int)($current['metrics']->trade_count ?? 0) === 0;
+            $isInactive  = $this->viewType === 'day' && ($isWeekend || $hasNoTrades);
+
+            if (!$isInactive) {
+                $totalSum['pnl']              += $current['metrics']->pnl;
+                $totalSum['proceeds']         += $current['metrics']->proceeds;
+                $totalSum['commission']       += $current['metrics']->commission;
+                $totalSum['turnover']         += $current['metrics']->turnover;
+                $totalSum['trade_count']      += $current['metrics']->trade_count;
+                $totalSum['win_count']        += $current['metrics']->win_count ?? 0;
+                $totalSum['loss_count']       += $current['metrics']->loss_count ?? 0;
+                $totalSum['active_day_count'] += $this->viewType === 'day' ? 1 : 0;
+            }
 
             $displayPeriods[] = [
-                'label' => $current['label'],
-                'metrics' => $current['metrics'],
-                'pf' => $this->calculateProfitFactor($current['metrics']),
-                'isCurrent' => ($current['offset'] === 0),
-                // Trend-Berechnung
-                'pnl_trend' => $current['metrics']->pnl <=> $previous['metrics']->pnl, // 1, 0, oder -1
+                'label'       => $current['label'],
+                'metrics'     => $current['metrics'],
+                'pf'          => $this->calculateProfitFactor($current['metrics']),
+                'isCurrent'   => ($current['offset'] === 0),
+                'pnl_diff'    => $this->viewType !== 'day'
+                    ? ($current['metrics']->pnl ?? 0) - ($previous['metrics']->pnl ?? 0)
+                    : null,
+                'cumulative'  => $this->viewType === 'day'
+                    ? $this->getCumulativePnl($current['end'])
+                    : null,
+                'avg_trade'   => $current['metrics']->trade_count > 0
+                    ? $current['metrics']->pnl / $current['metrics']->trade_count
+                    : 0,
+                'isWeekend'   => $isWeekend,
+                'hasNoTrades' => $hasNoTrades,
             ];
+        }
+
+        // Day-View: Diff gegen letzten Handelstag berechnen (überspringt WE + kein Handel)
+        if ($this->viewType === 'day') {
+            $lastTradingPnl = null;
+            $extra = $periods[$this->limit] ?? null;
+            if ($extra && (int)($extra['metrics']->trade_count ?? 0) > 0) {
+                $lastTradingPnl = (float)($extra['metrics']->pnl ?? 0);
+            }
+            for ($k = count($displayPeriods) - 1; $k >= 0; $k--) {
+                if (!$displayPeriods[$k]['isWeekend'] && !$displayPeriods[$k]['hasNoTrades']) {
+                    $displayPeriods[$k]['pnl_diff'] = $lastTradingPnl !== null
+                        ? (float)($displayPeriods[$k]['metrics']->pnl ?? 0) - $lastTradingPnl
+                        : null;
+                    $lastTradingPnl = (float)($displayPeriods[$k]['metrics']->pnl ?? 0);
+                }
+            }
         }
 
         return view('livewire.stats.stats-dashboard', [
             'periods' => $displayPeriods,
-            'totals' => $totalSum
+            'totals'  => $totalSum,
         ]);
     }
 
-    private function getMetrics($start, $end)
+    private function getMetrics(Carbon $start, Carbon $end)
     {
         return CampaignLedger::where('environment', $this->selectedEnvironment)
             ->whereBetween('dateTime', [$start, $end])
@@ -130,11 +172,20 @@ class StatsDashboard extends Component
                 SUM(netcash) as turnover,
                 SUM(CASE WHEN realized_pnl > 0 THEN realized_pnl ELSE 0 END) as gross_profit,
                 SUM(CASE WHEN realized_pnl < 0 THEN ABS(realized_pnl) ELSE 0 END) as gross_loss,
+                SUM(CASE WHEN realized_pnl > 0 THEN 1 ELSE 0 END) as win_count,
+                SUM(CASE WHEN realized_pnl < 0 THEN 1 ELSE 0 END) as loss_count,
                 COUNT(id) as trade_count
             ')->first();
     }
 
-    // Hilfsfunktion für das Blade, um den Profit Factor zu berechnen
+    private function getCumulativePnl(Carbon $end): float
+    {
+        $monthStart = (clone $end)->startOfMonth();
+        return (float)(CampaignLedger::where('environment', $this->selectedEnvironment)
+            ->whereBetween('dateTime', [$monthStart, $end])
+            ->sum('realized_pnl') ?? 0);
+    }
+
     public function calculateProfitFactor($metrics)
     {
         if (!$metrics || $metrics->gross_loss == 0) {
@@ -143,26 +194,24 @@ class StatsDashboard extends Component
         return $metrics->gross_profit / $metrics->gross_loss;
     }
 
-    private function getPeriodLabel($start, $end)
+    private function getPeriodLabel(Carbon $start, Carbon $end): string
     {
         return match($this->viewType) {
-            'week' => $this->formatWeeklyRange($start, $end),
+            'day'   => $start->translatedFormat('D, d.m.Y'),
+            'week'  => $this->formatWeeklyRange($start, $end),
             'month' => $start->translatedFormat('F Y'),
-            'year' => $start->format('Y'),
+            'year'  => $start->format('Y'),
         };
     }
 
-    private function formatWeeklyRange($start, $end)
+    private function formatWeeklyRange(Carbon $start, Carbon $end): string
     {
-        $kw = $start->format('W'); // Kalenderwoche
+        $kw = $start->format('W');
 
-        // Fall 1: Woche liegt komplett im gleichen Monat
         if ($start->month === $end->month) {
             return "KW $kw (" . $start->format('d.') . " - " . $end->translatedFormat('d. F Y') . ")";
         }
 
-        // Fall 2: Monatswechsel innerhalb der Woche
-        // Beispiel: 29. Jan. - 04. Feb. 2026
         return "KW $kw (" . $start->translatedFormat('d. M.') . " - " . $end->translatedFormat('d. M. Y') . ")";
     }
 }

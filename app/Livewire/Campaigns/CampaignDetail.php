@@ -115,6 +115,38 @@ class CampaignDetail extends Component
             SUM(CASE WHEN assetCategory = "OPT" THEN inventory_delta ELSE 0 END) as options_balance
         ')->first();
 
+        // Alle Einträge (unpaginiert) für Chart und Tages-Zusammenfassung
+        $allEntries = (clone $query)->orderBy('dateTime', 'asc')->get();
+
+        // Tages-Zusammenfassung
+        $dailySummaries = $allEntries
+            ->groupBy(fn($e) => \Carbon\Carbon::parse($e->dateTime)->format('Y-m-d'))
+            ->map(fn($day, $dateKey) => [
+                'date'           => \Carbon\Carbon::parse($dateKey),
+                'cashflow'       => $day->sum(fn($e) => $e->action === 'CASH_SETTLEMENT'
+                    ? (float) $e->proceeds : (float) $e->netcash),
+                'commission'     => $day->sum(fn($e) => (float) $e->commission),
+                'pnl'            => $day->sum(fn($e) => (float) $e->realized_pnl),
+                'count'          => $day->count(),
+                'has_settlement' => $day->contains('action', 'CASH_SETTLEMENT'),
+                'has_expiration' => $day->contains('action', 'OPTION_EXPIRATION'),
+            ]);
+
+        // Chart-Daten: kumulativer Cashflow je Buchung
+        $running  = 0.0;
+        $chartData = $allEntries->map(function ($e) use (&$running) {
+            $cash     = $e->action === 'CASH_SETTLEMENT'
+                ? (float) $e->proceeds
+                : (float) $e->netcash;
+            $running += $cash;
+            return [
+                'label'  => \Carbon\Carbon::parse($e->dateTime)->format('d.m H:i'),
+                'delta'  => round($cash, 2),
+                'cumul'  => round($running, 2),
+                'action' => $e->action,
+            ];
+        })->values()->toArray();
+
         $ledgerEntries = $query->orderBy('dateTime', 'asc')
             ->paginate($this->perPage);
 
@@ -131,6 +163,8 @@ class CampaignDetail extends Component
             'ledgerEntries'        => $ledgerEntries,
             'metrics'              => $metrics,
             'startingStockBalance' => $startingStockBalance,
+            'dailySummaries'       => $dailySummaries,
+            'chartData'            => $chartData,
         ]);
     }
 }

@@ -38,6 +38,212 @@ body {
     border-color: #6f42c1;
 }
 
+/* ── Sidebar Layout ─────────────────────────────────────────────────────── */
+
+:root {
+    --sidebar-width: 240px;
+    --sidebar-collapsed-width: 58px;
+    --topbar-height: 50px;
+}
+
+.sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: var(--sidebar-width);
+    height: 100vh;
+    z-index: 1040;
+    background-color: #212529;
+    overflow-y: auto;
+    overflow-x: hidden;
+    transition: width 0.25s ease;
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar.collapsed {
+    width: var(--sidebar-collapsed-width);
+}
+
+.sidebar-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.9rem 1rem;
+    color: #fff;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.sidebar-brand:hover {
+    color: #fff;
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+/* Toggle-Button innerhalb der Sidebar */
+.sidebar-collapse-btn {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 0.4rem 0.75rem;
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.4);
+    cursor: pointer;
+    width: 100%;
+    transition: color 0.15s;
+}
+
+.sidebar-collapse-btn:hover {
+    color: #fff;
+}
+
+.sidebar-collapse-btn .bi {
+    font-size: 1rem;
+    transition: transform 0.25s ease;
+}
+
+.sidebar.collapsed .sidebar-collapse-btn {
+    justify-content: center;
+    padding: 0.4rem 0;
+}
+
+.sidebar.collapsed .sidebar-collapse-btn .bi {
+    transform: rotate(180deg);
+}
+
+.sidebar-nav {
+    padding: 0.5rem 0;
+    overflow-x: hidden;
+}
+
+.sidebar-link {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.5rem 1rem;
+    color: rgba(255, 255, 255, 0.7);
+    text-decoration: none;
+    white-space: nowrap;
+    font-size: 0.9rem;
+    transition: background-color 0.15s, color 0.15s;
+    cursor: pointer;
+    min-width: 0;
+}
+
+.sidebar-link:hover {
+    color: #fff;
+    background-color: rgba(255, 255, 255, 0.08);
+    text-decoration: none;
+}
+
+.sidebar-link.active {
+    color: #fff;
+    background-color: rgba(255, 255, 255, 0.15);
+}
+
+/* Icons immer sichtbar, Text + Pfeil ausblenden wenn collapsed */
+.sidebar.collapsed .sidebar-link {
+    justify-content: center;
+    padding: 0.5rem 0;
+}
+
+.sidebar.collapsed .sidebar-text {
+    display: none;
+}
+
+.sidebar.collapsed .sidebar-arrow {
+    display: none;
+}
+
+.sidebar.collapsed .sidebar-brand .sidebar-text {
+    display: none;
+}
+
+.sidebar.collapsed .sidebar-brand {
+    justify-content: center;
+    padding: 0.9rem 0;
+}
+
+/* Untermenüs im collapsed-Modus ausblenden */
+.sidebar.collapsed .sidebar-subnav,
+.sidebar.collapsed .collapse {
+    display: none !important;
+}
+
+.sidebar-arrow {
+    margin-left: auto;
+    font-size: 0.7rem;
+    transition: transform 0.2s;
+    flex-shrink: 0;
+}
+
+.sidebar-toggle-btn[aria-expanded="true"] .sidebar-arrow {
+    transform: rotate(-180deg);
+}
+
+.sidebar-subnav {
+    background-color: rgba(0, 0, 0, 0.2);
+}
+
+.sidebar-subnav .sidebar-link {
+    padding-left: 2.4rem;
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.55);
+}
+
+.sidebar-subnav .sidebar-link:hover,
+.sidebar-subnav .sidebar-link.active {
+    color: #fff;
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.sidebar-divider {
+    height: 1px;
+    background-color: rgba(255, 255, 255, 0.1);
+    margin: 0.5rem 0;
+}
+
+/* ── Topbar ─────────────────────────────────────────────────────────────── */
+
+.topbar {
+    position: fixed;
+    top: 0;
+    left: var(--sidebar-width);
+    right: 0;
+    height: var(--topbar-height);
+    z-index: 1030;
+    background-color: #fff;
+    border-bottom: 1px solid #dee2e6;
+    display: flex;
+    align-items: center;
+    padding: 0 1rem;
+    transition: left 0.25s ease;
+}
+
+.topbar.sidebar-collapsed {
+    left: var(--sidebar-collapsed-width);
+}
+
+/* ── Content wrapper ────────────────────────────────────────────────────── */
+
+.content-wrapper {
+    margin-left: var(--sidebar-width);
+    margin-top: var(--topbar-height);
+    transition: margin-left 0.25s ease;
+    min-height: calc(100vh - var(--topbar-height));
+}
+
+.content-wrapper.sidebar-collapsed {
+    margin-left: var(--sidebar-collapsed-width);
+}
+
+/* ── Tabellen ───────────────────────────────────────────────────────────── */
+
 .closed-stocks-table thead tr:first-child th {
     padding-bottom: 0 !important;
     /* border-bottom: none !important; */

@@ -3,7 +3,7 @@
     @if(count($this->selectedTags) > 0)
         <div class="mb-3">
             <div class="d-flex flex-wrap gap-2">
-                @foreach(App\Models\Tag::whereIn('id', $this->selectedTags)->get() as $tag)
+                @foreach($this->selectedTagModels as $tag)
                     <span class="badge d-inline-flex align-items-center"
                           style="background-color: {{ $tag->color }}; color: {{ $tag->contrast_color }}; cursor: pointer; font-size: 0.9rem; padding: 0.5rem 0.75rem;"
                           wire:click="toggleTag({{ $tag->id }})"

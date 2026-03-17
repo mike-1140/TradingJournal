@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Trades;
 
+use Livewire\Attributes\Computed;
 use Livewire\Component;
 use Livewire\WithPagination;
 use App\Models\TradeClose;
@@ -46,6 +47,18 @@ class ClosedOptions extends Component
     public function updatingSearch()
     {
         $this->resetPage();
+    }
+
+    #[Computed]
+    public function hasActiveFilters(): bool
+    {
+        return $this->search !== '' || $this->filterPutCall !== '' || $this->filterStrategy !== '';
+    }
+
+    #[Computed]
+    public function activeFilterCount(): int
+    {
+        return (int)($this->search !== '') + (int)($this->filterPutCall !== '') + (int)($this->filterStrategy !== '');
     }
 
     public function resetFilters()

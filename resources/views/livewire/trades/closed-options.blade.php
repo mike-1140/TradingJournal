@@ -186,7 +186,7 @@
                             @endif
                         </td>
                         <td>
-                            <a href="{{ route('trades.closed.detail', $trade->id) }}" class="btn btn-sm btn-outline-primary">
+                            <a href="{{ route('trades.closed.options.detail', $trade->id) }}" class="btn btn-sm btn-outline-primary">
                                 <i class="bi bi-eye"></i>
                             </a>
                         </td>

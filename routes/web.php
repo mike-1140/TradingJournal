@@ -17,13 +17,15 @@ use App\Livewire\Campaigns\Campaigns;
 use App\Livewire\Campaigns\CampaignDetail;
 use App\Livewire\Trades\RawData;
 use App\Livewire\Trades\OpenTradeDetail;
-use App\Livewire\Trades\ClosedTradeDetail;
+use App\Livewire\Trades\ClosedOptionsDetail;
 use App\Livewire\Trades\RawTradeDetail;
 use App\Livewire\Symbols\SymbolList;
 use App\Livewire\Trades\FxTrades;
 use App\Livewire\Spreads\SpreadsList;
 use App\Livewire\Spreads\SpreadDetail;
 use App\Livewire\Tags\TagManager;
+use App\Livewire\TradePlanner\PlanList;
+use App\Livewire\TradePlanner\PlanForm;
 
 use App\Livewire\Stats\StatsDashboard;
 
@@ -41,7 +43,7 @@ Route::get('/trades/open/options/{id}', OpenOptionsDetail::class)->name('trades.
 Route::get('/trades/closed/stocks', ClosedStocks::class)->name('trades.closed.stocks');
 Route::get('/trades/closed/stocks/{id}', ClosedStocksDetail::class)->name('trades.closed.stocks.detail');
 Route::get('/trades/closed/options', ClosedOptions::class)->name('trades.closed.options');
-Route::get('/trades/closed/{id}', ClosedTradeDetail::class)->name('trades.closed.detail');
+Route::get('/trades/closed/options/{id}', ClosedOptionsDetail::class)->name('trades.closed.options.detail');
 
 // Raw Trades
 Route::get('/trades/raw', RawData::class)->name('trades.raw');
@@ -66,3 +68,8 @@ Route::get('/tags', TagManager::class)->name('tags.manage');
 
 // Stats
 Route::get('/stats', StatsDashboard::class)->name('stats.dashboard');
+
+// Trade Planner
+Route::get('/planer', PlanList::class)->name('planer.list');
+Route::get('/planer/neu', PlanForm::class)->name('planer.create');
+Route::get('/planer/{id}', PlanForm::class)->name('planer.edit');

@@ -4,6 +4,7 @@ namespace App\Livewire\Tags;
 
 use Livewire\Component;
 use App\Models\Tag;
+use App\Models\TradeTagPivot;
 use Illuminate\Support\Str;
 
 class TagManager extends Component
@@ -89,11 +90,24 @@ class TagManager extends Component
     {
         $tag = Tag::findOrFail($tagId);
 
-        // TODO: Check if tag is used in any trades
-        // $usageCount = TradeTagPivot::where('tag_id', $tagId)->count();
+        // Prüfe ob Tag noch in irgendeiner Environment verwendet wird
+        $environments = ['MONEY', 'PAPER', 'TEST', 'AUTOM_MONEY', 'AUTOM_PAPER'];
+        $totalUsage = 0;
+
+        foreach ($environments as $env) {
+            $connection = TradeTagPivot::getConnectionForEnvironment($env);
+            $totalUsage += TradeTagPivot::on($connection)
+                ->where('tag_id', $tagId)
+                ->count();
+        }
+
+        if ($totalUsage > 0) {
+            session()->flash('error', "Tag \"{$tag->name}\" wird noch in {$totalUsage} Trade(s) verwendet und kann nicht gelöscht werden.");
+            return;
+        }
 
         $tag->delete();
-        session()->flash('message', 'Tag deleted successfully!');
+        session()->flash('message', 'Tag gelöscht.');
     }
 
     public function closeModal()

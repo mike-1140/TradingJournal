@@ -16,7 +16,6 @@
                             <th class="text-end">Total P/L</th>
                             <th class="text-end">Avg P/L</th>
                             <th class="text-center">Avg Days</th>
-                            <th></th>
                         </tr>
                         </thead>
                         <tbody>
@@ -50,12 +49,6 @@
                                 </td>
                                 <td class="text-center">
                                     {{ $stat->avg_days_held }}
-                                </td>
-                                <td>
-                                    <a href="{{ route('trades.closed') }}?filterTags[]={{ $stat->tag->id }}"
-                                       class="btn btn-sm btn-outline-primary">
-                                        <i class="bi bi-eye"></i>
-                                    </a>
                                 </td>
                             </tr>
                         @endforeach

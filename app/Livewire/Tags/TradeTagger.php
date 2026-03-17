@@ -3,6 +3,8 @@
 namespace App\Livewire\Tags;
 
 use Livewire\Component;
+use Livewire\Attributes\Computed;
+use Livewire\Attributes\Locked;
 use App\Models\Tag;
 use App\Models\TradeTagPivot;
 use App\Models\TradeClose;
@@ -12,7 +14,9 @@ class TradeTagger extends Component
 {
     use ManagesEnvironment;
 
+    #[Locked]
     public $tradeId;
+    #[Locked]
     public $tradeType; // 'open', 'closed', 'spread', 'fx'
     public $searchQuery = '';
     public $showAllCategories = false;
@@ -38,24 +42,32 @@ class TradeTagger extends Component
     }
 
     /**
-     * Lade die aktuell ausgewählten Tags für diesen Trade
+     * Aktuell zugewiesene Tag-IDs für diesen Trade
      */
-
-    public function getSelectedTagsProperty()
+    #[Computed]
+    public function selectedTags(): array
     {
-        if (!$this->selectedEnvironment) {
-            $this->selectedEnvironment = session('trading_environment', 'PAPER');
-        }
-
         $connection = TradeTagPivot::getConnectionForEnvironment($this->selectedEnvironment);
 
-        // ✅ WICHTIG: tradeId ist jetzt immer tradeIDOpen!
         return TradeTagPivot::on($connection)
-            ->where('trade_id', $this->tradeId)  // tradeIDOpen
+            ->where('trade_id', $this->tradeId)
             ->where('trade_type', $this->tradeType)
             ->where('environment', $this->selectedEnvironment)
             ->pluck('tag_id')
             ->toArray();
+    }
+
+    /**
+     * Tag-Modelle der zugewiesenen Tags (für die Anzeige in der View)
+     */
+    #[Computed]
+    public function selectedTagModels()
+    {
+        if (empty($this->selectedTags)) {
+            return collect();
+        }
+
+        return Tag::whereIn('id', $this->selectedTags)->get();
     }
 
     /**

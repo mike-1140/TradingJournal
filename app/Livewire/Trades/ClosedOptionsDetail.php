@@ -70,7 +70,7 @@ class ClosedOptionsDetail extends Component
                 ->get();
         }
 
-        return view('livewire.trades.closed-trade-detail', [
+        return view('livewire.trades.closed-option-detail', [
             'relatedRawTrades' => $relatedRawTrades,
             'relatedTrades' => $relatedTrades,
         ]);
