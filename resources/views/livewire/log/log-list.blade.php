@@ -1,8 +1,8 @@
 <div>
-    <x-page-header title="Trade Planner" icon="journal-plus">
+    <x-page-header title="Trade Log" icon="journal-plus">
         <x-slot:actions>
-            <a href="{{ route('planer.create') }}" class="btn btn-sm btn-primary">
-                <i class="bi bi-plus-lg"></i> Neuer Plan
+            <a href="{{ route('log.create') }}" class="btn btn-sm btn-primary">
+                <i class="bi bi-plus-lg"></i> Neuer Eintrag
             </a>
         </x-slot:actions>
     </x-page-header>
@@ -11,14 +11,14 @@
     <div class="row g-3 mb-4">
         <div class="col-md-4">
             <x-stat-card
-                title="Offene Pläne"
+                title="Offene Einträge"
                 :value="$statistics['open_count']"
                 color="warning"
                 icon="hourglass-split" />
         </div>
         <div class="col-md-4">
             <x-stat-card
-                title="Geschlossene Pläne"
+                title="Geschlossene Einträge"
                 :value="$statistics['closed_count']"
                 color="secondary"
                 icon="check-circle" />
@@ -63,9 +63,9 @@
     </div>
 
     {{-- Tabelle --}}
-    <x-trade-card title="Trade-Pläne" icon="list-ul">
+    <x-trade-card title="Log-Einträge" icon="list-ul">
         <x-slot:actions>
-            <span class="badge bg-primary">{{ $plans->total() }}</span>
+            <span class="badge bg-primary">{{ $logs->total() }}</span>
         </x-slot:actions>
 
         <div class="table-responsive">
@@ -83,40 +83,40 @@
                 </tr>
                 </thead>
                 <tbody>
-                @forelse($plans as $plan)
+                @forelse($logs as $log)
                     <tr>
-                        <td class="text-nowrap">{{ $plan->date_open->format('d.m.Y') }}</td>
-                        <td><strong class="fs-5">{{ $plan->underlying }}</strong></td>
-                        <td>{{ $plan->strategy ?? '—' }}</td>
+                        <td class="text-nowrap">{{ $log->date_open->format('d.m.Y') }}</td>
+                        <td><strong class="fs-5">{{ $log->underlying }}</strong></td>
+                        <td>{{ $log->strategy ?? '—' }}</td>
                         <td class="text-muted small" style="max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                            {{ $plan->exit_plan ?? '—' }}
+                            {{ $log->exit_plan ?? '—' }}
                         </td>
                         <td class="text-center">
-                            <span class="badge bg-secondary">{{ $plan->legs_count }}</span>
+                            <span class="badge bg-secondary">{{ $log->legs_count }}</span>
                         </td>
                         <td class="text-center">
-                            @if($plan->status === 'open')
+                            @if($log->status === 'open')
                                 <span class="badge bg-warning text-dark">Offen</span>
                             @else
                                 <span class="badge bg-success">Geschlossen</span>
                             @endif
                         </td>
                         <td class="text-end">
-                            @if($plan->status === 'closed' && $plan->realized_pnl !== null)
-                                <span class="{{ $plan->realized_pnl >= 0 ? 'text-success' : 'text-danger' }} fw-bold">
-                                    {{ number_format($plan->realized_pnl, 2, ',', '') }} $
+                            @if($log->status === 'closed' && $log->realized_pnl !== null)
+                                <span class="{{ $log->realized_pnl >= 0 ? 'text-success' : 'text-danger' }} fw-bold">
+                                    {{ number_format($log->realized_pnl, 2, ',', '') }} $
                                 </span>
                             @else
                                 <small class="text-muted">—</small>
                             @endif
                         </td>
                         <td class="text-end text-nowrap">
-                            <a href="{{ route('planer.edit', $plan->id) }}"
+                            <a href="{{ route('log.edit', $log->id) }}"
                                class="btn btn-sm btn-outline-primary">
                                 <i class="bi bi-pencil"></i>
                             </a>
-                            <button wire:click="deletePlan({{ $plan->id }})"
-                                    wire:confirm="Plan wirklich löschen?"
+                            <button wire:click="deleteEntry({{ $log->id }})"
+                                    wire:confirm="Eintrag wirklich löschen?"
                                     class="btn btn-sm btn-outline-danger">
                                 <i class="bi bi-trash"></i>
                             </button>
@@ -127,8 +127,8 @@
                         <td colspan="8">
                             <x-empty-state
                                 icon="journal-plus"
-                                title="Keine Pläne vorhanden"
-                                message="Erstelle deinen ersten Trade-Plan." />
+                                title="Keine Einträge vorhanden"
+                                message="Erstelle deinen ersten Log-Eintrag." />
                         </td>
                     </tr>
                 @endforelse
@@ -137,7 +137,7 @@
         </div>
 
         <x-slot:footer>
-            {{ $plans->links('components.pagination') }}
+            {{ $logs->links('components.pagination') }}
         </x-slot:footer>
     </x-trade-card>
 </div>

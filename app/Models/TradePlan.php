@@ -20,6 +20,12 @@ class TradePlan extends BaseTradingModel
         'ivr_open',
         'strategy',
         'exit_plan',
+        'mindset_entry',
+        'energy_level',
+        'rationale',
+        'confidence',
+        'market_regime',
+        'pre_mortem',
         'status',
         'date_close',
         'price_close',
@@ -29,6 +35,10 @@ class TradePlan extends BaseTradingModel
         'fees_close',
         'realized_pnl',
         'actual_dte',
+        'mindset_exit',
+        'plan_adherence',
+        'lessons_learned',
+        'decision_quality',
         'notes',
     ];
 

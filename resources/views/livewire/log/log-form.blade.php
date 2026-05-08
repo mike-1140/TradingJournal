@@ -1,9 +1,9 @@
 <div>
-    <x-page-header
-        :title="$planId ? 'Plan bearbeiten' : 'Neuer Trade-Plan'"
+<x-page-header
+        :title="$planId ? 'Eintrag bearbeiten' : 'Neuer Eintrag'"
         icon="journal-plus">
         <x-slot:actions>
-            <a href="{{ route('planer.list') }}" class="btn btn-sm btn-outline-secondary">
+            <a href="{{ route('log.list') }}" class="btn btn-sm btn-outline-secondary">
                 <i class="bi bi-arrow-left"></i> Zurück
             </a>
         </x-slot:actions>
@@ -80,6 +80,60 @@
                                   rows="2"
                                   placeholder="TP bei 50%, SL bei 2x Prämie..."></textarea>
                         @error('exit_plan') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                    </div>
+                </div>
+
+                {{-- ── Mindset & Rationale (Phase 1) ──────────────────────────── --}}
+                <div class="row g-3 mt-1">
+                    <div class="col-md-2">
+                        <label class="form-label">Mindset</label>
+                        <select wire:model="mindset_entry" class="form-select form-select-sm">
+                            <option value="">— wählen —</option>
+                            @foreach(\App\Livewire\Log\LogForm::MINDSET_ENTRY_OPTIONS as $opt)
+                                <option value="{{ $opt }}">{{ $opt }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Energie</label>
+                        <select wire:model="energy_level" class="form-select form-select-sm">
+                            <option value="">— wählen —</option>
+                            @foreach(\App\Livewire\Log\LogForm::ENERGY_LEVEL_OPTIONS as $opt)
+                                <option value="{{ $opt }}">{{ $opt }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-8">
+                        <label class="form-label">Rationale</label>
+                        <textarea wire:model="rationale" class="form-control form-control-sm" rows="2"
+                                  placeholder="Warum dieser Trade? Welche Marktbedingung? Was erwartest du?"></textarea>
+                    </div>
+                </div>
+
+                {{-- ── Konfidenz, Marktregime, Pre-Mortem ──────────────────────── --}}
+                <div class="row g-3 mt-1">
+                    <div class="col-md-2">
+                        <label class="form-label">Konfidenz <small class="text-muted">(1–10)</small></label>
+                        <input type="number" min="1" max="10"
+                               class="form-control form-control-sm"
+                               wire:model="confidence"
+                               placeholder="7">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Marktregime</label>
+                        <select wire:model="market_regime" class="form-select form-select-sm">
+                            <option value="">— wählen —</option>
+                            @foreach(\App\Livewire\Log\LogForm::MARKET_REGIME_OPTIONS as $opt)
+                                <option value="{{ $opt }}">{{ $opt }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-8">
+                        <label class="form-label">Pre-Mortem <small class="text-muted">Wenn das schiefgeht, weil...</small></label>
+                        <input type="text"
+                               class="form-control form-control-sm"
+                               wire:model="pre_mortem"
+                               placeholder="... IV unerwartet steigt / Underlying gegen mich läuft">
                     </div>
                 </div>
 
@@ -254,10 +308,57 @@
                     </div>
                 </div>
 
+                {{-- ── Post-Trade Review (Phase 2) ────────────────────────────── --}}
+                <div class="row g-3 mb-3">
+                    <div class="col-md-3">
+                        <label class="form-label">Mindset Exit</label>
+                        <select wire:model="mindset_exit" class="form-select">
+                            <option value="">— wählen —</option>
+                            @foreach(\App\Livewire\Log\LogForm::MINDSET_EXIT_OPTIONS as $opt)
+                                <option value="{{ $opt }}">{{ $opt }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Exit Plan eingehalten?</label>
+                        <select wire:model="plan_adherence" class="form-select">
+                            <option value="">— wählen —</option>
+                            <option value="yes">✅ Ja</option>
+                            <option value="partial">⚠️ Teilweise</option>
+                            <option value="no">❌ Nein</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Lektionen</label>
+                        <textarea wire:model="lessons_learned" class="form-control" rows="2"
+                                  placeholder="Was habe ich gelernt? Was würde ich anders machen?"></textarea>
+                    </div>
+                </div>
+
+                {{-- ── Entscheidungsqualität (unabhängig vom Ergebnis) ────────── --}}
+                <div class="mb-3">
+                    <label class="form-label d-block">Entscheidungsqualität <small class="text-muted">War der Entscheidungsprozess gut — unabhängig vom Ergebnis?</small></label>
+                    <div class="btn-group btn-group-sm" role="group">
+                        <input type="radio" class="btn-check" wire:model="decision_quality" value="gut" id="dq_gut" autocomplete="off">
+                        <label class="btn btn-outline-success" for="dq_gut">Gut</label>
+                        <input type="radio" class="btn-check" wire:model="decision_quality" value="mittel" id="dq_mittel" autocomplete="off">
+                        <label class="btn btn-outline-warning" for="dq_mittel">Mittel</label>
+                        <input type="radio" class="btn-check" wire:model="decision_quality" value="schlecht" id="dq_schlecht" autocomplete="off">
+                        <label class="btn btn-outline-danger" for="dq_schlecht">Schlecht</label>
+                        @if($decision_quality)
+                            <button type="button" class="btn btn-outline-secondary"
+                                    wire:click="$set('decision_quality', null)"
+                                    title="Auswahl zurücksetzen">
+                                <i class="bi bi-x"></i>
+                            </button>
+                        @endif
+                    </div>
+                </div>
+
                 <div>
-                    <label class="form-label">Bemerkungen / Learnings</label>
-                    <textarea class="form-control" wire:model="notes" rows="3"
-                              placeholder="Was lief gut? Was würde ich anders machen?"></textarea>
+                    <label class="form-label">Allgemeine Notizen</label>
+                    <textarea class="form-control" wire:model="notes" rows="2"
+                              placeholder="Sonstige Bemerkungen..."></textarea>
                 </div>
 
             </div>
@@ -269,7 +370,7 @@
             <button type="submit" class="btn btn-primary">
                 <i class="bi bi-floppy"></i> Speichern
             </button>
-            <a href="{{ route('planer.list') }}" class="btn btn-outline-secondary">
+            <a href="{{ route('log.list') }}" class="btn btn-outline-secondary">
                 Abbrechen
             </a>
         </div>

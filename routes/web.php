@@ -24,8 +24,8 @@ use App\Livewire\Trades\FxTrades;
 use App\Livewire\Spreads\SpreadsList;
 use App\Livewire\Spreads\SpreadDetail;
 use App\Livewire\Tags\TagManager;
-use App\Livewire\TradePlanner\PlanList;
-use App\Livewire\TradePlanner\PlanForm;
+use App\Livewire\Log\LogList;
+use App\Livewire\Log\LogForm;
 
 use App\Livewire\Stats\StatsDashboard;
 
@@ -69,7 +69,8 @@ Route::get('/tags', TagManager::class)->name('tags.manage');
 // Stats
 Route::get('/stats', StatsDashboard::class)->name('stats.dashboard');
 
-// Trade Planner
-Route::get('/planer', PlanList::class)->name('planer.list');
-Route::get('/planer/neu', PlanForm::class)->name('planer.create');
-Route::get('/planer/{id}', PlanForm::class)->name('planer.edit');
+// Trade Log
+Route::get('/log', LogList::class)->name('log.list');
+Route::get('/log/neu', LogForm::class)->name('log.create');
+Route::get('/log/schnell', LogForm::class)->name('log.quick');
+Route::get('/log/{id}', LogForm::class)->name('log.edit');

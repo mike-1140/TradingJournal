@@ -77,7 +77,16 @@
             </a>
 
             {{-- Spreads --}}
-            @php $spreadsOpen = request()->routeIs('spreads.*'); @endphp
+            @php
+                $spreadsOpen      = request()->routeIs('spreads.*');
+                $qStatus          = request()->query('filterStatus');
+                $qGroup           = request()->query('filterStrategyGroup');
+                $qStrategy        = request()->query('filterStrategy');
+                $isOpenSpreads    = request()->routeIs('spreads.list') && $qStatus === 'open'    && !$qGroup && !$qStrategy;
+                $isClosedSpreads  = request()->routeIs('spreads.list') && !$qStatus              && !$qGroup && !$qStrategy;
+                $isVerticals      = request()->routeIs('spreads.list') && $qGroup === 'verticals';
+                $isIronCondors    = request()->routeIs('spreads.list') && $qStrategy === 'Iron Condor';
+            @endphp
             <a class="sidebar-link sidebar-toggle-btn {{ $spreadsOpen ? 'active' : '' }}"
                data-bs-toggle="collapse" href="#nav-spreads"
                aria-expanded="{{ $spreadsOpen ? 'true' : 'false' }}">
@@ -87,24 +96,34 @@
             </a>
             <div id="nav-spreads" class="collapse {{ $spreadsOpen ? 'show' : '' }}">
                 <div class="sidebar-subnav">
+                    <a href="{{ route('spreads.list', ['filterStatus' => 'open']) }}"
+                       class="sidebar-link {{ $isOpenSpreads ? 'active' : '' }}">
+                        <i class="bi bi-unlock"></i>
+                        <span class="sidebar-text">Offene Spreads</span>
+                    </a>
                     <a href="{{ route('spreads.list') }}"
-                       class="sidebar-link {{ request()->routeIs('spreads.list') ? 'active' : '' }}">
-                        <i class="bi bi-list"></i>
-                        <span class="sidebar-text">Alle Spreads</span>
+                       class="sidebar-link {{ $isClosedSpreads ? 'active' : '' }}">
+                        <i class="bi bi-check-circle"></i>
+                        <span class="sidebar-text">Geschlossene Spreads</span>
+                    </a>
+                    <a href="{{ route('spreads.list', ['filterStrategyGroup' => 'verticals']) }}"
+                       class="sidebar-link {{ $isVerticals ? 'active' : '' }}">
+                        <i class="bi bi-arrows-collapse"></i>
+                        <span class="sidebar-text">Vertical Spreads</span>
                     </a>
                     <a href="{{ route('spreads.list', ['filterStrategy' => 'Iron Condor']) }}"
-                       class="sidebar-link">
+                       class="sidebar-link {{ $isIronCondors ? 'active' : '' }}">
                         <i class="bi bi-diagram-3"></i>
                         <span class="sidebar-text">Iron Condors</span>
                     </a>
                 </div>
             </div>
 
-            {{-- Trade Planner --}}
-            <a href="{{ route('planer.list') }}"
-               class="sidebar-link {{ request()->routeIs('planer.*') ? 'active' : '' }}">
+            {{-- Trade Log --}}
+            <a href="{{ route('log.list') }}"
+               class="sidebar-link {{ request()->routeIs('log.*') ? 'active' : '' }}">
                 <i class="bi bi-journal-plus"></i>
-                <span class="sidebar-text">Planer</span>
+                <span class="sidebar-text">Log</span>
             </a>
 
             <div class="sidebar-divider"></div>
@@ -149,6 +168,14 @@
     {{-- ── Topbar ───────────────────────────────────────────────────────────── --}}
     <header id="topbar" class="topbar">
         <div class="ms-auto d-flex align-items-center gap-2">
+            {{-- Quick-Entry (immer sichtbar) --}}
+            <a href="{{ route('log.quick', ['env' => $selectedEnvironment]) }}"
+               class="btn btn-sm btn-warning"
+               title="Neuen Log-Eintrag anlegen (Quick-Entry)">
+                <i class="bi bi-journal-plus"></i>
+                <span class="d-none d-md-inline"> Neuer Eintrag</span>
+            </a>
+
             {{-- Zeitraum-Button --}}
             <button wire:click="$toggle('showDatePicker')"
                     class="btn btn-sm btn-outline-secondary">

@@ -1,13 +1,13 @@
 <?php
 
-namespace App\Livewire\TradePlanner;
+namespace App\Livewire\Log;
 
 use App\Models\TradePlan;
 use App\Traits\ManagesEnvironment;
 use Livewire\Component;
 use Livewire\WithPagination;
 
-class PlanList extends Component
+class LogList extends Component
 {
     use WithPagination, ManagesEnvironment;
 
@@ -39,10 +39,9 @@ class PlanList extends Component
         $this->resetPage();
     }
 
-    public function deletePlan(int $id): void
+    public function deleteEntry(int $id): void
     {
         $connection = TradePlan::getConnectionForEnvironment($this->selectedEnvironment);
-
         $plan = TradePlan::on($connection)->findOrFail($id);
         $plan->legs()->delete();
         $plan->delete();
@@ -64,18 +63,17 @@ class PlanList extends Component
             $query->where('underlying', 'like', '%' . $this->search . '%');
         }
 
-        $plans = $query->orderBy('date_open', 'desc')->paginate($this->perPage);
+        $logs = $query->orderBy('date_open', 'desc')->paginate($this->perPage);
 
-        // Statistiken
         $baseStats = TradePlan::on($connection)->where('environment', $this->selectedEnvironment);
         $statistics = [
-            'open_count'    => (clone $baseStats)->where('status', 'open')->count(),
-            'closed_count'  => (clone $baseStats)->where('status', 'closed')->count(),
-            'realized_pnl'  => (clone $baseStats)->where('status', 'closed')->sum('realized_pnl'),
+            'open_count'   => (clone $baseStats)->where('status', 'open')->count(),
+            'closed_count' => (clone $baseStats)->where('status', 'closed')->count(),
+            'realized_pnl' => (clone $baseStats)->where('status', 'closed')->sum('realized_pnl'),
         ];
 
-        return view('livewire.trade-planner.plan-list', [
-            'plans'      => $plans,
+        return view('livewire.log.log-list', [
+            'logs'       => $logs,
             'statistics' => $statistics,
         ]);
     }
