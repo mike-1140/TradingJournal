@@ -132,20 +132,27 @@ class CampaignDetail extends Component
                 'has_expiration' => $day->contains('action', 'OPTION_EXPIRATION'),
             ]);
 
-        // Chart-Daten: kumulativer Cashflow je Buchung
-        $running  = 0.0;
-        $chartData = $allEntries->map(function ($e) use (&$running) {
-            $cash     = $e->action === 'CASH_SETTLEMENT'
-                ? (float) $e->proceeds
-                : (float) $e->netcash;
-            $running += $cash;
-            return [
-                'label'  => \Carbon\Carbon::parse($e->dateTime)->format('d.m H:i'),
-                'delta'  => round($cash, 2),
-                'cumul'  => round($running, 2),
-                'action' => $e->action,
-            ];
-        })->values()->toArray();
+        // Chart-Daten: kumulativer P&L je Tag (nur Tage mit realisiertem P&L)
+        $running   = 0.0;
+        $chartData = [];
+
+        $startLabel = $this->campaign->start_date
+            ? \Carbon\Carbon::parse($this->campaign->start_date)->format('d.m.y')
+            : null;
+        if ($startLabel) {
+            $chartData[] = ['label' => $startLabel, 'cumul' => 0.0];
+        }
+
+        $allEntries
+            ->filter(fn($e) => (float) $e->realized_pnl != 0)
+            ->groupBy(fn($e) => \Carbon\Carbon::parse($e->dateTime)->format('Y-m-d'))
+            ->each(function ($day, $dateKey) use (&$running, &$chartData) {
+                $running    += $day->sum(fn($e) => (float) $e->realized_pnl);
+                $chartData[] = [
+                    'label' => \Carbon\Carbon::parse($dateKey)->format('d.m.y'),
+                    'cumul' => round($running, 2),
+                ];
+            });
 
         $ledgerEntries = $query->orderBy('dateTime', 'asc')
             ->paginate($this->perPage);

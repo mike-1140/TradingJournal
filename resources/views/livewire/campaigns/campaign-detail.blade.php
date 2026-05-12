@@ -52,12 +52,12 @@
         </div>
     </div>
 
-    {{-- Cashflow-Chart --}}
-    @if(count($chartData) > 0)
+    {{-- P&L-Verlauf --}}
+    @if(count($chartData) > 2)
     <div class="card mb-4 border-0 shadow-sm">
         <div class="card-header bg-white py-2 d-flex justify-content-between align-items-center">
-            <h6 class="mb-0"><i class="bi bi-graph-up me-2 text-primary"></i>Cashflow-Verlauf</h6>
-            <small class="text-muted">Balken = je Buchung · Linie = kumulativer Saldo</small>
+            <h6 class="mb-0"><i class="bi bi-graph-up me-2 text-primary"></i>P&L-Verlauf</h6>
+            <small class="text-muted">Kumulierter realisierter P&L je Ereignistag</small>
         </div>
         <div class="card-body py-2 px-3">
             <canvas id="cashflowChart" style="height: 190px; max-height: 190px;"></canvas>
@@ -325,75 +325,56 @@
                 if (!canvas) return;
 
                 const raw = @json($chartData);
-                if (!raw.length) return;
+                if (raw.length < 3) return;
 
-                const labels     = raw.map(d => d.label);
-                const deltas     = raw.map(d => d.delta);
-                const cumuls     = raw.map(d => d.cumul);
-                const barColors  = deltas.map(v => v >= 0
-                    ? 'rgba(25, 135, 84, 0.75)'
-                    : 'rgba(220, 53, 69, 0.75)');
+                const labels = raw.map(d => d.label);
+                const cumuls = raw.map(d => d.cumul);
+                const final  = cumuls[cumuls.length - 1];
+                const color  = final >= 0 ? '#198754' : '#dc3545';
+                const fill   = final >= 0 ? 'rgba(25,135,84,0.08)' : 'rgba(220,53,69,0.08)';
 
                 chart = new Chart(canvas, {
+                    type: 'line',
                     data: {
                         labels,
-                        datasets: [
-                            {
-                                type: 'bar',
-                                label: 'Cashflow je Buchung',
-                                data: deltas,
-                                backgroundColor: barColors,
-                                borderColor: barColors,
-                                yAxisID: 'yDelta',
-                                order: 2,
-                            },
-                            {
-                                type: 'line',
-                                label: 'Kumulativer Saldo',
-                                data: cumuls,
-                                borderColor: '#0d6efd',
-                                backgroundColor: 'rgba(13,110,253,0.07)',
-                                fill: true,
-                                tension: 0.3,
-                                pointRadius: 3,
-                                pointHoverRadius: 5,
-                                yAxisID: 'yCumul',
-                                order: 1,
-                            }
-                        ]
+                        datasets: [{
+                            label: 'Kumulativer P&L',
+                            data: cumuls,
+                            borderColor: color,
+                            backgroundColor: fill,
+                            fill: true,
+                            stepped: true,
+                            pointRadius: 4,
+                            pointHoverRadius: 6,
+                            borderWidth: 2,
+                        }]
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
                         interaction: { mode: 'index', intersect: false },
                         plugins: {
-                            legend: {
-                                position: 'bottom',
-                                labels: { font: { size: 11 }, boxWidth: 12 }
-                            },
+                            legend: { display: false },
                             tooltip: {
                                 callbacks: {
                                     label: ctx => {
                                         const v = ctx.parsed.y;
-                                        return ` ${ctx.dataset.label}: ${v >= 0 ? '+' : ''}${v.toFixed(2)} $`;
+                                        return ` P&L: ${v >= 0 ? '+' : ''}${v.toFixed(2)} $`;
                                     }
                                 }
                             }
                         },
                         scales: {
                             x: {
-                                ticks: { font: { size: 10 }, maxRotation: 45, maxTicksLimit: 20 }
+                                ticks: { font: { size: 10 }, maxRotation: 45 }
                             },
-                            yDelta: {
-                                type: 'linear',
-                                position: 'right',
-                                grid: { drawOnChartArea: false },
-                                ticks: { font: { size: 10 }, callback: v => v.toFixed(0) + ' $' }
-                            },
-                            yCumul: {
-                                type: 'linear',
-                                position: 'left',
-                                ticks: { font: { size: 10 }, callback: v => v.toFixed(0) + ' $' }
+                            y: {
+                                ticks: { font: { size: 10 }, callback: v => v.toFixed(0) + ' $' },
+                                grid: {
+                                    color: ctx => ctx.tick.value === 0
+                                        ? 'rgba(0,0,0,0.25)'
+                                        : 'rgba(0,0,0,0.05)'
+                                }
                             }
                         }
                     }
