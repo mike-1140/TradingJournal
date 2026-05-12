@@ -1,92 +1,282 @@
 <div>
+    @php
+    $envColors = [
+        'MONEY'       => '#198754',
+        'PAPER'       => '#0d6efd',
+        'TEST'        => '#6c757d',
+        'AUTOM_MONEY' => '#fd7e14',
+        'AUTOM_PAPER' => '#6f42c1',
+    ];
+    $activeColor = $envColors[$selectedEnvironment] ?? '#6c757d';
+    @endphp
+
     <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
         <div>
             <h1 class="mb-0">Trading Dashboard</h1>
             <small class="text-muted">Analyse & Statistik</small>
         </div>
 
-        <div class="d-flex flex-wrap gap-3 align-items-end">
-            <div>
-                <label class="d-block small text-muted mb-1">Environment:</label>
-                <div class="btn-group" role="group">
-                    @foreach ($environments as $env)
-                        <button wire:click="changeEnvironment('{{ $env }}')"
-                                class="btn btn-sm btn-{{ $selectedEnvironment === $env ? 'primary' : 'outline-primary' }}">
-                            {{ $env }}
-                        </button>
+        <div class="d-flex gap-2 align-items-center">
+            {{-- Environment Dropdown --}}
+            <div class="dropdown">
+                <button class="btn btn-sm btn-outline-secondary dropdown-toggle d-flex align-items-center gap-2"
+                        type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <span style="width:9px;height:9px;border-radius:50%;display:inline-block;background:{{ $activeColor }};flex-shrink:0"></span>
+                    {{ $selectedEnvironment }}
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                    @foreach($environments as $env)
+                        <li>
+                            <button class="dropdown-item d-flex align-items-center gap-2 {{ $selectedEnvironment === $env ? 'fw-semibold' : '' }}"
+                                    wire:click="changeEnvironment('{{ $env }}')">
+                                <span style="width:9px;height:9px;border-radius:50%;display:inline-block;background:{{ $envColors[$env] ?? '#6c757d' }};flex-shrink:0"></span>
+                                {{ $env }}
+                                @if($selectedEnvironment === $env)
+                                    <i class="bi bi-check ms-auto text-success"></i>
+                                @endif
+                            </button>
+                        </li>
                     @endforeach
-                </div>
+                </ul>
             </div>
 
-            <div class="btn-group btn-group-sm">
-                @foreach($users as $u)
-                    <button class="btn btn-{{ auth()->id() === $u->id ? 'primary' : 'outline-primary' }}" wire:click="switchUser({{ $u->id }})">
-                        {{ $u->name }}
-                    </button>
-                @endforeach
+            {{-- User Dropdown --}}
+            <div class="dropdown">
+                <button class="btn btn-sm btn-outline-secondary dropdown-toggle d-flex align-items-center gap-2"
+                        type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-person"></i>
+                    {{ auth()->user()->name }}
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                    @foreach($users as $u)
+                        <li>
+                            <button class="dropdown-item d-flex align-items-center gap-2 {{ auth()->id() === $u->id ? 'fw-semibold' : '' }}"
+                                    wire:click="switchUser({{ $u->id }})">
+                                <i class="bi bi-person{{ auth()->id() === $u->id ? '-fill' : '' }} text-muted"></i>
+                                {{ $u->name }}
+                                @if(auth()->id() === $u->id)
+                                    <i class="bi bi-check ms-auto text-success"></i>
+                                @endif
+                            </button>
+                        </li>
+                    @endforeach
+                </ul>
             </div>
         </div>
     </div>
 
-    <!-- Statistik-Karten -->
-    <div class="row g-4 mb-4">
-        <!-- Open Trades -->
-        <div class="col-md-3">
-            <div class="card bg-primary text-white">
-                <div class="card-body">
-                    <h5 class="card-title"><i class="bi bi-hourglass-split"></i> Open Trades</h5>
-                    <h2>{{ number_format($openTradesCount) }}</h2>
+    <!-- KPI-Boxen: Fixe Perioden + Zeitraum -->
+    <div class="row g-3 mb-3">
+        {{-- P&L Monat --}}
+        <div class="col-md-4">
+            <x-stat-card
+                title="P&L {{ \Carbon\Carbon::now()->translatedFormat('F Y') }}"
+                :value="'$ ' . number_format($monthProfit, 2)"
+                icon="calendar-check"
+                :color="$monthProfit >= 0 ? 'success' : 'danger'"
+                :trend="$monthTrend['direction']"
+                :trend-value="$monthTrend['label']"
+            />
+        </div>
+        {{-- P&L YTD --}}
+        <div class="col-md-4">
+            <x-stat-card
+                title="P&L YTD {{ \Carbon\Carbon::now()->year }}"
+                :value="'$ ' . number_format($ytdProfit, 2)"
+                icon="calendar-range"
+                :color="$ytdProfit >= 0 ? 'success' : 'danger'"
+            />
+        </div>
+        {{-- P&L Zeitraum (zeitraumgefiltert) --}}
+        <div class="col-md-4">
+            <x-stat-card
+                title="P&L Zeitraum"
+                :value="'$ ' . number_format($totalProfit, 2)"
+                icon="graph-up-arrow"
+                :color="$totalProfit >= 0 ? 'success' : 'danger'"
+                :subtitle="$zeitraumLabel . ' · ' . number_format($closedTradesCount) . ' Trades'"
+            />
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        {{-- Win Rate --}}
+        <div class="col-md-4">
+            <x-stat-card
+                title="Win Rate"
+                :value="$winRate . '%'"
+                icon="trophy"
+                :color="$winRate >= 50 ? 'success' : 'warning'"
+                :subtitle="number_format($closedTradesCount) . ' Trades · Ø ' . $avgDaysHeld . ' Tage'"
+            />
+        </div>
+        {{-- Ø P&L pro Trade --}}
+        <div class="col-md-4">
+            <x-stat-card
+                title="Ø P&L pro Trade"
+                :value="'$ ' . number_format($avgProfitPerTrade, 2)"
+                icon="bar-chart-line"
+                :color="$avgProfitPerTrade >= 0 ? 'success' : 'danger'"
+                :subtitle="'Kommission gesamt: $ ' . number_format($totalCommissions, 2)"
+            />
+        </div>
+        {{-- Offene Kampagnen --}}
+        <div class="col-md-4">
+            <x-stat-card
+                title="Offene Kampagnen"
+                :value="number_format($activeCampaignsCount)"
+                icon="briefcase"
+                color="primary"
+                :subtitle="'Kapital gebunden: $ ' . number_format($capitalAtRisk, 0)"
+            />
+        </div>
+    </div>
+    <!-- Charts: Kumulativer P&L + Strategie-Donut -->
+    <div class="row g-3 mb-3">
+        <div class="col-md-8">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0"><i class="bi bi-graph-up-arrow"></i> Kumulativer P&L {{ now()->year }}</h6>
+                    <small class="text-muted">monatlich</small>
+                </div>
+                <div class="card-body p-2">
+                    <div id="chart-cumulative" wire:ignore></div>
                 </div>
             </div>
         </div>
-        <!-- Closed Trades -->
-        <div class="col-md-3">
-            <div class="card bg-success text-white">
-                <div class="card-body">
-                    <h5 class="card-title"><i class="bi bi-check-circle"></i> Closed Trades</h5>
-                    <h2>{{ number_format($closedTradesCount) }}</h2>
+
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0"><i class="bi bi-pie-chart"></i> P&L nach Spreads</h6>
+                    <small class="text-muted">{{ $zeitraumLabel }}</small>
                 </div>
-            </div>
-        </div>
-        <!-- Total Profit -->
-        <div class="col-md-3">
-            <div class="card {{ $totalProfit >= 0 ? 'bg-success' : 'bg-danger' }} text-white">
-                <div class="card-body">
-                    <h5 class="card-title"><i class="bi bi-currency-dollar"></i> Total P/L</h5>
-                    <h2>{{ number_format($totalProfit, 2) }} $</h2>
-                    <small>Commissions: {{ number_format($totalCommissions, 2) }} $</small>
-                </div>
-            </div>
-        </div>
-        <!-- Win Rate -->
-        <div class="col-md-3">
-            <div class="card bg-info text-white">
-                <div class="card-body">
-                    <h5 class="card-title"><i class="bi bi-percent"></i> Win Rate</h5>
-                    <h2>{{ $winRate }}%</h2>
-                    <small>Ø {{ $avgDaysHeld }} Tage</small>
-                </div>
-            </div>
-        </div>
-        <!-- Spreads KPI Card -->
-        <div class="col-md-3">
-            <div class="card border-purple">
-                <div class="card-body">
-                    <h6 class="text-muted"><i class="bi bi-bezier2"></i> Spreads</h6>
-                    <h2>{{ number_format($spreadsCount) }}</h2>
-                    <small class="text-muted">
-                        Profit:
-                        <span class="text-{{ $spreadsProfit >= 0 ? 'success' : 'danger' }}">
-                    {{ number_format($spreadsProfit, 2) }} $
-                </span>
-                    </small><br>
-                    <a href="{{ route('spreads.list') }}" class="btn btn-sm btn-outline-purple mt-2">
-                        Details <i class="bi bi-arrow-right"></i>
-                    </a>
+                <div class="card-body p-2">
+                    @if(count($chartStrategyValues) > 0)
+                        <div id="chart-strategy" wire:ignore></div>
+                    @else
+                        <div class="d-flex align-items-center justify-content-center text-muted" style="height:260px">
+                            <div class="text-center">
+                                <i class="bi bi-pie-chart fs-1"></i>
+                                <p class="mt-2 small">Keine positiven Spreads im Zeitraum</p>
+                            </div>
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- Chart: Monatlicher P&L -->
+    <div class="row g-3 mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0"><i class="bi bi-bar-chart"></i> Monatlicher P&L</h6>
+                    <small class="text-muted">letzte 12 Monate</small>
+                </div>
+                <div class="card-body p-2">
+                    <div id="chart-monthly" wire:ignore></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    (function () {
+        var C = window.__dashCharts = window.__dashCharts || {};
+
+        var d = {
+            cumulative:     @json($chartCumulative),
+            monthly:        @json($chartMonthly),
+            strategyLabels: @json($chartStrategyLabels),
+            strategyValues: @json($chartStrategyValues),
+            strategyActual: @json($chartStrategyActual)
+        };
+
+        function fmt0(v)  { return '$ ' + Math.round(v).toLocaleString('de-DE'); }
+        function fmt2(v)  { return '$ ' + parseFloat(v).toFixed(2); }
+
+        function renderStrategy(data) {
+            var el = document.getElementById('chart-strategy');
+            if (!el || !data.strategyValues || data.strategyValues.length === 0) return;
+            if (C.strategy) { C.strategy.destroy(); C.strategy = null; }
+            var colors = data.strategyActual.map(function(v) { return v >= 0 ? undefined : '#dc3545'; });
+            C.strategy = new ApexCharts(el, {
+                chart:       { type: 'donut', height: 260, fontFamily: 'inherit', accessibility: { enabled: false } },
+                series:      data.strategyValues,
+                labels:      data.strategyLabels,
+                colors:      colors.some(function(c) { return c; })
+                                 ? colors.map(function(c, i) { return c || ['#008FFB','#00E396','#FEB019','#FF4560','#775DD0'][i % 5]; })
+                                 : undefined,
+                legend:      { position: 'bottom', fontSize: '13px' },
+                dataLabels:  { formatter: function (val) { return val.toFixed(1) + '%'; } },
+                tooltip:     { y: { formatter: function(val, opts) {
+                    var actual = data.strategyActual[opts.seriesIndex];
+                    return (actual >= 0 ? '$ ' : '−$ ') + Math.abs(actual).toFixed(2);
+                }}},
+                plotOptions: { pie: { donut: { size: '65%' } } }
+            });
+            C.strategy.render();
+        }
+
+        function init() {
+            if (typeof ApexCharts === 'undefined') { setTimeout(init, 100); return; }
+
+            if (!C.cumulative && document.getElementById('chart-cumulative')) {
+                C.cumulative = new ApexCharts(document.getElementById('chart-cumulative'), {
+                    chart:       { type: 'area', height: 260, toolbar: { show: false }, fontFamily: 'inherit', zoom: { enabled: false }, accessibility: { enabled: false } },
+                    series:      [{ name: 'Kum. P&L', data: d.cumulative }],
+                    xaxis:       { type: 'category' },
+                    yaxis:       { labels: { formatter: fmt0 } },
+                    colors:      ['#198754'],
+                    fill:        { type: 'gradient', gradient: { opacityFrom: 0.35, opacityTo: 0.03 } },
+                    stroke:      { curve: 'smooth', width: 2 },
+                    dataLabels:  { enabled: false },
+                    grid:        { borderColor: '#f0f0f0', strokeDashArray: 3 },
+                    tooltip:     { y: { formatter: fmt2 } }
+                });
+                C.cumulative.render();
+            }
+
+            if (!C.monthly && document.getElementById('chart-monthly')) {
+                C.monthly = new ApexCharts(document.getElementById('chart-monthly'), {
+                    chart:       { type: 'bar', height: 220, toolbar: { show: false }, fontFamily: 'inherit', zoom: { enabled: false }, accessibility: { enabled: false } },
+                    series:      [{ name: 'P&L', data: d.monthly }],
+                    xaxis:       { type: 'category' },
+                    yaxis:       { labels: { formatter: fmt0 } },
+                    plotOptions: { bar: { borderRadius: 3, colors: { ranges: [{ from: -9999999, to: -0.01, color: '#dc3545' }, { from: 0, to: 9999999, color: '#198754' }] } } },
+                    dataLabels:  { enabled: false },
+                    grid:        { borderColor: '#f0f0f0', strokeDashArray: 3 },
+                    tooltip:     { y: { formatter: fmt2 } }
+                });
+                C.monthly.render();
+            }
+
+            if (!C.strategy) {
+                renderStrategy(d);
+            }
+        }
+
+        document.readyState === 'loading'
+            ? document.addEventListener('DOMContentLoaded', init)
+            : init();
+
+        // Update bei Environment-/Zeitraum-Wechsel (nur einmal registrieren)
+        if (!window.__dashChartsListening) {
+            window.__dashChartsListening = true;
+            window.addEventListener('charts-data', function (e) {
+                var u = e.detail;
+                if (C.cumulative) C.cumulative.updateSeries([{ name: 'Kum. P&L', data: u.cumulative }]);
+                if (C.monthly)    C.monthly.updateSeries([{ name: 'P&L', data: u.monthly }]);
+                // Donut destroy+recreate: Labels, Farben und Slice-Anzahl können sich komplett ändern
+                if (C.strategy) { C.strategy.destroy(); C.strategy = null; }
+                renderStrategy(u);
+            });
+        }
+    })();
+    </script>
+
     <!-- Tag Statistics -->
     {{-- DEAKTIVIERT für Option C
     <div class="row mb-4">
@@ -95,78 +285,6 @@
         </div>
     </div>
     --}}
-
-    <div class="row g-4 mb-4">
-        <!-- Top Symbole -->
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0"><i class="bi bi-trophy"></i> Top 5 Symbole</h5>
-                </div>
-                <div class="card-body">
-                    <table class="table table-sm">
-                        <thead>
-                        <tr>
-                            <th>Symbol</th>
-                            <th class="text-end">Trades</th>
-                            <th class="text-end">Profit</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        @forelse($topSymbols as $item)
-                            <tr>
-                                <td><strong>{{ $item->symbol }}</strong></td>
-                                <td class="text-end">{{ $item->trade_count }}</td>
-                                <td class="text-end text-{{ $item->total_profit >= 0 ? 'success' : 'danger' }}">
-                                    {{ number_format($item->total_profit, 2) }} $
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="3" class="text-center text-muted">Keine Daten</td>
-                            </tr>
-                        @endforelse
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <!-- Performance nach Strategie -->
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0"><i class="bi bi-diagram-3"></i> Strategien Performance</h5>
-                </div>
-                <div class="card-body">
-                    <table class="table table-sm">
-                        <thead>
-                        <tr>
-                            <th>Strategie</th>
-                            <th class="text-end">Trades</th>
-                            <th class="text-end">Profit</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        @forelse($strategyPerformance as $item)
-                            <tr>
-                                <td>{{ $item->strategy ?: 'N/A' }}</td>
-                                <td class="text-end">{{ $item->trade_count }}</td>
-                                <td class="text-end text-{{ $item->total_profit >= 0 ? 'success' : 'danger' }}">
-                                    {{ number_format($item->total_profit, 2) }} $
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="3" class="text-center text-muted">Keine Daten</td>
-                            </tr>
-                        @endforelse
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <!-- Aktuelle offene Positionen -->
     <div class="card mb-4">
@@ -225,108 +343,5 @@
         </div>
     </div>
 
-    <!-- Letzte geschlossene Trades -->
-    <div class="card">
-        <div class="card-header">
-            <h5 class="mb-0"><i class="bi bi-clock-history"></i> Letzte geschlossene Trades</h5>
-        </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-hover">
-                    <thead>
-                    <tr>
-                        <th>Symbol</th>
-                        <th>Open</th>
-                        <th>Close</th>
-                        <th class="text-end">Qty</th>
-                        <th class="text-end">Tage</th>
-                        <th class="text-end">Profit</th>
-                        <th class="text-end">ROI</th>
-                        <th>Closed By</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    @forelse($recentClosedTrades as $trade)
-                        <tr>
-                            <td>
-                                <strong>{{ $trade->symbol }}</strong>
-                                @if($trade->putCall)
-                                    <br><small class="text-muted">{{ $trade->putCall }}</small>
-                                @endif
-                            </td>
-                            <td>{{ $trade->dateTimeOpen?->format('d.m.Y') }}</td>
-                            <td>{{ $trade->dateTimeClose?->format('d.m.Y') }}</td>
-                            <td class="text-end">{{ number_format($trade->quantity, 0) }}</td>
-                            <td class="text-end">{{ $trade->daysHeld }}</td>
-                            <td class="text-end">
-                                <strong class="text-{{ $trade->profit >= 0 ? 'success' : 'danger' }}">
-                                    {{ number_format($trade->profit, 2) }} $
-                                </strong>
-                            </td>
-                            <td class="text-end">
-                                <span class="badge bg-{{ $trade->ROI >= 0 ? 'success' : 'danger' }}">
-                                    {{ number_format($trade->ROI, 2) }}%
-                                </span>
-                            </td>
-                            <td><small>{{ $trade->closedBy ?: '-' }}</small></td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="8" class="text-center text-muted">Keine geschlossenen Trades</td>
-                        </tr>
-                    @endforelse
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
-    <!-- Top Performing Spreads Section -->
-    @if($spreadsCount > 0)
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card border-purple">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0"><i class="bi bi-trophy"></i> Top 5 Performing Spreads</h5>
-                        <a href="{{ route('spreads.list') }}" class="btn btn-sm btn-outline-purple">
-                            Alle Spreads <i class="bi bi-arrow-right"></i>
-                        </a>
-                    </div>
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-sm">
-                                <thead>
-                                <tr>
-                                    <th>Strategie</th>
-                                    <th class="text-end">Profit</th>
-                                    <th></th>
-                                </tr>
-                                </thead>
-                                <tbody>
-                                @foreach($topSpreads as $spread)
-                                    <tr>
-                                        <td>
-                                            <strong>{{ $spread->opt_strategyName }}</strong>
-                                            @if(str_contains(strtolower($spread->opt_strategyName), 'iron condor'))
-                                                <span class="badge bg-purple ms-2">IC</span>
-                                            @endif
-                                        </td>
-                                        <td class="text-end">
-                                            <strong class="text-{{ $spread->spread_profit >= 0 ? 'success' : 'danger' }}">
-                                                {{ number_format($spread->spread_profit, 2) }} $
-                                            </strong>
-                                        </td>
-                                        <td>
-                                        </td>
-                                    </tr>
-                                @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    @endif
 </div>
 
