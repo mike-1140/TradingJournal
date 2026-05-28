@@ -70,31 +70,33 @@
         {{-- P&L Monat --}}
         <div class="col-md-4">
             <x-stat-card
-                title="P&L {{ \Carbon\Carbon::now()->translatedFormat('F Y') }}"
+                title="Brutto P&L {{ \Carbon\Carbon::now()->translatedFormat('F Y') }}"
                 :value="'$ ' . number_format($monthProfit, 2)"
                 icon="calendar-check"
                 :color="$monthProfit >= 0 ? 'success' : 'danger'"
                 :trend="$monthTrend['direction']"
                 :trend-value="$monthTrend['label']"
+                :subtitle="'Netto: $ ' . number_format($monthNetProfit, 2)"
             />
         </div>
         {{-- P&L YTD --}}
         <div class="col-md-4">
             <x-stat-card
-                title="P&L YTD {{ \Carbon\Carbon::now()->year }}"
+                title="Brutto P&L YTD {{ \Carbon\Carbon::now()->year }}"
                 :value="'$ ' . number_format($ytdProfit, 2)"
                 icon="calendar-range"
                 :color="$ytdProfit >= 0 ? 'success' : 'danger'"
+                :subtitle="'Netto: $ ' . number_format($ytdNetProfit, 2)"
             />
         </div>
         {{-- P&L Zeitraum (zeitraumgefiltert) --}}
         <div class="col-md-4">
             <x-stat-card
-                title="P&L Zeitraum"
+                title="Brutto P&L Zeitraum"
                 :value="'$ ' . number_format($totalProfit, 2)"
                 icon="graph-up-arrow"
                 :color="$totalProfit >= 0 ? 'success' : 'danger'"
-                :subtitle="$zeitraumLabel . ' · ' . number_format($closedTradesCount) . ' Trades'"
+                :subtitle="'Netto: $ ' . number_format($periodNetProfit, 2) . ' · ' . $zeitraumLabel . ' · ' . number_format($closedTradesCount) . ' Trades'"
             />
         </div>
     </div>
@@ -113,11 +115,11 @@
         {{-- Ø P&L pro Trade --}}
         <div class="col-md-4">
             <x-stat-card
-                title="Ø P&L pro Trade"
+                title="Ø Brutto P&L / Trade"
                 :value="'$ ' . number_format($avgProfitPerTrade, 2)"
                 icon="bar-chart-line"
                 :color="$avgProfitPerTrade >= 0 ? 'success' : 'danger'"
-                :subtitle="'Kommission gesamt: $ ' . number_format($totalCommissions, 2)"
+                :subtitle="'Ø Netto: $ ' . number_format($avgNetProfitPerTrade, 2) . ' · Komm.: $ ' . number_format($totalCommissions, 2)"
             />
         </div>
         {{-- Offene Kampagnen --}}
@@ -131,6 +133,89 @@
             />
         </div>
     </div>
+    <!-- NAV KPI-Karten (nur wenn Snapshot-Daten vorhanden) -->
+    @if($navCurrent !== null)
+    <div class="row g-3 mb-3">
+        <div class="col-md-4">
+            <x-stat-card
+                title="NAV aktuell"
+                :value="'€ ' . number_format($navCurrent, 2, ',', '.')"
+                icon="wallet2"
+                color="primary"
+                :subtitle="'Stand: ' . $navDate"
+            />
+        </div>
+        <div class="col-md-4">
+            <x-stat-card
+                title="NAV Änderung (Tag)"
+                :value="($navChange >= 0 ? '+' : '') . '€ ' . number_format($navChange, 2, ',', '.')"
+                icon="arrow-up-down"
+                :color="$navChange >= 0 ? 'success' : 'danger'"
+            />
+        </div>
+        <div class="col-md-4">
+            <x-stat-card
+                title="TWRR"
+                :value="number_format($navTwrr, 2, ',', '.') . ' %'"
+                icon="percent"
+                :color="$navTwrr >= 0 ? 'success' : 'danger'"
+                subtitle="Time-Weighted Rate of Return"
+            />
+        </div>
+    </div>
+    <div class="row g-3 mb-3">
+        <div class="col-md-3">
+            <x-stat-card
+                title="Cash EUR"
+                :value="'€ ' . number_format($navCashEur ?? 0, 2, ',', '.')"
+                icon="cash-coin"
+                color="secondary"
+                :subtitle="'Stand: ' . $navDate"
+            />
+        </div>
+        <div class="col-md-3">
+            <x-stat-card
+                title="Cash USD"
+                :value="'$ ' . number_format($navCashUsd ?? 0, 2, ',', '.')"
+                icon="currency-dollar"
+                color="secondary"
+                :subtitle="'Stand: ' . $navDate"
+            />
+        </div>
+        <div class="col-md-3">
+            <x-stat-card
+                title="Realisiert (Tag)"
+                :value="($navRealizedPnl >= 0 ? '+' : '') . '€ ' . number_format($navRealizedPnl ?? 0, 2, ',', '.')"
+                icon="check-circle"
+                :color="($navRealizedPnl ?? 0) >= 0 ? 'success' : 'danger'"
+            />
+        </div>
+        <div class="col-md-3">
+            <x-stat-card
+                title="Unrealisiert (Tag)"
+                :value="($navUnrealizedPnl >= 0 ? '+' : '') . '€ ' . number_format($navUnrealizedPnl ?? 0, 2, ',', '.')"
+                icon="hourglass-split"
+                :color="($navUnrealizedPnl ?? 0) >= 0 ? 'success' : 'danger'"
+            />
+        </div>
+    </div>
+    @endif
+
+    <!-- NAV-Kurve (immer im DOM, Sichtbarkeit per CSS) -->
+    <div class="row g-3 mb-3 {{ $navCurrent !== null ? '' : 'd-none' }}">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0"><i class="bi bi-graph-up"></i> NAV-Verlauf</h6>
+                    <small class="text-muted">Account-Wert täglich</small>
+                </div>
+                <div class="card-body p-2">
+                    <div id="chart-nav" wire:ignore></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Charts: Kumulativer P&L + Strategie-Donut -->
     <div class="row g-3 mb-3">
         <div class="col-md-8">
@@ -191,7 +276,8 @@
             monthly:        @json($chartMonthly),
             strategyLabels: @json($chartStrategyLabels),
             strategyValues: @json($chartStrategyValues),
-            strategyActual: @json($chartStrategyActual)
+            strategyActual: @json($chartStrategyActual),
+            nav:            @json($chartNav)
         };
 
         function fmt0(v)  { return '$ ' + Math.round(v).toLocaleString('de-DE'); }
@@ -220,8 +306,30 @@
             C.strategy.render();
         }
 
+        function renderNav(data) {
+            var el = document.getElementById('chart-nav');
+            if (C.nav) { C.nav.destroy(); C.nav = null; }
+            if (!el || !data.nav || data.nav.length === 0) return;
+            C.nav = new ApexCharts(el, {
+                chart:      { type: 'area', height: 240, toolbar: { show: false }, fontFamily: 'inherit', zoom: { enabled: false }, accessibility: { enabled: false } },
+                series:     [{ name: 'NAV', data: data.nav }],
+                xaxis:      { type: 'category', labels: { show: false } },
+                yaxis:      { labels: { formatter: function(v) { return '€ ' + v.toLocaleString('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 0 }); } }, min: function(min) { return min * 0.995; } },
+                colors:     ['#0d6efd'],
+                fill:       { type: 'gradient', gradient: { opacityFrom: 0.3, opacityTo: 0.03 } },
+                stroke:     { curve: 'smooth', width: 2 },
+                markers:    { size: 5, strokeWidth: 0 },
+                dataLabels: { enabled: false },
+                grid:       { borderColor: '#f0f0f0', strokeDashArray: 3 },
+                tooltip:    { x: { formatter: function(v, opts) { return data.nav[opts.dataPointIndex].x; } }, y: { formatter: function(v) { return '€ ' + v.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); } } }
+            });
+            C.nav.render();
+        }
+
         function init() {
             if (typeof ApexCharts === 'undefined') { setTimeout(init, 100); return; }
+
+            renderNav(d);
 
             if (!C.cumulative && document.getElementById('chart-cumulative')) {
                 C.cumulative = new ApexCharts(document.getElementById('chart-cumulative'), {
@@ -267,6 +375,7 @@
             window.__dashChartsListening = true;
             window.addEventListener('charts-data', function (e) {
                 var u = e.detail;
+                renderNav(u);
                 if (C.cumulative) C.cumulative.updateSeries([{ name: 'Kum. P&L', data: u.cumulative }]);
                 if (C.monthly)    C.monthly.updateSeries([{ name: 'P&L', data: u.monthly }]);
                 // Donut destroy+recreate: Labels, Farben und Slice-Anzahl können sich komplett ändern

@@ -14,7 +14,7 @@
 
     {{-- Metriken --}}
     <div class="card-body bg-light border-bottom">
-        <div class="row g-3 text-center row-cols-2 row-cols-md-6">
+        <div class="row g-3 text-center row-cols-2 row-cols-md-auto justify-content-md-evenly">
             <div class="col">
                 <small class="text-muted d-block text-uppercase" style="font-size: 0.7rem;">Aktien-Bestand</small>
                 <span class="fs-5 fw-bold">{{ number_format($metrics->shares_balance ?? 0, 0, ',', '.') }}</span>
@@ -36,11 +36,28 @@
                 <x-currency-value :value="$metrics->total_commission ?? 0" :currency="'USD'" class="fs-5" />
             </div>
             <div class="col">
-                <small class="text-muted d-block text-uppercase" style="font-size: 0.7rem;">Gesamt PnL</small>
+                <small class="text-muted d-block text-uppercase" style="font-size: 0.7rem;">Brutto PnL</small>
                 <x-currency-value :value="$metrics->total_pnl ?? 0" :currency="'USD'" class="fs-5" :colored="true" />
+            </div>
+            <div class="col">
+                <small class="text-muted d-block text-uppercase" style="font-size: 0.7rem;">Netto PnL</small>
+                <x-currency-value :value="$metrics->total_net_pnl ?? 0" :currency="'USD'" class="fs-5 fw-bold" :colored="true" />
             </div>
         </div>
     </div>
+
+    {{-- P&L-Verlauf --}}
+    @if(count($chartData) > 2)
+    <div class="card-body border-bottom py-2 px-3">
+        <div class="d-flex justify-content-between align-items-center mb-1">
+            <small class="fw-semibold text-muted text-uppercase" style="font-size: 0.7rem;">
+                <i class="bi bi-graph-up me-1 text-primary"></i>Kumulierter P&L-Verlauf – alle Kampagnen
+            </small>
+            <small class="text-muted" style="font-size: 0.7rem;">{{ count($chartData) - 1 }} Ereignistage</small>
+        </div>
+        <canvas id="globalPnlChart" style="height: 160px; max-height: 160px;"></canvas>
+    </div>
+    @endif
 
     {{-- Tabelle --}}
     <div class="table-responsive">
@@ -54,7 +71,8 @@
                     <th class="text-end" style="width: 110px;">Net Cash</th>
                     <th class="text-end" style="width: 100px;">Proceeds</th>
                     <th class="text-end" style="width: 100px;">Commission</th>
-                    <th class="text-end" style="width: 100px;">PnL</th>
+                    <th class="text-end" style="width: 95px;">Brutto PnL</th>
+                    <th class="text-end" style="width: 95px;">Netto PnL</th>
                     <th class="text-end" style="width: 90px;">
                         <i class="bi bi-stack" title="Laufender Aktienbestand"></i> Bestand
                     </th>
@@ -84,7 +102,7 @@
                     @if($dateKey !== $currentDateKey)
                         @php $currentDateKey = $dateKey; @endphp
                         <tr class="date-separator">
-                            <td colspan="9">
+                            <td colspan="10">
                                 <i class="bi bi-calendar3 me-1"></i>
                                 {{ $entryDt->locale('de')->isoFormat('dddd, D. MMMM YYYY') }}
                             </td>
@@ -121,6 +139,14 @@
                                 <span class="text-muted">—</span>
                             @endif
                         </td>
+                        <td class="text-end fw-bold">
+                            @php $netPnlGlobal = (float) $entry->realized_pnl + (float) $entry->commission; @endphp
+                            @if($netPnlGlobal != 0)
+                                <x-currency-value :value="$netPnlGlobal" :currency="$entry->currency" :colored="true" />
+                            @else
+                                <span class="text-muted">—</span>
+                            @endif
+                        </td>
                         <td class="text-end">
                             @if($isStk)
                                 <span class="fw-bold {{ $runningStockBalance != 0 ? 'text-dark' : 'text-muted' }}">
@@ -136,7 +162,7 @@
 
                 @empty
                     <tr>
-                        <td colspan="9" class="text-center text-muted py-5">
+                        <td colspan="10" class="text-center text-muted py-5">
                             Keine Buchungen für diesen Zeitraum.
                         </td>
                     </tr>
@@ -163,6 +189,10 @@
                             <td class="text-end">
                                 <x-currency-value :value="$ledgerEntries->sum('realized_pnl')" :currency="'USD'" :colored="true" />
                             </td>
+                            <td class="text-end fw-bold">
+                                @php $pageNetPnlGlobal = $ledgerEntries->sum('realized_pnl') + $ledgerEntries->sum('commission'); @endphp
+                                <x-currency-value :value="$pageNetPnlGlobal" :currency="'USD'" :colored="true" />
+                            </td>
                             <td></td>
                         </tr>
                     @endif
@@ -180,6 +210,9 @@
                         <td class="text-end">
                             <x-currency-value :value="$metrics->total_pnl ?? 0" :currency="'USD'" :colored="true" />
                         </td>
+                        <td class="text-end fw-bold">
+                            <x-currency-value :value="$metrics->total_net_pnl ?? 0" :currency="'USD'" :colored="true" />
+                        </td>
                         <td class="text-end">
                             <small class="fw-normal opacity-75">{{ $ledgerEntries->total() }} Buchungen</small>
                         </td>
@@ -194,6 +227,82 @@
             {{ $ledgerEntries->links('components.pagination') }}
         </div>
     @endif
+
+    @assets
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+    @endassets
+
+    @script
+    <script>
+        (function () {
+            let chart = null;
+
+            function buildChart() {
+                if (chart) { chart.destroy(); chart = null; }
+
+                const canvas = document.getElementById('globalPnlChart');
+                if (!canvas) return;
+
+                const raw = @json($chartData);
+                if (raw.length < 3) return;
+
+                const labels = raw.map(d => d.label);
+                const cumuls = raw.map(d => d.cumul);
+                const final  = cumuls[cumuls.length - 1];
+                const color  = final >= 0 ? '#198754' : '#dc3545';
+                const fill   = final >= 0 ? 'rgba(25,135,84,0.08)' : 'rgba(220,53,69,0.08)';
+
+                chart = new Chart(canvas, {
+                    type: 'line',
+                    data: {
+                        labels,
+                        datasets: [{
+                            label: 'Kumulativer P&L',
+                            data: cumuls,
+                            borderColor: color,
+                            backgroundColor: fill,
+                            fill: true,
+                            stepped: true,
+                            pointRadius: 3,
+                            pointHoverRadius: 5,
+                            borderWidth: 2,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: { mode: 'index', intersect: false },
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: ctx => {
+                                        const v = ctx.parsed.y;
+                                        return ` P&L: ${v >= 0 ? '+' : ''}${v.toFixed(2)} $`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: { ticks: { font: { size: 10 }, maxRotation: 45 } },
+                            y: {
+                                ticks: { font: { size: 10 }, callback: v => v.toFixed(0) + ' $' },
+                                grid: {
+                                    color: ctx => ctx.tick.value === 0
+                                        ? 'rgba(0,0,0,0.25)'
+                                        : 'rgba(0,0,0,0.05)'
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            buildChart();
+            document.addEventListener('livewire:update', buildChart);
+        })();
+    </script>
+    @endscript
 
     <style>
         tr.date-separator td {

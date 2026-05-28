@@ -1,7 +1,14 @@
 <div>
+    @php
+        $pageTitle = match($filterStrategyGroup) {
+            'verticals' => 'Vertical Spreads',
+            default     => 'Options Spreads',
+        };
+    @endphp
     <x-page-header
-        title="Options Spreads"
+        :title="$pageTitle"
         icon="bezier2">
+        @if($filterStrategy || $filterStrategyGroup)
         <x-slot:actions>
             <div class="btn-group btn-group-sm" role="group">
                 <button type="button"
@@ -16,6 +23,7 @@
                 </button>
             </div>
         </x-slot:actions>
+        @endif
     </x-page-header>
 
     <x-date-range-info :startDate="$this->startDate" :endDate="$this->endDate" />
@@ -33,7 +41,7 @@
             </div>
             <div class="col-md-3">
                 <x-stat-card
-                    title="Gesamtgewinn/-verlust"
+                    title="Brutto Gewinn/-verlust"
                     :value="number_format($statistics['total_profit'], 2, ',', '') . ' $'"
                     :color="$statistics['total_profit'] >= 0 ? 'success' : 'danger'"
                     icon="graph-up" />
@@ -47,7 +55,7 @@
             </div>
             <div class="col-md-3">
                 <x-stat-card
-                    title="Ø Profit / Spread"
+                    title="Ø Brutto / Spread"
                     :value="number_format($statistics['avg_profit'], 2, ',', '') . ' $'"
                     :color="$statistics['avg_profit'] >= 0 ? 'success' : 'danger'"
                     icon="calculator" />
@@ -127,11 +135,12 @@
                     @if($filterStatus === 'closed')
                         <th>Geschlossen</th>
                         <th class="text-end">Profit (SELL / BUY)</th>
+                        <th class="text-center">% of max</th>
                         <th class="text-end">Netto</th>
                         <th class="text-center">Ø Tage</th>
                     @else
                         <th class="text-end">Premium (SELL / BUY)</th>
-                        <th class="text-end">50% Ziel</th>
+                        <th class="text-end">Max P / 50% / Max L</th>
                         <th class="text-end">Netto</th>
                     @endif
                     <th></th>
@@ -149,16 +158,23 @@
                                 if ($spread->call_strikes) $parts[] = '<span class="text-success">C: ' . $spread->call_strikes . '</span>';
                             @endphp
                             <span class="font-monospace small">{!! implode('<br>', $parts) !!}</span>
+                            @if($filterStatus === 'closed' && $spread->spread_width && (!$spread->put_strikes || !$spread->call_strikes))
+                                <br><small class="text-muted">{{ (int)$spread->spread_width }}-wide</small>
+                            @endif
                         </td>
                         <td>
                             @if($spread->expiry)
                                 @php $expiry = \Carbon\Carbon::parse($spread->expiry); @endphp
                                 {{ $expiry->format('d.m.Y') }}
-                                <br>
-                                @if($expiry->isPast())
-                                    <small class="text-danger">abgelaufen</small>
-                                @else
-                                    <small class="text-muted">{{ $expiry->diffForHumans() }}</small>
+                                @if($filterStatus === 'open')
+                                    @php $dte = (int) now()->startOfDay()->diffInDays($expiry->startOfDay(), false); @endphp
+                                    @if($dte > 0)
+                                        <br><small class="text-muted"><strong>{{ $dte }}</strong> DTE</small>
+                                    @elseif($dte === 0)
+                                        <br><small class="text-warning fw-bold">0 DTE</small>
+                                    @else
+                                        <br><small class="text-danger">abgelaufen</small>
+                                    @endif
                                 @endif
                             @else
                                 <small class="text-muted">—</small>
@@ -178,6 +194,27 @@
                                     <span class="text-danger">{{ number_format($spread->profit_buy, 2, ',', '') }}</span>
                                 </small>
                             </td>
+                            <td class="text-center">
+                                @php
+                                    $pctOfMax = null;
+                                    if ($spread->net_credit_open > 0) {
+                                        // Credit Spread (Bull Put, Bear Call, Iron Condor)
+                                        $pctOfMax = round($spread->total_profit / $spread->net_credit_open * 100);
+                                    } elseif ($spread->net_credit_open < 0 && $spread->spread_width && $spread->multiplier) {
+                                        // Debit Spread (Bull Call, Bear Put)
+                                        $maxProfit = ($spread->spread_width * $spread->multiplier) + $spread->net_credit_open;
+                                        if ($maxProfit > 0) {
+                                            $pctOfMax = round($spread->total_profit / $maxProfit * 100);
+                                        }
+                                    }
+                                @endphp
+                                @if($pctOfMax !== null)
+                                    @php $badgeColor = $pctOfMax >= 50 ? 'success' : ($pctOfMax >= 0 ? 'warning' : 'danger'); @endphp
+                                    <span class="badge bg-{{ $badgeColor }}">{{ $pctOfMax }}%</span>
+                                @else
+                                    <small class="text-muted">—</small>
+                                @endif
+                            </td>
                             <td class="text-end">
                                 @php $netto = $spread->total_profit + $spread->total_commission; @endphp
                                 <x-currency-value :value="$netto" currency="USD" :colored="true" />
@@ -196,7 +233,26 @@
                                 </small>
                             </td>
                             <td class="text-end">
-                                @if($spread->total_premium > 0)
+                                @php
+                                    $isPure = !$spread->put_strikes || !$spread->call_strikes;
+                                    $maxProfit = null;
+                                    $maxLoss   = null;
+                                    if ($isPure && $spread->spread_width && $spread->multiplier) {
+                                        $width = $spread->spread_width * $spread->multiplier;
+                                        if ($spread->total_premium > 0) {
+                                            $maxProfit = $spread->total_premium;
+                                            $maxLoss   = $width - $spread->total_premium;
+                                        } elseif ($spread->total_premium < 0) {
+                                            $maxProfit = $width + $spread->total_premium;
+                                            $maxLoss   = abs($spread->total_premium);
+                                        }
+                                    }
+                                @endphp
+                                @if($maxProfit !== null && $maxProfit > 0)
+                                    <small class="text-success">Max {{ number_format($maxProfit, 0, ',', '') }} $</small>
+                                    <br><strong class="text-success">50% {{ number_format($maxProfit * 0.5, 0, ',', '') }} $</strong>
+                                    <br><small class="text-danger">Loss {{ number_format($maxLoss, 0, ',', '') }} $</small>
+                                @elseif($spread->total_premium > 0)
                                     <span class="text-success fw-bold">
                                         {{ number_format($spread->total_premium * 0.5, 2, ',', '') }} $
                                     </span>
@@ -218,7 +274,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="{{ $filterStatus === 'closed' ? 10 : 9 }}">
+                        <td colspan="{{ $filterStatus === 'closed' ? 11 : 9 }}">
                             <x-empty-state
                                 icon="bezier2"
                                 title="Keine Spreads gefunden"

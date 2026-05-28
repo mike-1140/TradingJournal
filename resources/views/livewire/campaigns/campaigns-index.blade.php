@@ -35,29 +35,54 @@
         />
     @else
         <div class="container-fluid py-4">
-            <div class="btn-group shadow-sm mb-4">
-                <button wire:click="setStatus('OPEN')"
-                        class="btn btn-{{ $filterStatus == 'OPEN' ? 'primary' : 'outline-primary' }}">
-                    Offen (Aktiv & Pending)
-                </button>
-                <button wire:click="setStatus('CLOSED')"
-                        class="btn btn-{{ $filterStatus == 'CLOSED' ? 'primary' : 'outline-primary' }}">
-                    Geschlossen
-                </button>
-                <button wire:click="setStatus('ALL')"
-                        class="btn btn-{{ $filterStatus == 'ALL' ? 'primary' : 'outline-primary' }}">
-                    Alle
-                </button>
+            <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+                <div class="btn-group shadow-sm">
+                    <button wire:click="setStatus('OPEN')"
+                            class="btn btn-{{ $filterStatus == 'OPEN' ? 'primary' : 'outline-primary' }}">
+                        Offen (Aktiv & Pending)
+                    </button>
+                    <button wire:click="setStatus('CLOSED')"
+                            class="btn btn-{{ $filterStatus == 'CLOSED' ? 'primary' : 'outline-primary' }}">
+                        Geschlossen
+                    </button>
+                    <button wire:click="setStatus('ALL')"
+                            class="btn btn-{{ $filterStatus == 'ALL' ? 'primary' : 'outline-primary' }}">
+                        Alle
+                    </button>
+                </div>
+                @if($summary && $summary->campaign_count > 0)
+                    <div class="d-flex align-items-center gap-3 bg-light rounded px-3 py-2">
+                        <span class="text-muted small">
+                            <i class="bi bi-collection me-1"></i>{{ $summary->campaign_count }} Kampagnen
+                        </span>
+                        <span class="text-muted small">Brutto PnL:</span>
+                        <x-currency-value :value="$summary->total_pnl ?? 0" :currency="'USD'" :colored="true" class="fw-bold" />
+                        <span class="text-muted small ms-2">Netto PnL:</span>
+                        <x-currency-value :value="$summary->total_net_pnl ?? 0" :currency="'USD'" :colored="true" class="fw-bold" />
+                    </div>
+                @endif
             </div>
 
             <div class="row">
                 @forelse($campaigns as $campaign)
                     <div class="col-md-4 mb-3">
-                        <a href="{{ route('campaigns.campaign.detail', $campaign->id) }}"
-                           class="text-decoration-none">
-                            <div class="card h-100 shadow-sm border-0 campaign-card">
+                            @php
+                                $borderColor = match($campaign->status) {
+                                    'ACTIVE'  => 'success',
+                                    'PENDING' => 'warning',
+                                    default   => 'secondary',
+                                };
+                            @endphp
+                            <div class="card h-100 shadow-sm border-0 campaign-card border-start border-4 border-{{ $borderColor }}"
+                                 onclick="window.location='{{ route('campaigns.campaign.detail', $campaign->id) }}'"
+                                 style="cursor: pointer;">
                                 <div class="card-header d-flex justify-content-between align-items-center">
-                                    <span class="badge bg-dark fs-6">{{ $campaign->symbol }}</span>
+                                    <a href="{{ route('symbols.detail', $campaign->symbol) }}"
+                                       class="badge bg-dark fs-6 text-decoration-none"
+                                       onclick="event.stopPropagation()"
+                                       title="Symbol-Übersicht öffnen">
+                                        {{ $campaign->symbol }}
+                                    </a>
                                     <small class="text-muted">{{ $campaign->start_date->format('d.M.Y') }}</small>
                                     @if($campaign->status === 'PENDING')
                                         <span class="badge rounded-pill bg-warning text-dark" style="font-size: 0.7rem;">
@@ -67,14 +92,22 @@
                                         <span class="badge rounded-pill bg-success" style="font-size: 0.7rem;">
                                             <i class="bi bi-activity"></i> Aktiv
                                         </span>
+                                    @elseif($campaign->status === 'CLOSED')
+                                        <span class="badge rounded-pill bg-secondary" style="font-size: 0.7rem;">
+                                            <i class="bi bi-check-circle"></i> Closed
+                                        </span>
                                     @endif
                                 </div>
                                 <div class="card-body">
                                     <h5 class="card-title text-dark">{{ $campaign->name }}</h5>
                                     <div class="row mt-3 g-2">
                                         <div class="col-6">
-                                            <label class="small text-muted d-block">PnL</label>
+                                            <label class="small text-muted d-block">Brutto PnL</label>
                                             <x-currency-value :value="$campaign->total_pnl" :currency="'USD'" :colored="true" />
+                                            @php $cardNetPnl = (float)($campaign->total_pnl ?? 0) + (float)($campaign->total_commission ?? 0); @endphp
+                                            <small class="d-block text-muted" style="font-size: 0.75rem;">
+                                                Netto: <x-currency-value :value="$cardNetPnl" :currency="'USD'" :colored="true" />
+                                            </small>
                                         </div>
                                         <div class="col-6 text-end">
                                             <label class="small text-muted d-block">Bestand</label>
@@ -97,7 +130,6 @@
                                     </div>
                                 @endif
                             </div>
-                        </a>
                     </div>
                 @empty
                     <div class="col-12 text-center py-5">

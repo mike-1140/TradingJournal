@@ -34,7 +34,7 @@
                         <th style="width: 20%;">Datum</th>
                         <th class="text-end">PnL</th>
                         <th class="text-end">Diff</th>
-                        <th class="text-center">Trades</th>
+                        <th class="text-center">Buchungen</th>
                         <th class="text-center">Win / Loss</th>
                         <th class="text-end">Ø Trade</th>
                         <th class="text-end">Kommission</th>
@@ -46,7 +46,7 @@
                         <th class="text-end">Proceeds</th>
                         <th class="text-end">Commissions</th>
                         <th class="text-end">Net Cash</th>
-                        <th class="text-center">Trades</th>
+                        <th class="text-center">Buchungen</th>
                     @endif
                 </tr>
             </thead>
@@ -78,6 +78,7 @@
                         </td>
                         <td class="text-end text-nowrap">
                             <x-currency-value :value="$p['metrics']->pnl" :colored="true" />
+                            <br><small class="text-muted" style="font-size: 0.7rem;">netto: <x-currency-value :value="$p['metrics']->net_pnl ?? 0" :colored="true" /></small>
                         </td>
                         <td class="text-end">
                             @if($p['pnl_diff'] !== null)
@@ -125,6 +126,7 @@
                         </td>
                         <td class="text-end text-nowrap">
                             <x-currency-value :value="$p['metrics']->pnl" :colored="true" />
+                            <br><small class="text-muted" style="font-size: 0.7rem;">netto: <x-currency-value :value="$p['metrics']->net_pnl ?? 0" :colored="true" /></small>
                             @if($p['pnl_diff'] != 0)
                                 <small class="{{ $p['pnl_diff'] > 0 ? 'text-success' : 'text-danger' }} ms-1">
                                     ({{ $p['pnl_diff'] > 0 ? '+' : '' }}{{ number_format($p['pnl_diff'], 2, ',', '.') }})
@@ -165,6 +167,7 @@
                     <td>GESAMT ({{ $totals['active_day_count'] }} aktive Tage)</td>
                     <td class="text-end">
                         <x-currency-value :value="$totals['pnl']" />
+                        <br><small style="font-size: 0.7rem; opacity: 0.8;">netto: <x-currency-value :value="$totals['net_pnl']" /></small>
                     </td>
                     <td></td>
                     <td class="text-center">{{ $totals['trade_count'] }}</td>
@@ -184,7 +187,7 @@
                     <td>GESAMT ({{ $limit }} {{ $this->getViewTypeLabel() }}e)</td>
                     <td class="text-end">
                         <x-currency-value :value="$totals['pnl']" />
-                        <span class="ms-1 d-inline-block" style="width: 0.7rem;"></span>
+                        <br><small style="font-size: 0.7rem; opacity: 0.8;">netto: <x-currency-value :value="$totals['net_pnl']" /></small>
                     </td>
                     <td class="text-end">
                         <span class="text-muted small">---</span>

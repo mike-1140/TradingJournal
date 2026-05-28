@@ -118,10 +118,11 @@
                     <th class="text-end">Preis</th>
                     <th class="text-end">Status</th>
                     <th class="text-end" wire:click="sortBy('profit')" style="cursor: pointer;">
-                        Premium
+                        Brutto P&L
                         @if($sortField === 'profit')
                             <i class="bi bi-arrow-{{ $sortDirection === 'asc' ? 'up' : 'down' }}"></i>
                         @endif
+                        <br><small class="text-muted fw-normal" style="font-size: 0.65rem;">/ Netto</small>
                     </th>
                     <th class="text-end">Kommission</th>
                     <th>Strategie</th>
@@ -162,7 +163,12 @@
                         <td class="text-center">{{ number_format($trade->daysHeld, 0) }}</td>
                         <td class="text-end">{{ number_format($trade->tradePriceOpen, 2, ',', '') }}</td>
                         <td class="text-end">{{ $trade->status }}</td>
-                        <td class="text-end"><x-currency-value :value="$trade->profit" currency="USD" :colored="true" /></td>
+                        <td class="text-end">
+                            <x-currency-value :value="$trade->profit" currency="USD" :colored="true" />
+                            <br><small class="text-muted" style="font-size: 0.75rem;">
+                                netto: <x-currency-value :value="$trade->profit + $trade->ibCommission" currency="USD" :colored="true" />
+                            </small>
+                        </td>
                         <td class="text-end"><x-currency-value :value="$trade->ibCommission" currency="USD" /></td>
                         <td>
                             @if($trade->strategy)

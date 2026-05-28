@@ -16,15 +16,17 @@ class SpreadsList extends Component
 
     public $search = '';
     public $filterStrategy = '';
-    public $filterStatus = 'closed'; // open, closed, all
+    public $filterStrategyGroup = ''; // 'verticals' → Bull Put / Bear Put / Bear Call / Bull Call
+    public $filterStatus = 'closed'; // open, closed
     public $sortField = 'latest_date';
     public $sortDirection = 'desc';
     public $perPage = 25;
 
     protected $queryString = [
-        'search' => ['except' => ''],
-        'filterStrategy' => ['except' => ''],
-        'filterStatus' => ['except' => 'closed'],
+        'search'               => ['except' => ''],
+        'filterStrategy'       => ['except' => ''],
+        'filterStrategyGroup'  => ['except' => ''],
+        'filterStatus'         => ['except' => 'closed'],
     ];
 
     protected $listeners = [
@@ -47,6 +49,7 @@ class SpreadsList extends Component
     {
         $this->search = '';
         $this->filterStrategy = '';
+        $this->filterStrategyGroup = '';
         $this->resetPage();
     }
 
@@ -61,6 +64,21 @@ class SpreadsList extends Component
             'strategies' => $strategies,
             'statistics' => $statistics,
         ]);
+    }
+
+    private function applyStrategyFilter($query)
+    {
+        if ($this->filterStrategyGroup === 'verticals') {
+            $verticals = ['Bull Put Spread', 'Bear Put Spread', 'Bear Call Spread', 'Bull Call Spread'];
+            if ($this->filterStrategy && in_array($this->filterStrategy, $verticals)) {
+                return $query->where('opt_strategyName', $this->filterStrategy);
+            }
+            return $query->whereIn('opt_strategyName', $verticals);
+        }
+        if ($this->filterStrategy) {
+            return $query->where('opt_strategyName', $this->filterStrategy);
+        }
+        return $query;
     }
 
     private function getSpreads()
@@ -80,9 +98,7 @@ class SpreadsList extends Component
             if ($this->search) {
                 $baseQuery->where('underlyingSymbol', 'like', '%' . $this->search . '%');
             }
-            if ($this->filterStrategy) {
-                $baseQuery->where('opt_strategyName', $this->filterStrategy);
-            }
+            $baseQuery = $this->applyStrategyFilter($baseQuery);
 
             $query = $baseQuery
                 ->select(
@@ -99,6 +115,8 @@ class SpreadsList extends Component
                     DB::raw("GROUP_CONCAT(CASE WHEN putCall = 'PUT' THEN ROUND(strike, 0) ELSE NULL END ORDER BY strike ASC SEPARATOR '/') as put_strikes"),
                     DB::raw("GROUP_CONCAT(CASE WHEN putCall = 'CALL' THEN ROUND(strike, 0) ELSE NULL END ORDER BY strike ASC SEPARATOR '/') as call_strikes"),
                     DB::raw('MIN(expiry) as expiry'),
+                    DB::raw('(MAX(strike) - MIN(strike)) as spread_width'),
+                    DB::raw('MIN(multiplier) as multiplier'),
                 )
                 ->groupBy('opt_strategyID', 'opt_strategyName', 'underlyingSymbol');
 
@@ -114,9 +132,7 @@ class SpreadsList extends Component
             if ($this->search) {
                 $baseQuery->where('underlyingSymbol', 'like', '%' . $this->search . '%');
             }
-            if ($this->filterStrategy) {
-                $baseQuery->where('opt_strategyName', $this->filterStrategy);
-            }
+            $baseQuery = $this->applyStrategyFilter($baseQuery);
 
             $query = $baseQuery
                 ->select(
@@ -134,6 +150,9 @@ class SpreadsList extends Component
                     DB::raw("GROUP_CONCAT(CASE WHEN putCall = 'P' THEN ROUND(strike, 0) ELSE NULL END ORDER BY strike ASC SEPARATOR '/') as put_strikes"),
                     DB::raw("GROUP_CONCAT(CASE WHEN putCall = 'C' THEN ROUND(strike, 0) ELSE NULL END ORDER BY strike ASC SEPARATOR '/') as call_strikes"),
                     DB::raw('MIN(expiry) as expiry'),
+                    DB::raw('(MAX(strike) - MIN(strike)) as spread_width'),
+                    DB::raw('SUM(netCashOpen) as net_credit_open'),
+                    DB::raw('MIN(multiplier) as multiplier'),
                 )
                 ->groupBy('opt_strategyID', 'opt_strategyName', 'underlyingSymbol');
         }
@@ -146,6 +165,10 @@ class SpreadsList extends Component
     private function getAvailableStrategies()
     {
         $connection = TradeClose::getConnectionForEnvironment($this->selectedEnvironment);
+
+        if ($this->filterStrategyGroup === 'verticals') {
+            return collect(['Bull Put Spread', 'Bear Put Spread', 'Bear Call Spread', 'Bull Call Spread'])->sort();
+        }
 
         if ($this->filterStatus === 'open') {
             return TradeOpen::on($connection)
@@ -175,12 +198,15 @@ class SpreadsList extends Component
                 ->where('environment', $this->selectedEnvironment)
                 ->whereNotNull('opt_strategyID')
                 ->where('opt_strategyID', '!=', '')
-                ->whereIn('assetCategory', ['OPT', 'FOP'])
-                ->select('opt_strategyID', DB::raw('SUM(profit) as spread_profit'))
-                ->groupBy('opt_strategyID');
+                ->whereIn('assetCategory', ['OPT', 'FOP']);
 
             $closedSpreadsQuery = $this->applyTimeFilter($closedSpreadsQuery, 'dateTimeClose');
-            $closedSpreads = $closedSpreadsQuery->get();
+            $closedSpreadsQuery = $this->applyStrategyFilter($closedSpreadsQuery);
+
+            $closedSpreads = $closedSpreadsQuery
+                ->select('opt_strategyID', DB::raw('SUM(profit) as spread_profit'))
+                ->groupBy('opt_strategyID')
+                ->get();
 
             $totalSpreads = $closedSpreads->count();
             $totalProfit = $closedSpreads->sum('spread_profit');
@@ -198,11 +224,14 @@ class SpreadsList extends Component
                 'avg_profit' => $avgProfit,
             ];
         } else {
-            $openSpreads = TradeOpen::on(TradeOpen::getConnectionForEnvironment($this->selectedEnvironment))
+            $openQuery = TradeOpen::on(TradeOpen::getConnectionForEnvironment($this->selectedEnvironment))
                 ->where('environment', $this->selectedEnvironment)
                 ->where('processed', 0)
                 ->whereNotNull('opt_strategyID')
-                ->whereIn('assetCategory', ['OPT', 'FOP'])
+                ->whereIn('assetCategory', ['OPT', 'FOP']);
+
+            $openQuery  = $this->applyStrategyFilter($openQuery);
+            $openSpreads = $openQuery
                 ->select('opt_strategyID', DB::raw('SUM(netCash) as spread_premium'))
                 ->groupBy('opt_strategyID')
                 ->get();

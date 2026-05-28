@@ -2,30 +2,23 @@
 
 namespace App\Livewire\Symbols;
 
-use App\Traits\UsesTradingDatabase;
-use Livewire\Component;
-use Livewire\WithPagination;
-use App\Models\Symbol;
-use App\Models\TradeOpen;
-use App\Models\TradeClose;
-use Illuminate\Support\Facades\DB;
-use App\Traits\ManagesEnvironment;
+use App\Models\Campaign;
+use App\Models\CampaignLedger;
 use App\Traits\FilterableByTime;
+use App\Traits\ManagesEnvironment;
+use Livewire\Component;
 
 class SymbolList extends Component
 {
-    use WithPagination, ManagesEnvironment, UsesTradingDatabase, FilterableByTime;
+    use ManagesEnvironment, FilterableByTime;
 
-    public $search = '';
-    public $sortField = 'symbol';
-    public $sortDirection = 'asc';
-    public $perPage = 25;
-    public $filterAssetCategory = '';
+    public string $search       = '';
+    public string $sortField    = 'symbol';
+    public string $sortDirection = 'asc';
 
     protected $queryString = [
-        'search' => ['except' => ''],
-        'selectedEnvironment' => ['except' => 'MONEY'],
-        'sortField' => ['except' => 'symbol'],
+        'search'        => ['except' => ''],
+        'sortField'     => ['except' => 'symbol'],
         'sortDirection' => ['except' => 'asc'],
     ];
 
@@ -40,110 +33,113 @@ class SymbolList extends Component
         $this->mountManagesEnvironment();
     }
 
-    public function changeEnvironment($environment)
-    {
-        $this->selectedEnvironment = $environment;
-        session(['trading_environment' => $environment]);
-
-        // Globales Event
-        $this->dispatch('environmentChanged', environment: $environment);
-
-        $this->resetPage();
-    }
-
     public function updatingSearch()
     {
-        $this->resetPage();
+        // kein resetPage mehr nötig — keine Pagination
     }
 
-    public function updatedSelectedEnvironment()
-    {
-        session(['trading_environment' => $this->selectedEnvironment]);
-        $this->resetPage();
-    }
-
-    public function sortBy($field)
+    public function sortBy(string $field): void
     {
         if ($this->sortField === $field) {
             $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
         } else {
-            $this->sortField = $field;
+            $this->sortField     = $field;
             $this->sortDirection = 'asc';
         }
     }
 
     public function render()
     {
-        // Symbole sollten in beiden Datenbanken existieren
-        // Wir verwenden die entsprechende Connection
-        $connection = Symbol::getConnectionForEnvironment($this->selectedEnvironment);
+        // Alle Kampagnen für dieses Environment (Query 1)
+        $campaigns = Campaign::where('environment', $this->selectedEnvironment)
+            ->when($this->search, fn($q) => $q->where('symbol', 'like', '%' . $this->search . '%'))
+            ->orderBy('symbol')
+            ->orderBy('start_date')
+            ->get();
 
-        $query = Symbol::on($connection)
-            ->where('environment', $this->selectedEnvironment);
-
-        // Suchfilter
-        if ($this->search) {
-            $query->where('symbol', 'like', '%' . $this->search . '%');
+        if ($campaigns->isEmpty()) {
+            return view('livewire.symbols.symbol-list', [
+                'symbols'       => collect(),
+                'totalSymbols'  => 0,
+                'activeSymbols' => 0,
+            ]);
         }
 
-        // Asset Category Filter
-        if ($this->filterAssetCategory) {
-            $query->where('assetCategory', $this->filterAssetCategory);
-        }
-
-        // Sortierung
-        $query->orderBy($this->sortField, $this->sortDirection);
-
-        $symbols = $query->paginate($this->perPage);
-
-        // Statistiken hinzufügen
-        foreach ($symbols as $symbol) {
-            $symbol->open_trades_count = TradeOpen::on($connection)
-                ->where('symID', $symbol->id)
-                ->where('environment', $this->selectedEnvironment)
-                ->count();
-
-            $closedTrades = $this->applyTimeFilter(
-                TradeClose::on($connection)
-                    ->where('symID', $symbol->id)
-                    ->where('environment', $this->selectedEnvironment),
-                'dateTimeClose'
-            )->get();
-
-            $symbol->closed_trades_count = $closedTrades->count();
-            $symbol->total_profit = $closedTrades->sum('profit');
-            $symbol->win_rate = $closedTrades->count() > 0
-                ? round(($closedTrades->where('profit', '>', 0)->count() / $closedTrades->count()) * 100, 1)
-                : 0;
-        }
-
-        // Gesamt-Statistiken
-        $totalSymbols = Symbol::on($connection)
+        // P&L pro Kampagne — eine Query für alle (Query 2)
+        $pnlByCampaign = CampaignLedger::whereIn('campaign_id', $campaigns->pluck('id')->toArray())
             ->where('environment', $this->selectedEnvironment)
-            ->count();
+            ->selectRaw('
+                campaign_id,
+                SUM(realized_pnl)              as total_pnl,
+                SUM(commission)                as total_commission,
+                SUM(realized_pnl + commission) as total_net_pnl
+            ')
+            ->groupBy('campaign_id')
+            ->get()
+            ->keyBy('campaign_id');
 
-        $activeSymbols = Symbol::on($connection)
-            ->where('environment', $this->selectedEnvironment)
-            ->whereExists(function ($query) use ($connection) {
-                $query->select(DB::raw(1))
-                    ->from('trades_open')
-                    ->whereColumn('trades_open.symID', 'symbols.id')
-                    ->where('trades_open.environment', $this->selectedEnvironment);
-            })
-            ->count();
+        // Pro Symbol aggregieren (PHP-seitig, kein weiterer DB-Roundtrip)
+        $symbols = $campaigns->groupBy('symbol')->map(function ($group, $symbol) use ($pnlByCampaign) {
+            $closedGroup = $group->where('status', 'CLOSED');
+            $totalPnl    = 0.0;
+            $totalComm   = 0.0;
+            $totalNetPnl = 0.0;
+            $winCount    = 0;
 
-        // Asset Categories für Filter
-        $assetCategories = Symbol::on($connection)
-            ->where('environment', $this->selectedEnvironment)
-            ->distinct()
-            ->pluck('assetCategory')
-            ->filter();
+            foreach ($group as $campaign) {
+                $pnl = $pnlByCampaign->get($campaign->id);
+                if ($pnl) {
+                    $totalPnl    += (float) $pnl->total_pnl;
+                    $totalComm   += (float) $pnl->total_commission;
+                    $totalNetPnl += (float) $pnl->total_net_pnl;
+                }
+            }
+
+            foreach ($closedGroup as $campaign) {
+                $pnl = $pnlByCampaign->get($campaign->id);
+                if ($pnl && (float) $pnl->total_net_pnl > 0) {
+                    $winCount++;
+                }
+            }
+
+            $closedCount = $closedGroup->count();
+
+            return (object) [
+                'symbol'          => $symbol,
+                'campaign_count'  => $group->count(),
+                'open_count'      => $group->whereIn('status', ['ACTIVE', 'PENDING'])->count(),
+                'closed_count'    => $closedCount,
+                'total_pnl'       => $totalPnl,
+                'total_commission' => $totalComm,
+                'total_net_pnl'   => $totalNetPnl,
+                'win_rate'        => $closedCount > 0 ? round($winCount / $closedCount * 100, 1) : null,
+                'win_count'       => $winCount,
+                'last_activity'   => $group->max('end_date'),
+                'first_activity'  => $group->min('start_date'),
+                'latest_status'   => $group->sortByDesc('start_date')->first()->status,
+            ];
+        })->values();
+
+        // Sortierung anwenden
+        $symbols = match($this->sortField) {
+            'total_net_pnl'  => $this->sortDirection === 'asc'
+                ? $symbols->sortBy('total_net_pnl')
+                : $symbols->sortByDesc('total_net_pnl'),
+            'last_activity'  => $this->sortDirection === 'asc'
+                ? $symbols->sortBy('last_activity')
+                : $symbols->sortByDesc('last_activity'),
+            'campaign_count' => $this->sortDirection === 'asc'
+                ? $symbols->sortBy('campaign_count')
+                : $symbols->sortByDesc('campaign_count'),
+            default          => $this->sortDirection === 'asc'
+                ? $symbols->sortBy('symbol')
+                : $symbols->sortByDesc('symbol'),
+        };
 
         return view('livewire.symbols.symbol-list', [
-            'symbols' => $symbols,
-            'totalSymbols' => $totalSymbols,
-            'activeSymbols' => $activeSymbols,
-            'assetCategories' => $assetCategories,
+            'symbols'       => $symbols->values(),
+            'totalSymbols'  => $symbols->count(),
+            'activeSymbols' => $symbols->where('open_count', '>', 0)->count(),
         ]);
     }
 }

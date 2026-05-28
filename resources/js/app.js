@@ -3,6 +3,10 @@ import './bootstrap';
 // Bootstrap JS importieren
 import * as bootstrap from 'bootstrap';
 
+// ApexCharts global verfügbar machen (für Alpine.js x-data)
+import ApexCharts from 'apexcharts';
+window.ApexCharts = ApexCharts;
+
 // Bootstrap global verfügbar machen
 window.bootstrap = bootstrap;
 

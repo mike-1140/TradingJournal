@@ -91,10 +91,11 @@
                     <th rowspan="2" class="text-end">Buy/Sell</th>
                     <th colspan="2" class="text-end">NetCash</th>
                     <th  rowspan="2" class="text-end" wire:click="sortBy('profit')" style="cursor: pointer;">
-                        PnL
+                        Brutto PnL
                         @if($sortField === 'profit')
                             <i class="bi bi-arrow-{{ $sortDirection === 'asc' ? 'up' : 'down' }}"></i>
                         @endif
+                        <br><small class="text-muted fw-normal" style="font-size: 0.65rem;">/ Netto</small>
                     </th>
                     <th rowspan="2" class="text-end" wire:click="sortBy('ROI')" style="cursor: pointer;">
                         ROI
@@ -140,7 +141,12 @@
                         </td>
                         <td class="text-end">{{ number_format($trade->netCashOpen, 2, ',', '') }}</td>
                         <td class="text-end">{{ number_format($trade->netCashClose, 2, ',', '') }}</td>
-                        <td class="text-end"><x-currency-value :value="$trade->profit" :currency="$trade->currency" :colored="true" /></td>
+                        <td class="text-end">
+                            <x-currency-value :value="$trade->profit" :currency="$trade->currency" :colored="true" />
+                            <br><small class="text-muted" style="font-size: 0.75rem;">
+                                netto: <x-currency-value :value="$trade->profit + $trade->ibCommission" :currency="$trade->currency" :colored="true" />
+                            </small>
+                        </td>
                         <td class="text-end">{{ number_format($trade->ROI, 2, ',', '') }}</td>
 
                         <td class="text-end">{{ number_format($trade->tradePriceOpen, 2, ',', '') }}</td>

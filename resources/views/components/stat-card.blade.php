@@ -52,9 +52,9 @@
                 box-shadow: 0 4px 12px rgba(0,0,0,0.1);
             }
             .stat-value {
-                font-size: 1.75rem;
-                font-weight: 700;
-                line-height: 1.2;
+                font-size: 1.5rem;
+                font-weight: 600;
+                line-height: 1.1;
             }
             .stat-icon {
                 width: 3rem;

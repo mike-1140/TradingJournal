@@ -6,6 +6,7 @@ use App\Services\UserSwitchService;
 use App\Traits\UsesTradingDatabase;
 use Illuminate\Support\Facades\Log;
 use Livewire\Component;
+use App\Models\AccountSnapshot;
 use App\Models\Campaign;
 use App\Models\TradeOpen;
 use App\Models\TradeClose;
@@ -34,11 +35,25 @@ class Dashboard extends Component
 
     // KPI-Boxen: fixe Perioden
     public $monthProfit;
+    public $monthNetProfit;
     public $prevMonthProfit;
     public $ytdProfit;
+    public $ytdNetProfit;
+    public $periodNetProfit;
+    public $avgNetProfitPerTrade;
     public $activeCampaignsCount;
     public $capitalAtRisk;
     public $avgProfitPerTrade;
+
+    // NAV Snapshot KPIs
+    public $navCurrent       = null;
+    public $navChange        = null;
+    public $navTwrr          = null;
+    public $navDate          = null;
+    public $navCashEur       = null;
+    public $navCashUsd       = null;
+    public $navRealizedPnl   = null;
+    public $navUnrealizedPnl = null;
     protected $listeners = [
         'time-range-changed' => 'onTimeRangeChanged',
     ];
@@ -133,6 +148,10 @@ class Dashboard extends Component
                 ->where('environment', $this->selectedEnvironment)
                 ->whereBetween('dateTimeClose', [$monthStart, $monthEnd])
                 ->sum('profit');
+            $this->monthNetProfit = (float) TradeClose::on($connection)
+                ->where('environment', $this->selectedEnvironment)
+                ->whereBetween('dateTimeClose', [$monthStart, $monthEnd])
+                ->selectRaw('SUM(profit + ibCommission) as v')->value('v');
 
             // P&L Vormonat (für Trend-Pfeil)
             $prevMonthStart = Carbon::now()->subMonth()->startOfMonth();
@@ -147,6 +166,10 @@ class Dashboard extends Component
                 ->where('environment', $this->selectedEnvironment)
                 ->where('dateTimeClose', '>=', Carbon::now()->startOfYear())
                 ->sum('profit');
+            $this->ytdNetProfit = (float) TradeClose::on($connection)
+                ->where('environment', $this->selectedEnvironment)
+                ->where('dateTimeClose', '>=', Carbon::now()->startOfYear())
+                ->selectRaw('SUM(profit + ibCommission) as v')->value('v');
 
             // Aktive Kampagnen + gebundenes Kapital
             $this->activeCampaignsCount = Campaign::on($connection)
@@ -164,6 +187,10 @@ class Dashboard extends Component
             $this->avgProfitPerTrade = $this->closedTradesCount > 0
                 ? round($this->totalProfit / $this->closedTradesCount, 2)
                 : 0;
+            $this->periodNetProfit = $this->totalProfit + $this->totalCommissions;
+            $this->avgNetProfitPerTrade = $this->closedTradesCount > 0
+                ? round($this->periodNetProfit / $this->closedTradesCount, 2)
+                : 0;
 
             // Spreads Statistiken - NUR die Zahlen, NICHT die Collection!
             $spreadsData = TradeClose::on($connection)
@@ -177,6 +204,21 @@ class Dashboard extends Component
 
             $this->spreadsCount = $spreadsData->count();
             $this->spreadsProfit = $spreadsData->sum('spread_profit');
+
+            // Letzter Account-Snapshot für NAV-KPIs
+            $snap = AccountSnapshot::on($connection)
+                ->where('environment', $this->selectedEnvironment)
+                ->orderBy('snapshot_date', 'desc')
+                ->first();
+
+            $this->navCurrent       = $snap ? (float) $snap->nav_current      : null;
+            $this->navChange        = $snap ? (float) $snap->nav_change       : null;
+            $this->navTwrr          = $snap ? (float) $snap->twrr             : null;
+            $this->navDate          = $snap ? $snap->snapshot_date->format('d.m.Y') : null;
+            $this->navCashEur       = $snap ? (float) $snap->cash_eur         : null;
+            $this->navCashUsd       = $snap ? (float) $snap->cash_usd         : null;
+            $this->navRealizedPnl   = $snap ? (float) $snap->realized_pnl_eur : null;
+            $this->navUnrealizedPnl = $snap ? (float) $snap->unrealized_pnl_eur : null;
 
 //            flow_log('All statistics loaded successfully', [
 //                'openTrades' => $this->openTradesCount,
@@ -258,6 +300,15 @@ class Dashboard extends Component
         $chartStrategyValues = $strategyRows->pluck('profit')->map(fn($v) => round(abs((float) $v), 2))->toArray();
         $chartStrategyActual = $strategyRows->pluck('profit')->map(fn($v) => (float) $v)->toArray();
 
+        // NAV-Kurve: alle Snapshots chronologisch
+        $chartNav = AccountSnapshot::on($connection)
+            ->where('environment', $this->selectedEnvironment)
+            ->orderBy('snapshot_date')
+            ->get(['snapshot_date', 'nav_current'])
+            ->map(fn($r) => ['x' => $r->snapshot_date->format('d.m.Y'), 'y' => round((float) $r->nav_current, 2)])
+            ->values()
+            ->toArray();
+
         // Chart-Update an Alpine-Komponenten senden (für Environment-/Zeitraum-Wechsel)
         $this->dispatch('charts-data',
             cumulative:      $chartCumulative,
@@ -265,6 +316,7 @@ class Dashboard extends Component
             strategyLabels:  $chartStrategyLabels,
             strategyValues:  $chartStrategyValues,
             strategyActual:  $chartStrategyActual,
+            nav:             $chartNav,
         );
 
         // Trend P&L Monat vs. Vormonat
@@ -294,6 +346,7 @@ class Dashboard extends Component
             'chartStrategyLabels' => $chartStrategyLabels,
             'chartStrategyValues' => $chartStrategyValues,
             'chartStrategyActual' => $chartStrategyActual,
+            'chartNav'            => $chartNav,
         ]);
     }
 }

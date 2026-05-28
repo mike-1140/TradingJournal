@@ -6,6 +6,7 @@
     <title>{{ $title ?? 'TradingJournal' }}</title>
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @stack('styles')
     @livewireStyles
 </head>
 <body>

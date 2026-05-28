@@ -75,6 +75,7 @@ class StatsDashboard extends Component
         $periods = [];
         $totalSum = [
             'pnl'              => 0,
+            'net_pnl'          => 0,
             'proceeds'         => 0,
             'commission'       => 0,
             'turnover'         => 0,
@@ -110,6 +111,7 @@ class StatsDashboard extends Component
 
             if (!$isInactive) {
                 $totalSum['pnl']              += $current['metrics']->pnl;
+                $totalSum['net_pnl']          += $current['metrics']->net_pnl ?? 0;
                 $totalSum['proceeds']         += $current['metrics']->proceeds;
                 $totalSum['commission']       += $current['metrics']->commission;
                 $totalSum['turnover']         += $current['metrics']->turnover;
@@ -167,6 +169,7 @@ class StatsDashboard extends Component
             ->whereBetween('dateTime', [$start, $end])
             ->selectRaw('
                 SUM(realized_pnl) as pnl,
+                SUM(realized_pnl + commission) as net_pnl,
                 SUM(proceeds) as proceeds,
                 SUM(commission) as commission,
                 SUM(netcash) as turnover,

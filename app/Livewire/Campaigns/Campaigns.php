@@ -50,46 +50,48 @@ class Campaigns extends Component
     {
         $query = Campaign::query()
             ->where('environment', $this->selectedEnvironment);
-        $query = $this->applyTimeFilter($query, 'end_date');
 
-        // NEU: Logik für Active, Pending und Closed zusammenführen
+        // Status-Filter
         if ($this->filterStatus === 'OPEN') {
-            // Zeigt beides: Active und Pending
             $query->whereIn('status', ['ACTIVE', 'PENDING']);
         } elseif ($this->filterStatus === 'CLOSED') {
             $query->where('status', 'CLOSED');
-        } elseif ($this->filterStatus !== 'ALL' && !empty($this->filterStatus)) {
-            // Falls du doch mal einzeln filterst (z.B. über URL-Parameter)
-            $query->where('status', $this->filterStatus);
         }
 
-        // NEU: Wir laden das Summen-Feld "total_pnl" für jede Karte direkt mit
-        // Wir filtern auch hier nach dem environment, damit die Summe stimmt
-        $query->withSum(['ledgerEntries as total_pnl' => function($q) {
-            $q->where('environment', $this->selectedEnvironment);
-        }], 'realized_pnl')
-            ->withSum(['ledgerEntries as shares_balance' => function($q) {
-            $q->where('environment', $this->selectedEnvironment);
-        }], 'inventory_delta')
-            ->withSum(['ledgerEntries as total_proceeds' => function($q) {
-            $q->where('environment', $this->selectedEnvironment);
-        }], 'proceeds')
-            ->withSum(['ledgerEntries as total_commission' => function($q) {
-            $q->where('environment', $this->selectedEnvironment);
-        }], 'commission');
+        // Zeitfilter: OPEN-Kampagnen haben kein end_date — würden sonst herausgefiltert
+        // CLOSED → end_date, ALL → start_date, OPEN → kein Filter
+        if ($this->filterStatus === 'CLOSED') {
+            $query = $this->applyTimeFilter($query, 'end_date');
+        } elseif ($this->filterStatus === 'ALL') {
+            $query = $this->applyTimeFilter($query, 'start_date');
+        }
 
-        // In Campaigns.php render()
+        $env = $this->selectedEnvironment;
+
+        // Aggregat-PnL über alle gefilterten Kampagnen (alle Seiten)
+        $allIds  = (clone $query)->pluck('id');
+        $summary = \App\Models\CampaignLedger::whereIn('campaign_id', $allIds)
+            ->where('environment', $env)
+            ->selectRaw('SUM(realized_pnl) as total_pnl, SUM(realized_pnl + commission) as total_net_pnl, COUNT(DISTINCT campaign_id) as campaign_count')
+            ->first();
+
+        $query
+            ->withSum(['ledgerEntries as total_pnl' => fn($q) => $q->where('environment', $env)], 'realized_pnl')
+            ->withSum(['ledgerEntries as shares_balance' => fn($q) => $q->where('environment', $env)->where('assetCategory', 'STK')], 'inventory_delta')
+            ->withSum(['ledgerEntries as total_proceeds' => fn($q) => $q->where('environment', $env)], 'proceeds')
+            ->withSum(['ledgerEntries as total_commission' => fn($q) => $q->where('environment', $env)], 'commission');
+
         $globalView = !empty($this->search) && strlen($this->search) >= 2;
 
-        // Sortierung und Pagination für Kampagnen
         $campaigns = $query->orderBy('symbol', 'asc')
             ->orderBy('start_date', 'desc')
             ->paginate($this->perPage);
 
         return view('livewire.campaigns.campaigns-index', [
-            'campaigns' => $campaigns,
+            'campaigns'  => $campaigns,
             'globalView' => $globalView,
-            'searchTerm' => strtoupper($this->search)
+            'searchTerm' => strtoupper($this->search),
+            'summary'    => $summary,
         ]);
     }
 }

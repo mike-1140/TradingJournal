@@ -18,7 +18,7 @@
             <span class="badge fs-6 bg-{{ $campaign->status === 'ACTIVE' ? 'success' : ($campaign->status === 'PENDING' ? 'warning text-dark' : 'secondary') }}">
                 {{ $campaign->status }}
             </span>
-            <a href="{{ route('campaigns.campaigns') }}" class="btn btn-outline-secondary btn-sm">
+            <a href="{{ $backUrl }}" class="btn btn-outline-secondary btn-sm">
                 <i class="bi bi-arrow-left"></i> Zurück
             </a>
         </div>
@@ -27,7 +27,7 @@
     {{-- Metriken --}}
     <div class="card mb-4 border-start border-primary border-4 border-top-0 border-end-0 border-bottom-0">
         <div class="card-body bg-light">
-            <div class="row g-3 text-center row-cols-2 row-cols-md-5">
+            <div class="row g-3 text-center row-cols-2 row-cols-md-6">
                 <div class="col">
                     <small class="text-muted d-block text-uppercase" style="font-size: 0.7rem;">Aktien-Bestand</small>
                     <span class="fs-5 fw-bold">{{ number_format($metrics->shares_balance ?? 0, 0, ',', '.') }}</span>
@@ -45,8 +45,12 @@
                     <x-currency-value :value="$metrics->total_commission ?? 0" :currency="'USD'" class="fs-5" />
                 </div>
                 <div class="col">
-                    <small class="text-muted d-block text-uppercase" style="font-size: 0.7rem;">Gesamt PnL</small>
+                    <small class="text-muted d-block text-uppercase" style="font-size: 0.7rem;">Brutto PnL</small>
                     <x-currency-value :value="$metrics->total_pnl ?? 0" :currency="'USD'" class="fs-5" :colored="true" />
+                </div>
+                <div class="col">
+                    <small class="text-muted d-block text-uppercase" style="font-size: 0.7rem;">Netto PnL</small>
+                    <x-currency-value :value="$metrics->total_net_pnl ?? 0" :currency="'USD'" class="fs-5 fw-bold" :colored="true" />
                 </div>
             </div>
         </div>
@@ -79,7 +83,8 @@
                         <th class="text-center">Buchungen</th>
                         <th class="text-end">Cashflow</th>
                         <th class="text-end">Commission</th>
-                        <th class="text-end">PnL</th>
+                        <th class="text-end">Brutto PnL</th>
+                        <th class="text-end">Netto PnL</th>
                         <th>Ereignisse</th>
                     </tr>
                 </thead>
@@ -99,6 +104,13 @@
                         <td class="text-end">
                             @if($day['pnl'] != 0)
                                 <x-currency-value :value="$day['pnl']" :currency="'USD'" :colored="true" />
+                            @else
+                                <span class="text-muted">—</span>
+                            @endif
+                        </td>
+                        <td class="text-end fw-bold">
+                            @if($day['net_pnl'] != 0)
+                                <x-currency-value :value="$day['net_pnl']" :currency="'USD'" :colored="true" />
                             @else
                                 <span class="text-muted">—</span>
                             @endif
@@ -140,7 +152,8 @@
                         <th class="text-end" style="width: 80px;">Δ Menge</th>
                         <th class="text-end" style="width: 110px;">Cashflow</th>
                         <th class="text-end" style="width: 100px;">Commission</th>
-                        <th class="text-end" style="width: 100px;">PnL</th>
+                        <th class="text-end" style="width: 95px;">Brutto PnL</th>
+                        <th class="text-end" style="width: 95px;">Netto PnL</th>
                         <th class="text-end" style="width: 90px;">
                             <i class="bi bi-stack" title="Laufender Aktienbestand"></i> Bestand
                         </th>
@@ -191,7 +204,7 @@
                         @if($dateKey !== $currentDateKey)
                             @php $currentDateKey = $dateKey; @endphp
                             <tr class="date-separator">
-                                <td colspan="8">
+                                <td colspan="9">
                                     <i class="bi bi-calendar3 me-1"></i>
                                     {{ $entryDt->locale('de')->isoFormat('dddd, D. MMMM YYYY') }}
                                 </td>
@@ -233,6 +246,14 @@
                                     <span class="text-muted">—</span>
                                 @endif
                             </td>
+                            <td class="text-end fw-bold">
+                                @php $netPnlEntry = (float) $entry->realized_pnl + (float) $entry->commission; @endphp
+                                @if($netPnlEntry != 0)
+                                    <x-currency-value :value="$netPnlEntry" :currency="$entry->currency" :colored="true" />
+                                @else
+                                    <span class="text-muted">—</span>
+                                @endif
+                            </td>
                             <td class="text-end">
                                 @if($isStk)
                                     <span class="fw-bold {{ $runningStockBalance != 0 ? 'text-dark' : 'text-muted' }}">
@@ -248,7 +269,7 @@
 
                     @empty
                         <tr>
-                            <td colspan="8" class="text-center text-muted py-5">
+                            <td colspan="9" class="text-center text-muted py-5">
                                 Keine Buchungen für diesen Zeitraum.
                             </td>
                         </tr>
@@ -278,6 +299,10 @@
                                 <td class="text-end">
                                     <x-currency-value :value="$ledgerEntries->sum('realized_pnl')" :currency="'USD'" :colored="true" />
                                 </td>
+                                <td class="text-end fw-bold">
+                                    @php $pageNetPnl = $ledgerEntries->sum('realized_pnl') + $ledgerEntries->sum('commission'); @endphp
+                                    <x-currency-value :value="$pageNetPnl" :currency="'USD'" :colored="true" />
+                                </td>
                                 <td></td>
                             </tr>
                         @endif
@@ -292,6 +317,9 @@
                             </td>
                             <td class="text-end">
                                 <x-currency-value :value="$metrics->total_pnl ?? 0" :currency="'USD'" :colored="true" />
+                            </td>
+                            <td class="text-end fw-bold">
+                                <x-currency-value :value="$metrics->total_net_pnl ?? 0" :currency="'USD'" :colored="true" />
                             </td>
                             <td class="text-end">
                                 <small class="fw-normal opacity-75">{{ $ledgerEntries->total() }} Buchungen</small>

@@ -129,7 +129,7 @@
             <div class="sidebar-divider"></div>
 
             {{-- Analyse --}}
-            @php $analyseOpen = request()->routeIs('symbols') || request()->routeIs('tags.*') || request()->routeIs('stats.*') || request()->routeIs('trades.raw*'); @endphp
+            @php $analyseOpen = request()->routeIs('symbols') || request()->routeIs('symbols.detail') || request()->routeIs('tags.*') || request()->routeIs('stats.*') || request()->routeIs('trades.raw*'); @endphp
             <a class="sidebar-link sidebar-toggle-btn {{ $analyseOpen ? 'active' : '' }}"
                data-bs-toggle="collapse" href="#nav-analyse"
                aria-expanded="{{ $analyseOpen ? 'true' : 'false' }}">
@@ -140,7 +140,7 @@
             <div id="nav-analyse" class="collapse {{ $analyseOpen ? 'show' : '' }}">
                 <div class="sidebar-subnav">
                     <a href="{{ route('symbols') }}"
-                       class="sidebar-link {{ request()->routeIs('symbols') ? 'active' : '' }}">
+                       class="sidebar-link {{ request()->routeIs('symbols') || request()->routeIs('symbols.detail') ? 'active' : '' }}">
                         <i class="bi bi-tag"></i>
                         <span class="sidebar-text">Symbole</span>
                     </a>

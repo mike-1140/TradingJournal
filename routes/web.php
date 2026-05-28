@@ -20,6 +20,7 @@ use App\Livewire\Trades\OpenTradeDetail;
 use App\Livewire\Trades\ClosedOptionsDetail;
 use App\Livewire\Trades\RawTradeDetail;
 use App\Livewire\Symbols\SymbolList;
+use App\Livewire\Symbols\SymbolDetail;
 use App\Livewire\Trades\FxTrades;
 use App\Livewire\Spreads\SpreadsList;
 use App\Livewire\Spreads\SpreadDetail;
@@ -51,6 +52,7 @@ Route::get('/trades/raw/{id}', RawTradeDetail::class)->name('trades.raw.detail')
 
 // Symbols
 Route::get('/symbols', SymbolList::class)->name('symbols');
+Route::get('/symbols/{symbol}', SymbolDetail::class)->name('symbols.detail');
 
 // FX Trades
 //Route::get('/trades/fx', xFxTrades::class)->name('trades.fx');
