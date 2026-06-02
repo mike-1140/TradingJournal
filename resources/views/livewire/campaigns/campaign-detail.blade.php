@@ -137,8 +137,8 @@
             <h5 class="mb-0">
                 <i class="bi bi-clock-history me-2"></i>Transaktions-Historie
             </h5>
-            @if($ledgerEntries)
-                <span class="badge bg-secondary">{{ $ledgerEntries->total() }} Buchungen</span>
+            @if($totalEntries > 0)
+                <span class="badge bg-secondary">{{ $totalEntries }} Buchungen</span>
             @endif
         </div>
 
@@ -162,150 +162,170 @@
                 <tbody>
 
                     @php
-                        $currentDateKey      = null;
-                        $runningStockBalance = $startingStockBalance;
+                        $runningStockBalance = 0; // wird pro Tag aus $dayStartBalances gesetzt
 
                         // linkID-Farbzuweisung: mehrfach vorkommende linkIDs bekommen eine Farbe
                         $linkIdColors  = [];
                         $colorPalette  = ['#6f42c1', '#fd7e14', '#20c997', '#e83e8c', '#17a2b8'];
                         $colorIdx      = 0;
-                        foreach ($ledgerEntries->getCollection()->groupBy('linkID') as $lid => $group) {
+                        foreach ($ledgerEntries->groupBy('linkID') as $lid => $group) {
                             if ($lid && $group->count() > 1) {
                                 $linkIdColors[$lid] = $colorPalette[$colorIdx % count($colorPalette)];
                                 $colorIdx++;
                             }
                         }
+
+                        $groupedEntries = $ledgerEntries->groupBy(
+                            fn($e) => \Carbon\Carbon::parse($e->dateTime)->format('Y-m-d')
+                        );
                     @endphp
 
-                    @forelse($ledgerEntries as $entry)
-                        @php
-                            $entryDt   = \Carbon\Carbon::parse($entry->dateTime);
-                            $dateKey   = $entryDt->format('Y-m-d');
-                            $isStk     = $entry->assetCategory === 'STK';
-
-                            if ($isStk) {
-                                $runningStockBalance += (float) $entry->inventory_delta;
-                            }
-
-                            $linkColor  = ($entry->linkID && isset($linkIdColors[$entry->linkID]))
-                                            ? $linkIdColors[$entry->linkID]
-                                            : null;
-                            $narrative  = $this->buildNarrative($entry);
-                            $deltaPos   = (float) $entry->inventory_delta > 0;
-                            $deltaNeg   = (float) $entry->inventory_delta < 0;
-
-                            // Effektiver Cashflow: bei CASH_SETTLEMENT proceeds nehmen, sonst netcash
-                            $effectiveCashflow = $entry->action === 'CASH_SETTLEMENT'
-                                ? $entry->proceeds
-                                : $entry->netcash;
-                        @endphp
-
-                        {{-- Tages-Trennzeile --}}
-                        @if($dateKey !== $currentDateKey)
-                            @php $currentDateKey = $dateKey; @endphp
-                            <tr class="date-separator">
-                                <td colspan="9">
-                                    <i class="bi bi-calendar3 me-1"></i>
-                                    {{ $entryDt->locale('de')->isoFormat('dddd, D. MMMM YYYY') }}
-                                </td>
-                            </tr>
-                        @endif
-
-                        {{-- Buchungszeile --}}
-                        <tr class="ledger-row {{ $deltaPos ? 'row-buy' : ($deltaNeg ? 'row-sell' : '') }}"
-                            style="border-left: 3px solid {{ $linkColor ?? 'transparent' }};">
-                            <td class="text-muted text-nowrap" style="font-size: 0.75rem;">
-                                {{ $entryDt->format('H:i') }}
-                                @if($linkColor)
-                                    <span class="link-dot" style="background: {{ $linkColor }};"></span>
-                                @endif
-                            </td>
-                            <td>
-                                <span class="badge {{ $this->getActionBadgeClass($entry->action) }}"
-                                      style="font-size: 0.7rem;">
-                                    {{ $entry->action }}
-                                </span>
-                            </td>
-                            <td class="narrative-text">{{ $narrative }}</td>
-                            <td class="text-end fw-bold {{ $deltaPos ? 'text-primary' : ($deltaNeg ? 'text-warning' : 'text-muted') }}">
-                                {{ $deltaPos ? '+' : '' }}{{ number_format((float) $entry->inventory_delta, 0, ',', '.') }}
-                            </td>
-                            <td class="text-end">
-                                <x-currency-value :value="$effectiveCashflow" :currency="$entry->currency" />
-                                @if($entry->action === 'CASH_SETTLEMENT')
-                                    <br><small class="text-muted" style="font-size: 0.7rem;">Settlement</small>
-                                @endif
-                            </td>
-                            <td class="text-end">
-                                <x-currency-value :value="$entry->commission" :currency="$entry->currency" />
-                            </td>
-                            <td class="text-end fw-bold">
-                                @if((float) $entry->realized_pnl != 0)
-                                    <x-currency-value :value="$entry->realized_pnl" :currency="$entry->currency" :colored="true" />
-                                @else
-                                    <span class="text-muted">—</span>
-                                @endif
-                            </td>
-                            <td class="text-end fw-bold">
-                                @php $netPnlEntry = (float) $entry->realized_pnl + (float) $entry->commission; @endphp
-                                @if($netPnlEntry != 0)
-                                    <x-currency-value :value="$netPnlEntry" :currency="$entry->currency" :colored="true" />
-                                @else
-                                    <span class="text-muted">—</span>
-                                @endif
-                            </td>
-                            <td class="text-end">
-                                @if($isStk)
-                                    <span class="fw-bold {{ $runningStockBalance != 0 ? 'text-dark' : 'text-muted' }}">
-                                        {{ number_format($runningStockBalance, 0, ',', '.') }}
-                                    </span>
-                                @else
-                                    <span class="text-muted" style="font-size: 0.78rem;">
-                                        {{ number_format($runningStockBalance, 0, ',', '.') }}
-                                    </span>
-                                @endif
-                            </td>
-                        </tr>
-
-                    @empty
+                    @if($groupedEntries->isEmpty())
                         <tr>
                             <td colspan="9" class="text-center text-muted py-5">
                                 Keine Buchungen für diesen Zeitraum.
                             </td>
                         </tr>
-                    @endforelse
+                    @else
+                        @foreach($groupedEntries as $dateKey => $dayEntries)
+                            @php
+                                $firstEntryDt        = \Carbon\Carbon::parse($dayEntries->first()->dateTime);
+                                $runningStockBalance = (float) ($dayStartBalances[$dateKey] ?? 0);
+                                $dayCashflow         = 0.0;
+                                $dayCommission       = 0.0;
+                                $dayPnl              = 0.0;
+                                $dayNetPnl           = 0.0;
+                            @endphp
 
-                </tbody>
+                            {{-- Tages-Trennzeile --}}
+                            <tr class="date-separator">
+                                <td colspan="9">
+                                    <i class="bi bi-calendar3 me-1"></i>
+                                    {{ $firstEntryDt->locale('de')->isoFormat('dddd, D. MMMM YYYY') }}
+                                </td>
+                            </tr>
 
-                @if($ledgerEntries->count() > 0)
-                    <tfoot>
-                        @if($ledgerEntries->lastPage() > 1)
-                            <tr class="table-light fw-bold" style="font-size: 0.8rem;">
-                                <td colspan="3" class="text-muted">
-                                    Seite {{ $ledgerEntries->currentPage() }} von {{ $ledgerEntries->lastPage() }}:
+                            @foreach($dayEntries as $entry)
+                                @php
+                                    $entryDt   = \Carbon\Carbon::parse($entry->dateTime);
+                                    $isStk = $entry->assetCategory === 'STK';
+                                    if ($isStk) {
+                                        $runningStockBalance += (float) $entry->inventory_delta;
+                                    }
+                                    $displayBalance = $runningStockBalance;
+
+                                    $linkColor  = ($entry->linkID && isset($linkIdColors[$entry->linkID]))
+                                                    ? $linkIdColors[$entry->linkID]
+                                                    : null;
+                                    $narrative  = $this->buildNarrative($entry);
+                                    $deltaPos   = (float) $entry->inventory_delta > 0;
+                                    $deltaNeg   = (float) $entry->inventory_delta < 0;
+
+                                    // Effektiver Cashflow: bei CASH_SETTLEMENT proceeds nehmen, sonst netcash
+                                    $effectiveCashflow = $entry->action === 'CASH_SETTLEMENT'
+                                        ? $entry->proceeds
+                                        : $entry->netcash;
+
+                                    $dayCashflow   += (float) $effectiveCashflow;
+                                    $dayCommission += (float) $entry->commission;
+                                    $dayPnl        += (float) $entry->realized_pnl;
+                                    $dayNetPnl     += (float) $entry->realized_pnl + (float) $entry->commission;
+                                @endphp
+
+                                {{-- Buchungszeile --}}
+                                <tr class="ledger-row {{ $deltaPos ? 'row-buy' : ($deltaNeg ? 'row-sell' : '') }}"
+                                    style="border-left: 3px solid {{ $linkColor ?? 'transparent' }};">
+                                    <td class="text-muted text-nowrap" style="font-size: 0.75rem;">
+                                        {{ $entryDt->format('H:i') }}
+                                        @if($linkColor)
+                                            <span class="link-dot" style="background: {{ $linkColor }};"></span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        <span class="badge {{ $this->getActionBadgeClass($entry->action) }}"
+                                              style="font-size: 0.7rem;">
+                                            {{ $entry->action }}
+                                        </span>
+                                    </td>
+                                    <td class="narrative-text">{{ $narrative }}</td>
+                                    <td class="text-end fw-bold {{ $deltaPos ? 'text-primary' : ($deltaNeg ? 'text-warning' : 'text-muted') }}">
+                                        {{ $deltaPos ? '+' : '' }}{{ number_format((float) $entry->inventory_delta, 0, ',', '.') }}
+                                    </td>
+                                    <td class="text-end">
+                                        <x-currency-value :value="$effectiveCashflow" :currency="$entry->currency" />
+                                        @if($entry->action === 'CASH_SETTLEMENT')
+                                            <br><small class="text-muted" style="font-size: 0.7rem;">Settlement</small>
+                                        @endif
+                                    </td>
+                                    <td class="text-end">
+                                        <x-currency-value :value="$entry->commission" :currency="$entry->currency" />
+                                    </td>
+                                    <td class="text-end fw-bold">
+                                        @if((float) $entry->realized_pnl != 0)
+                                            <x-currency-value :value="$entry->realized_pnl" :currency="$entry->currency" :colored="true" />
+                                        @else
+                                            <span class="text-muted">—</span>
+                                        @endif
+                                    </td>
+                                    <td class="text-end fw-bold">
+                                        @php $netPnlEntry = (float) $entry->realized_pnl + (float) $entry->commission; @endphp
+                                        @if($netPnlEntry != 0)
+                                            <x-currency-value :value="$netPnlEntry" :currency="$entry->currency" :colored="true" />
+                                        @else
+                                            <span class="text-muted">—</span>
+                                        @endif
+                                    </td>
+                                    <td class="text-end">
+                                        @if($isStk)
+                                            <span class="fw-bold {{ $displayBalance != 0 ? 'text-dark' : 'text-muted' }}">
+                                                {{ number_format($displayBalance, 0, ',', '.') }}
+                                            </span>
+                                        @else
+                                            <span class="text-muted" style="font-size: 0.78rem;">
+                                                {{ number_format($displayBalance, 0, ',', '.') }}
+                                            </span>
+                                        @endif
+                                    </td>
+                                </tr>
+
+                            @endforeach
+
+                            {{-- Tagessumme --}}
+                            <tr class="day-subtotal-row">
+                                <td colspan="3" class="text-end text-muted pe-2" style="font-size: 0.75rem; font-style: italic;">
+                                    Tagessumme
                                 </td>
                                 <td></td>
                                 <td class="text-end">
-                                    @php
-                                        $pageCashflow = $ledgerEntries->getCollection()->sum(
-                                            fn($e) => $e->action === 'CASH_SETTLEMENT' ? $e->proceeds : $e->netcash
-                                        );
-                                    @endphp
-                                    <x-currency-value :value="$pageCashflow" :currency="'USD'" />
+                                    <x-currency-value :value="$dayCashflow" :currency="'USD'" :colored="true" />
                                 </td>
                                 <td class="text-end">
-                                    <x-currency-value :value="$ledgerEntries->sum('commission')" :currency="'USD'" />
+                                    <x-currency-value :value="$dayCommission" :currency="'USD'" />
                                 </td>
                                 <td class="text-end">
-                                    <x-currency-value :value="$ledgerEntries->sum('realized_pnl')" :currency="'USD'" :colored="true" />
+                                    @if($dayPnl != 0)
+                                        <x-currency-value :value="$dayPnl" :currency="'USD'" :colored="true" />
+                                    @else
+                                        <span class="text-muted">—</span>
+                                    @endif
                                 </td>
                                 <td class="text-end fw-bold">
-                                    @php $pageNetPnl = $ledgerEntries->sum('realized_pnl') + $ledgerEntries->sum('commission'); @endphp
-                                    <x-currency-value :value="$pageNetPnl" :currency="'USD'" :colored="true" />
+                                    @if($dayNetPnl != 0)
+                                        <x-currency-value :value="$dayNetPnl" :currency="'USD'" :colored="true" />
+                                    @else
+                                        <span class="text-muted">—</span>
+                                    @endif
                                 </td>
                                 <td></td>
                             </tr>
-                        @endif
+
+                        @endforeach
+                    @endif
+
+                </tbody>
+
+                @if($ledgerEntries->isNotEmpty())
+                    <tfoot>
                         <tr class="table-dark" style="font-size: 0.8rem;">
                             <td colspan="3" class="text-uppercase">Gesamtergebnis Kampagne:</td>
                             <td></td>
@@ -322,7 +342,7 @@
                                 <x-currency-value :value="$metrics->total_net_pnl ?? 0" :currency="'USD'" :colored="true" />
                             </td>
                             <td class="text-end">
-                                <small class="fw-normal opacity-75">{{ $ledgerEntries->total() }} Buchungen</small>
+                                <small class="fw-normal opacity-75">{{ $totalEntries }} Buchungen</small>
                             </td>
                         </tr>
                     </tfoot>
@@ -330,9 +350,9 @@
             </table>
         </div>
 
-        @if($ledgerEntries->hasPages())
+        @if($daysPaginator->hasPages())
             <div class="card-footer bg-white">
-                {{ $ledgerEntries->links('components.pagination') }}
+                {{ $daysPaginator->links('components.pagination') }}
             </div>
         @endif
     </div>
@@ -410,7 +430,12 @@
             }
 
             buildChart();
-            document.addEventListener('livewire:update', buildChart);
+
+            // livewire:update feuert vor dem DOM-Patch → Chart wird weggeMorpht
+            // commit.succeed() feuert nach dem DOM-Patch → zuverlässig
+            Livewire.hook('commit', ({ succeed }) => {
+                succeed(() => queueMicrotask(buildChart));
+            });
         })();
     </script>
     @endscript
@@ -418,7 +443,7 @@
     <style>
         /* Tages-Trennzeile */
         tr.date-separator td {
-            background-color: #f0f4f8;
+            background-color: #d5dde6;
             color: #495057;
             font-size: 0.78rem;
             font-weight: 600;
@@ -449,6 +474,16 @@
             border-radius: 50%;
             margin-left: 3px;
             vertical-align: middle;
+        }
+
+        /* Tagessumme-Zeile */
+        tr.day-subtotal-row td {
+            background-color: #f0f4f8;
+            font-size: 0.78rem;
+            border-top: 1px dashed #ced4da;
+            border-bottom: 2px solid #dee2e6;
+            padding-top: 4px;
+            padding-bottom: 4px;
         }
     </style>
 </div>

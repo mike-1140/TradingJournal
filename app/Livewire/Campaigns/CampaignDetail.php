@@ -14,7 +14,7 @@ class CampaignDetail extends Component
     use WithPagination, ManagesEnvironment, FilterableByTime;
 
     public $campaignId;
-    public $perPage = 20;
+    public $perPage = 5; // Tage pro Seite
     public Campaign $campaign;
     public string $backUrl = '';
 
@@ -159,7 +159,7 @@ class CampaignDetail extends Component
         // Alle Einträge (unpaginiert) für Chart und Tages-Zusammenfassung
         $allEntries = (clone $query)->orderBy('dateTime', 'asc')->get();
 
-        // Tages-Zusammenfassung
+        // Tages-Zusammenfassung (absteigend: neuestes Datum zuerst)
         $dailySummaries = $allEntries
             ->groupBy(fn($e) => \Carbon\Carbon::parse($e->dateTime)->format('Y-m-d'))
             ->map(fn($day, $dateKey) => [
@@ -172,7 +172,8 @@ class CampaignDetail extends Component
                 'count'          => $day->count(),
                 'has_settlement' => $day->contains('action', 'CASH_SETTLEMENT'),
                 'has_expiration' => $day->contains('action', 'OPTION_EXPIRATION'),
-            ]);
+            ])
+            ->sortKeysDesc();
 
         // Chart-Daten: kumulativer P&L je Tag (nur Tage mit realisiertem P&L)
         $running   = 0.0;
@@ -196,24 +197,41 @@ class CampaignDetail extends Component
                 ];
             });
 
-        $ledgerEntries = $query->orderBy('dateTime', 'asc')
+        // Tages-basierte Pagination: immer ganze Tage anzeigen
+        $daysPaginator = (clone $query)
+            ->selectRaw('DATE(dateTime) as date_key')
+            ->groupBy('date_key')
+            ->orderByRaw('date_key DESC')
             ->paginate($this->perPage);
 
-        // Laufender Aktien-Bestand: Summe aller STK-Einträge vor der ersten Zeile dieser Seite
-        $startingStockBalance = 0;
-        if ($ledgerEntries->count() > 0) {
-            $startingStockBalance = (float) ((clone $query)
-                ->where('assetCategory', 'STK')
-                ->where('id', '<', $ledgerEntries->first()->id)
-                ->sum('inventory_delta') ?? 0);
-        }
+        $visibleDates = $daysPaginator->pluck('date_key');
+
+        $ledgerEntries = (clone $query)
+            ->whereIn(\DB::raw('DATE(dateTime)'), $visibleDates)
+            ->orderByRaw('DATE(dateTime) DESC, TIME(dateTime) ASC')
+            ->get();
+
+        // STK-Startbestand pro Tag: aus allEntries aufsteigend vorberechnet
+        $dayStartBalances = [];
+        $stkBalance = 0.0;
+        $allEntries
+            ->groupBy(fn($e) => \Carbon\Carbon::parse($e->dateTime)->format('Y-m-d'))
+            ->sortKeys()
+            ->each(function ($dayEntries, $dateKey) use (&$stkBalance, &$dayStartBalances) {
+                $dayStartBalances[$dateKey] = $stkBalance;
+                foreach ($dayEntries->where('assetCategory', 'STK') as $e) {
+                    $stkBalance += (float) $e->inventory_delta;
+                }
+            });
 
         return view('livewire.campaigns.campaign-detail', [
-            'ledgerEntries'        => $ledgerEntries,
-            'metrics'              => $metrics,
-            'startingStockBalance' => $startingStockBalance,
-            'dailySummaries'       => $dailySummaries,
-            'chartData'            => $chartData,
+            'ledgerEntries'    => $ledgerEntries,
+            'totalEntries'     => $allEntries->count(),
+            'daysPaginator'    => $daysPaginator,
+            'metrics'          => $metrics,
+            'dayStartBalances' => $dayStartBalances,
+            'dailySummaries'   => $dailySummaries,
+            'chartData'        => $chartData,
         ]);
     }
 

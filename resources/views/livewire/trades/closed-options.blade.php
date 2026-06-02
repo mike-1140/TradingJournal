@@ -133,7 +133,7 @@
                 </thead>
                 <tbody>
                 @forelse($trades as $trade)
-                    <tr class="{{ $trade->expiry && $trade->expiry->isPast() ? 'table-warning' : '' }}">
+                    <tr>
                         <td>
                             <strong class="fs-5">{{ $trade->underlyingSymbol }}</strong>
                             <br><small class="text-muted font-monospace">{{ $trade->formatted_option }}</small>

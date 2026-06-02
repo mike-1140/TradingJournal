@@ -294,7 +294,10 @@
             }
 
             buildChart();
-            document.addEventListener('livewire:update', buildChart);
+
+            Livewire.hook('commit', ({ succeed }) => {
+                succeed(() => queueMicrotask(buildChart));
+            });
         })();
     </script>
     @endscript
