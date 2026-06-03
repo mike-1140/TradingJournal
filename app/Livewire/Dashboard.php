@@ -177,11 +177,12 @@ class Dashboard extends Component
                 ->where('status', 'ACTIVE')
                 ->count();
 
-            $this->capitalAtRisk = abs((float) TradeOpen::on($connection)
+            $netCashSum = (float) TradeOpen::on($connection)
                 ->where('environment', $this->selectedEnvironment)
                 ->where('processed', 0)
-                ->where('netCash', '<', 0)
-                ->sum('netCash'));
+                ->sum('netCash');
+            // Netto-Cashflow: bei Credit-Spreads ist der Saldo positiv (kein Kapital gebunden)
+            $this->capitalAtRisk = $netCashSum < 0 ? abs($netCashSum) : 0;
 
             // Ø P&L pro Trade (zeitraumgefiltert)
             $this->avgProfitPerTrade = $this->closedTradesCount > 0
