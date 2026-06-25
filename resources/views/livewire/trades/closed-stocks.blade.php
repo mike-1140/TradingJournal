@@ -107,8 +107,6 @@
                     <th rowspan="2" class="text-end">Stück</th>
                     <th rowspan="2" class="text-end">Kommision</th>
                     <th rowspan="2" class="text-end">Strategie</th>
-                    <th rowspan="2" class="text-end">Tags</th>
-                    <th rowspan="2" class="text-end">Notes</th>
                     <th rowspan="2"></th>
                 </tr>
                 <tr>
@@ -163,21 +161,6 @@
                             @endif
                         </td>
                         <td>
-                            {{-- 5. TAG BADGES --}}
-                            <div class="d-flex flex-wrap gap-1">
-                                @foreach($trade->trade_tags ?? [] as $tag)
-                                    <x-tag-badge :tag="$tag" size="sm" />
-                                @endforeach
-                            </div>
-                        </td>
-                        <td><!-- Notes Indicator -->
-                            @if($trade->notes()->count() > 0)
-                                <span class="badge bg-info" title="{{ $trade->notes()->count() }} note(s)">
-                                    <i class="bi bi-journal-text"></i> {{ $trade->notes()->count() }}
-                                </span>
-                            @endif
-                        </td>
-                        <td>
                             <a href="{{ route('trades.closed.stocks.detail', $trade->id) }}" class="btn btn-sm btn-outline-primary">
                                 <i class="bi bi-eye"></i>
                             </a>
@@ -185,7 +168,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="17">
+                        <td colspan="15">
                             <x-empty-state
                                 icon="inbox"
                                 title="Keine geschlossenen Stock-Positionen gefunden"

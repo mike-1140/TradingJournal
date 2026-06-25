@@ -2,8 +2,6 @@
 
 namespace App\Livewire\Trades;
 
-use App\Models\Tag;
-use App\Models\TradeTagPivot;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use Livewire\Component;
@@ -133,17 +131,7 @@ class OpenStocks extends Component
             ->pluck('strategy')
             ->filter();
 
-        // ✅ Lade Tags für jeden Trade
-        $connection = TradeOpen::getConnectionForEnvironment($this->selectedEnvironment);
         foreach ($trades as $trade) {
-            $tagIds = TradeTagPivot::on($connection)
-                ->where('trade_id', $trade->tradeID)
-                ->where('trade_type', 'open')
-                ->where('environment', $this->selectedEnvironment)
-                ->pluck('tag_id');
-
-            $trade->trade_tags = Tag::whereIn('id', $tagIds)->get();
-            // aktuellen Kurs laden
             $trade->current_price  = $yahoo->quote($trade->symbol);
             $trade->daysHeld = Carbon::parse($trade->dateTime)
                 ->diffInDays(Carbon::now());

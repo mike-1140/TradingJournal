@@ -4,8 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use App\Traits\UsesTradingDatabase;
-use App\Models\Tag;
-use App\Models\TradeTagPivot;
 
 class TradeOpen extends BaseTradingModel
 {
@@ -125,49 +123,6 @@ class TradeOpen extends BaseTradingModel
     public function hasStrike()
     {
         return $this->strike !== null;
-    }
-
-    /**
-     * Beziehung zu Notes
-     */
-    public function notes()
-    {
-        return $this->hasMany(TradeNote::class, 'trade_id', 'tradeID')
-            ->where('trade_type', 'open')
-            ->where('environment', $this->environment);
-    }
-
-    /**
-     * Hat dieser Trade Notes?
-     */
-    public function hasNotes()
-    {
-        return $this->notes()->exists();
-    }
-
-    /**
-     * Tags für diesen Trade (Many-to-Many)
-     */
-    public function tags()
-    {
-        return $this->belongsToMany(
-            Tag::class,
-            'trade_tag_pivot',
-            'trade_id',
-            'tag_id'        // ✅ Local key für open trades
-        )
-            ->using(TradeTagPivot::class)
-            ->where('trade_tag_pivot.trade_type', 'open')
-            ->where('trade_tag_pivot.environment', $this->environment)
-            ->withPivot('tagged_at');
-    }
-
-    /**
-     * Hat dieser Trade den Tag?
-     */
-    public function hasTag($tagId)
-    {
-        return $this->tags()->where('tag_id', $tagId)->exists();
     }
 
 }

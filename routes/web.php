@@ -24,7 +24,6 @@ use App\Livewire\Symbols\SymbolDetail;
 use App\Livewire\Trades\FxTrades;
 use App\Livewire\Spreads\SpreadsList;
 use App\Livewire\Spreads\SpreadDetail;
-use App\Livewire\Tags\TagManager;
 use App\Livewire\Log\LogList;
 use App\Livewire\Log\LogForm;
 
@@ -64,9 +63,6 @@ Route::get('/campaigns/{campaignId}', CampaignDetail::class)->name('campaigns.ca
 // Spreads
 Route::get('/spreads', SpreadsList::class)->name('spreads.list');
 Route::get('/spreads/{opt_strategyID}', SpreadDetail::class)->name('spreads.detail');
-
-//Tags
-Route::get('/tags', TagManager::class)->name('tags.manage');
 
 // Stats
 Route::get('/stats', StatsDashboard::class)->name('stats.dashboard');

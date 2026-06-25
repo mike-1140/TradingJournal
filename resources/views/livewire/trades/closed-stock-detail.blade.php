@@ -162,22 +162,5 @@
 
         </div>
 
-        <div class="col-lg-4">
-            {{-- Tags --}}
-            <x-trade-card title="Trade Tags" icon="tags" class="mb-4">
-                @livewire('tags.trade-tagger', [
-                    'tradeId' => $trade->tradeIDOpen,
-                    'tradeType' => 'closed'
-                ])
-            </x-trade-card>
-
-            {{-- Notes --}}
-            <x-trade-card title="Trade Notes" icon="journal-text">
-                @livewire('notes.note-manager', [
-                    'tradeId' => $trade->tradeIDOpen,
-                    'tradeType' => 'closed'
-                ])
-            </x-trade-card>
-        </div>
     </div>
 </div>

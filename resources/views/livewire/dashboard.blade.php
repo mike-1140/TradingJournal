@@ -386,15 +386,6 @@
     })();
     </script>
 
-    <!-- Tag Statistics -->
-    {{-- DEAKTIVIERT für Option C
-    <div class="row mb-4">
-        <div class="col-12">
-            @livewire('tags.tag-statistics')
-        </div>
-    </div>
-    --}}
-
     <!-- Aktuelle offene Positionen -->
     <div class="card mb-4">
         <div class="card-header">

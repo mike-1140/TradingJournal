@@ -4,8 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use App\Traits\UsesTradingDatabase;
-use App\Models\Tag;
-use App\Models\TradeTagPivot;
 
 class TradeClose extends BaseTradingModel
 {
@@ -150,72 +148,6 @@ class TradeClose extends BaseTradingModel
     public function hasStrike()
     {
         return $this->strike !== null;
-    }
-
-    /**
-     * Beziehung zu Notes
-     */
-    public function notes()
-    {
-        return $this->hasMany(TradeNote::class, 'trade_id', 'tradeIDClose')
-            ->where('trade_type', 'closed')
-            ->where('environment', $this->environment);
-    }
-
-    /**
-     * Hat dieser Trade Notes?
-     */
-    public function hasNotes()
-    {
-        return $this->notes()->exists();
-    }
-
-    /**
-     * Tags für diesen Trade (Many-to-Many)
-     */
-    /**
-     * ✅ WICHTIG: Diese Relationship funktioniert NICHT für Queries!
-     * Verwende sie nur für: $trade->tags (Eager Loading)
-     * NICHT für: whereHas('tags') - das funktioniert nicht über Datenbanken hinweg!
-     */
-    public function tags()
-    {
-        // Diese Relationship funktioniert nur für Eager Loading,
-        // nicht für Query-Constraints über Datenbanken hinweg
-        return $this->belongsToMany(
-            Tag::class,
-            'trade_tag_pivot',
-            'trade_id',
-            'tag_id',
-            'tradeIDClose'
-        )
-            ->where('trade_tag_pivot.trade_type', 'closed')
-            ->where('trade_tag_pivot.environment', $this->environment)
-            ->withPivot('tagged_at');
-    }
-
-    /**
-     * Hat dieser Trade den Tag?
-     */
-    public function hasTag($tagId)
-    {
-        return $this->tags()->where('tag_id', $tagId)->exists();
-    }
-
-    /**
-     * ✅ NEU: Helper-Methode um Tags zu laden (ohne Relationship)
-     */
-    public function loadTags()
-    {
-        $connection = static::getConnectionForEnvironment($this->environment);
-
-        $tagIds = TradeTagPivot::on($connection)
-            ->where('trade_id', $this->tradeIDClose)
-            ->where('trade_type', 'closed')
-            ->where('environment', $this->environment)
-            ->pluck('tag_id');
-
-        return Tag::whereIn('id', $tagIds)->get();
     }
 
 }

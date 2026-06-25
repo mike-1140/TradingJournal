@@ -347,29 +347,4 @@
         </div>
     @endif
 
-    {{-- Notes --}}
-    <div class="card mt-4">
-        <div class="card-header">
-            <h6 class="mb-0"><i class="bi bi-journal-text"></i> Notes</h6>
-        </div>
-        <div class="card-body">
-            @livewire('notes.note-manager', [
-                'opt_strategyID' => $opt_strategyID,
-                'tradeType' => 'spread'
-            ])
-        </div>
-    </div>
-
-    {{-- Tags --}}
-    <div class="card mt-4">
-        <div class="card-header">
-            <h6 class="mb-0"><i class="bi bi-tags"></i> Tags</h6>
-        </div>
-        <div class="card-body">
-            @livewire('tags.trade-tagger', [
-                'tradeId' => $opt_strategyID,
-                'tradeType' => 'spread'
-            ])
-        </div>
-    </div>
 </div>

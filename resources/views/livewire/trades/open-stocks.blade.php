@@ -84,8 +84,6 @@
                     <th class="text-end">Gesamtwert</th>
                     <th class="text-end">NetCash</th>
                     <th>Buy/Sell</th>
-                    <th>Tags</th>
-                    <th>Notes</th>
                     <th></th>
                 </tr>
                 </thead>
@@ -119,21 +117,6 @@
                             </span>
                         </td>
                         <td>
-                            {{-- 5. TAG BADGES --}}
-                            <div class="d-flex flex-wrap gap-1">
-                                @foreach($trade->trade_tags ?? [] as $tag)
-                                    <x-tag-badge :tag="$tag" size="sm" />
-                                @endforeach
-                            </div>
-                        </td>
-                        <td><!-- Notes Indicator -->
-                            @if($trade->notes()->count() > 0)
-                                <span class="badge bg-info" title="{{ $trade->notes()->count() }} note(s)">
-                                    <i class="bi bi-journal-text"></i> {{ $trade->notes()->count() }}
-                                </span>
-                            @endif
-                        </td>
-                        <td>
                             <a href="{{ route('trades.open.stocks.detail', $trade->id) }}" class="btn btn-sm btn-outline-primary">
                                 <i class="bi bi-eye"></i>
                             </a>
@@ -141,7 +124,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="10">
+                        <td colspan="8">
                             {{-- 6. EMPTY STATE --}}
                             <x-empty-state
                                 icon="inbox"
