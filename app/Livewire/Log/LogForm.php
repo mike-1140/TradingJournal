@@ -28,22 +28,8 @@ class LogForm extends Component
     public ?string $ivr_open   = null;
     public ?string $strategy      = null;
     public ?string $exit_plan     = null;
-    public ?string $mindset_entry = null;
-    public ?string $energy_level  = null;
     public ?string $rationale     = null;
-    public ?string $confidence    = null;
-    public ?string $market_regime = null;
-    public ?string $pre_mortem    = null;
     public string $status         = 'open';
-
-    public const MINDSET_ENTRY_OPTIONS = [
-        'Neutral', 'Überzeugung', 'Vorsicht', 'FOMO', 'Ungeduldig', 'Unsicher',
-    ];
-    public const MINDSET_EXIT_OPTIONS = [
-        'Diszipliniert', 'Plan befolgt', 'Vorzeitig', 'Ungeduldig', 'Panik', 'Impulsiv',
-    ];
-    public const ENERGY_LEVEL_OPTIONS  = ['fit', 'müde', 'gestresst', 'krank'];
-    public const MARKET_REGIME_OPTIONS = ['bullish', 'bearish', 'seitwärts', 'volatil'];
 
     // Closing-Daten
     public ?string $date_close    = null;
@@ -53,12 +39,8 @@ class LogForm extends Component
     public ?string $premium_close = null;
     public ?string $fees_close    = null;
     public ?string $realized_pnl  = null;
-    public ?string $actual_dte      = null;
-    public ?string $mindset_exit    = null;
-    public ?string $plan_adherence  = null;
-    public ?string $lessons_learned = null;
-    public ?string $decision_quality = null;
-    public ?string $notes           = null;
+    public ?string $actual_dte = null;
+    public ?string $notes      = null;
 
     // Legs
     public array $legs = [];
@@ -74,12 +56,7 @@ class LogForm extends Component
         'date_open'        => 'required|date',
         'strategy'         => 'nullable|max:50',
         'exit_plan'        => 'nullable',
-        'mindset_entry'    => 'nullable|max:30',
-        'energy_level'     => 'nullable|in:fit,müde,gestresst,krank',
         'rationale'        => 'nullable',
-        'confidence'       => 'nullable|integer|min:1|max:10',
-        'market_regime'    => 'nullable|in:bullish,bearish,seitwärts,volatil',
-        'pre_mortem'       => 'nullable|max:200',
         'price_open'       => 'nullable|numeric',
         'ivp_open'         => 'nullable|integer|min:0|max:100',
         'ivr_open'         => 'nullable|integer|min:0|max:100',
@@ -98,10 +75,6 @@ class LogForm extends Component
         'premium_close'    => 'nullable|numeric',
         'fees_close'       => 'nullable|numeric',
         'actual_dte'       => 'nullable|integer',
-        'mindset_exit'     => 'nullable|max:30',
-        'plan_adherence'   => 'nullable|in:yes,partial,no',
-        'lessons_learned'  => 'nullable',
-        'decision_quality' => 'nullable|in:gut,mittel,schlecht',
     ];
 
     public function mount(?int $id = null): void
@@ -160,15 +133,10 @@ class LogForm extends Component
         $this->price_open  = $plan->price_open;
         $this->ivp_open    = $plan->ivp_open;
         $this->ivr_open    = $plan->ivr_open;
-        $this->strategy      = $plan->strategy;
-        $this->exit_plan     = $plan->exit_plan;
-        $this->mindset_entry = $plan->mindset_entry;
-        $this->energy_level  = $plan->energy_level;
-        $this->rationale     = $plan->rationale;
-        $this->confidence    = $plan->confidence;
-        $this->market_regime = $plan->market_regime;
-        $this->pre_mortem    = $plan->pre_mortem;
-        $this->status        = $plan->status;
+        $this->strategy  = $plan->strategy;
+        $this->exit_plan = $plan->exit_plan;
+        $this->rationale = $plan->rationale;
+        $this->status    = $plan->status;
         $this->date_close    = $plan->date_close?->format('Y-m-d');
         $this->price_close   = $plan->price_close;
         $this->ivp_close     = $plan->ivp_close;
@@ -176,12 +144,8 @@ class LogForm extends Component
         $this->premium_close = $plan->premium_close;
         $this->fees_close    = $plan->fees_close;
         $this->realized_pnl  = $plan->realized_pnl;
-        $this->actual_dte       = $plan->actual_dte;
-        $this->mindset_exit     = $plan->mindset_exit;
-        $this->plan_adherence   = $plan->plan_adherence;
-        $this->lessons_learned  = $plan->lessons_learned;
-        $this->decision_quality = $plan->decision_quality;
-        $this->notes            = $plan->notes;
+        $this->actual_dte = $plan->actual_dte;
+        $this->notes      = $plan->notes;
 
         $this->showClosing = $plan->status === 'closed';
 
@@ -250,12 +214,7 @@ class LogForm extends Component
             'ivr_open'       => $this->ivr_open ?: null,
             'strategy'       => $this->strategy ?: null,
             'exit_plan'      => $this->exit_plan ?: null,
-            'mindset_entry'  => $this->mindset_entry ?: null,
-            'energy_level'   => $this->energy_level ?: null,
             'rationale'      => $this->rationale ?: null,
-            'confidence'     => $this->confidence ?: null,
-            'market_regime'  => $this->market_regime ?: null,
-            'pre_mortem'     => $this->pre_mortem ?: null,
             'status'         => $this->status,
             'date_close'     => $this->date_close ?: null,
             'price_close'    => $this->price_close ?: null,
@@ -265,10 +224,6 @@ class LogForm extends Component
             'fees_close'     => $this->fees_close ?: null,
             'realized_pnl'   => $this->realized_pnl ?: null,
             'actual_dte'      => $this->actual_dte ?: null,
-            'mindset_exit'    => $this->mindset_exit ?: null,
-            'plan_adherence'  => $this->plan_adherence ?: null,
-            'lessons_learned' => $this->lessons_learned ?: null,
-            'decision_quality' => $this->decision_quality ?: null,
             'notes'           => $this->notes ?: null,
         ];
 
