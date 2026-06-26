@@ -139,18 +139,18 @@
                     <label class="form-label">Regelwerk</label>
                     <select class="form-select form-select-sm w-auto" wire:model.live="selectedRulesetId">
                         <option value="">— kein Regelwerk —</option>
-                        @foreach ($rulesets as $rs)
+                        @foreach ($rulesListets as $rs)
                         <option value="{{ $rs['id'] }}">{{ $rs['name'] }}</option>
                         @endforeach
                     </select>
                 </div>
 
-                @if (count($rules) > 0)
+                @if (count($rulesList) > 0)
 
                 {{-- Compliance-Grid --}}
                 <label class="form-label text-muted small mb-2">Regeln eingehalten <span class="text-success">(grün = ja)</span></label>
                 <div class="row g-2 mb-4">
-                    @foreach ($rules as $rule)
+                    @foreach ($rulesList as $rule)
                     @php $complied = $complianceValues[$rule['id']] ?? false; @endphp
                     <div class="col-md-6">
                         <div class="p-3 rounded border h-100 {{ $complied ? 'border-success bg-success bg-opacity-10' : 'border-secondary-subtle bg-light' }}"
@@ -173,7 +173,7 @@
                 {{-- Regelversuchungen --}}
                 <label class="form-label text-muted small mb-2">Regelversuchungen <span class="text-warning">(Impuls war da, aber nicht ausgeführt)</span></label>
                 <div class="border rounded p-3">
-                    @foreach ($rules as $index => $rule)
+                    @foreach ($rulesList as $index => $rule)
                     @php $tempted = $temptationValues[$rule['id']] ?? false; @endphp
                     <div class="d-flex align-items-center gap-3 py-2 {{ !$loop->last ? 'border-bottom' : '' }}"
                          style="cursor:pointer"

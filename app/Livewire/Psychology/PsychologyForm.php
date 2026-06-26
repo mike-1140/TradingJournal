@@ -38,21 +38,24 @@ class PsychologyForm extends Component
     public array $temptationValues  = [];   // rule_id => bool
 
     // Geladene Listen (Zustand, kein DB-Roundtrip pro Render)
-    public array $rulesets = [];
-    public array $rules    = [];
+    public array $rulesets  = [];
+    public array $rulesList = [];  // umbenannt — $rules ist in Livewire reserviert
 
     protected $listeners = [
         'environment-changed' => 'refreshRulesets',
     ];
 
-    protected $rules = [
-        'symbol'      => 'required|max:100',
-        'tradeDate'   => 'required|date',
-        'pnl'         => 'nullable|numeric',
-        'emotionPre'  => 'nullable|integer|min:1|max:5',
-        'emotionPost' => 'nullable|integer|min:1|max:5',
-        'lesson'      => 'nullable|max:1000',
-    ];
+    public function rules(): array
+    {
+        return [
+            'symbol'      => 'required|max:100',
+            'tradeDate'   => 'required|date',
+            'pnl'         => 'nullable|numeric',
+            'emotionPre'  => 'nullable|integer|min:1|max:5',
+            'emotionPost' => 'nullable|integer|min:1|max:5',
+            'lesson'      => 'nullable|max:1000',
+        ];
+    }
 
     public function mount(?int $id = null): void
     {
@@ -85,7 +88,7 @@ class PsychologyForm extends Component
         $env        = $this->selectedEnvironment;
         $connection = PsychologyRuleset::getConnectionForEnvironment($env);
 
-        $this->rulesets = PsychologyRuleset::on($connection)
+        $this->rulesListets = PsychologyRuleset::on($connection)
             ->where('environment', $env)
             ->where('is_active', true)
             ->orderBy('sort_order')
@@ -93,8 +96,8 @@ class PsychologyForm extends Component
             ->get()
             ->toArray();
 
-        if (!$this->selectedRulesetId && count($this->rulesets) > 0) {
-            $this->selectedRulesetId = $this->rulesets[0]['id'];
+        if (!$this->selectedRulesetId && count($this->rulesListets) > 0) {
+            $this->selectedRulesetId = $this->rulesListets[0]['id'];
             $this->loadRules();
         }
     }
@@ -102,7 +105,7 @@ class PsychologyForm extends Component
     private function loadRules(): void
     {
         if (!$this->selectedRulesetId) {
-            $this->rules           = [];
+            $this->rulesList           = [];
             $this->complianceValues = [];
             $this->temptationValues = [];
             return;
@@ -111,13 +114,13 @@ class PsychologyForm extends Component
         $env        = $this->selectedEnvironment;
         $connection = PsychologyRule::getConnectionForEnvironment($env);
 
-        $this->rules = PsychologyRule::on($connection)
+        $this->rulesList = PsychologyRule::on($connection)
             ->where('ruleset_id', $this->selectedRulesetId)
             ->orderBy('sort_order')
             ->get()
             ->toArray();
 
-        foreach ($this->rules as $rule) {
+        foreach ($this->rulesList as $rule) {
             $id = $rule['id'];
             $this->complianceValues[$id] ??= false;
             $this->temptationValues[$id] ??= false;
@@ -199,7 +202,7 @@ class PsychologyForm extends Component
     public function refreshRulesets(): void
     {
         $this->selectedRulesetId = null;
-        $this->rules             = [];
+        $this->rulesList             = [];
         $this->complianceValues  = [];
         $this->temptationValues  = [];
         $this->loadRulesets();
@@ -272,7 +275,7 @@ class PsychologyForm extends Component
             $entry = PsychologyEntry::on($connection)->create($data);
         }
 
-        foreach ($this->rules as $rule) {
+        foreach ($this->rulesList as $rule) {
             $ruleId = $rule['id'];
             PsychologyComplianceResult::on($connection)->create([
                 'entry_id' => $entry->id,
