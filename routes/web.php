@@ -26,6 +26,8 @@ use App\Livewire\Spreads\SpreadsList;
 use App\Livewire\Spreads\SpreadDetail;
 use App\Livewire\Log\LogList;
 use App\Livewire\Log\LogForm;
+use App\Livewire\Psychology\PsychologyList;
+use App\Livewire\Psychology\PsychologyForm;
 
 use App\Livewire\Stats\StatsDashboard;
 
@@ -72,3 +74,10 @@ Route::get('/log', LogList::class)->name('log.list');
 Route::get('/log/neu', LogForm::class)->name('log.create');
 Route::get('/log/schnell', LogForm::class)->name('log.quick');
 Route::get('/log/{id}', LogForm::class)->name('log.edit');
+
+// Psychology — spezifische Routen VOR /{id} definieren
+Route::get('/psychology', PsychologyList::class)->name('psychology.list');
+Route::get('/psychology/neu', PsychologyForm::class)->name('psychology.create');
+Route::get('/psychology/analytics', PsychologyList::class)->name('psychology.analytics');
+Route::get('/psychology/rulesets', PsychologyList::class)->name('psychology.rulesets');
+Route::get('/psychology/{id}', PsychologyForm::class)->name('psychology.edit');

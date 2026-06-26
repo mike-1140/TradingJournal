@@ -126,6 +126,40 @@
                 <span class="sidebar-text">Log</span>
             </a>
 
+            {{-- Psychologie --}}
+            @php $psychOpen = request()->routeIs('psychology.*'); @endphp
+            <a class="sidebar-link sidebar-toggle-btn {{ $psychOpen ? 'active' : '' }}"
+               data-bs-toggle="collapse" href="#nav-psychology"
+               aria-expanded="{{ $psychOpen ? 'true' : 'false' }}">
+                <i class="bi bi-journal-check"></i>
+                <span class="sidebar-text">Psychologie</span>
+                <i class="bi bi-chevron-down sidebar-arrow"></i>
+            </a>
+            <div id="nav-psychology" class="collapse {{ $psychOpen ? 'show' : '' }}">
+                <div class="sidebar-subnav">
+                    <a href="{{ route('psychology.list') }}"
+                       class="sidebar-link {{ request()->routeIs('psychology.list') ? 'active' : '' }}">
+                        <i class="bi bi-list-ul"></i>
+                        <span class="sidebar-text">Einträge</span>
+                    </a>
+                    <a href="{{ route('psychology.create') }}"
+                       class="sidebar-link {{ request()->routeIs('psychology.create') ? 'active' : '' }}">
+                        <i class="bi bi-plus-circle"></i>
+                        <span class="sidebar-text">Neuer Eintrag</span>
+                    </a>
+                    <a href="{{ route('psychology.analytics') }}"
+                       class="sidebar-link {{ request()->routeIs('psychology.analytics') ? 'active' : '' }}">
+                        <i class="bi bi-graph-up"></i>
+                        <span class="sidebar-text">Auswertung</span>
+                    </a>
+                    <a href="{{ route('psychology.rulesets') }}"
+                       class="sidebar-link {{ request()->routeIs('psychology.rulesets') ? 'active' : '' }}">
+                        <i class="bi bi-shield-check"></i>
+                        <span class="sidebar-text">Regelwerke</span>
+                    </a>
+                </div>
+            </div>
+
             <div class="sidebar-divider"></div>
 
             {{-- Analyse --}}
