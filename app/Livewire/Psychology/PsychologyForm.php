@@ -88,7 +88,7 @@ class PsychologyForm extends Component
         $env        = $this->selectedEnvironment;
         $connection = PsychologyRuleset::getConnectionForEnvironment($env);
 
-        $this->rulesListets = PsychologyRuleset::on($connection)
+        $this->rulesets = PsychologyRuleset::on($connection)
             ->where('environment', $env)
             ->where('is_active', true)
             ->orderBy('sort_order')
@@ -96,8 +96,8 @@ class PsychologyForm extends Component
             ->get()
             ->toArray();
 
-        if (!$this->selectedRulesetId && count($this->rulesListets) > 0) {
-            $this->selectedRulesetId = $this->rulesListets[0]['id'];
+        if (!$this->selectedRulesetId && count($this->rulesets) > 0) {
+            $this->selectedRulesetId = $this->rulesets[0]['id'];
             $this->loadRules();
         }
     }

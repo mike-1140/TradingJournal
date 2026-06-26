@@ -139,7 +139,7 @@
                     <label class="form-label">Regelwerk</label>
                     <select class="form-select form-select-sm w-auto" wire:model.live="selectedRulesetId">
                         <option value="">— kein Regelwerk —</option>
-                        @foreach ($rulesListets as $rs)
+                        @foreach ($rulesets as $rs)
                         <option value="{{ $rs['id'] }}">{{ $rs['name'] }}</option>
                         @endforeach
                     </select>
