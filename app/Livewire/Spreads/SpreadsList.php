@@ -157,7 +157,10 @@ class SpreadsList extends Component
                 ->groupBy('opt_strategyID', 'opt_strategyName', 'underlyingSymbol');
         }
 
-        $query->orderBy($this->sortField, $this->sortDirection);
+        // Whitelist — sortField/sortDirection kommen vom Client; nur Aliase, die in beiden Selects existieren
+        $sortable  = ['latest_date', 'earliest_date', 'expiry', 'leg_count'];
+        $sortField = in_array($this->sortField, $sortable, true) ? $this->sortField : 'latest_date';
+        $query->orderBy($sortField, strtolower($this->sortDirection) === 'asc' ? 'asc' : 'desc');
 
         return $query->paginate($this->perPage);
     }

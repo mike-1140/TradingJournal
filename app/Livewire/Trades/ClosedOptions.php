@@ -69,8 +69,15 @@ class ClosedOptions extends Component
         $this->resetPage();
     }
 
+    // Whitelist — sortField/sortDirection kommen vom Client (Livewire-Property + URL-Query)
+    private const SORTABLE_FIELDS = ['dateTimeClose', 'dateTimeOpen', 'profit', 'strike', 'underlyingSymbol'];
+
     public function sortBy($field)
     {
+        if (!in_array($field, self::SORTABLE_FIELDS, true)) {
+            return;
+        }
+
         $defaultDesc = ['dateTimeOpen', 'dateTimeClose', 'profit'];
 
         if ($this->sortField === $field) {
@@ -107,7 +114,8 @@ class ClosedOptions extends Component
             $query->where('strategy', $this->filterStrategy);
         }
 
-        $query->orderBy($this->sortField, $this->sortDirection);
+        $sortField = in_array($this->sortField, self::SORTABLE_FIELDS, true) ? $this->sortField : 'dateTimeClose';
+        $query->orderBy($sortField, strtolower($this->sortDirection) === 'asc' ? 'asc' : 'desc');
         $trades = $query->paginate($this->perPage);
 
         $totalTrades = $baseQuery()->count();

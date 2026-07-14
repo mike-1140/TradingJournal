@@ -49,8 +49,15 @@ class OpenOptions extends Component
         $this->resetPage();
     }
 
+    // Whitelist — sortField/sortDirection kommen vom Client (Livewire-Property + URL-Query)
+    private const SORTABLE_FIELDS = ['dateTime', 'expiry', 'strike', 'underlyingSymbol'];
+
     public function sortBy($field)
     {
+        if (!in_array($field, self::SORTABLE_FIELDS, true)) {
+            return;
+        }
+
         if ($this->sortField === $field) {
             $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
         } else {
@@ -82,7 +89,8 @@ class OpenOptions extends Component
             $query->where('strategy', $this->filterStrategy);
         }
 
-        $query->orderBy($this->sortField, $this->sortDirection);
+        $sortField = in_array($this->sortField, self::SORTABLE_FIELDS, true) ? $this->sortField : 'expiry';
+        $query->orderBy($sortField, strtolower($this->sortDirection) === 'desc' ? 'desc' : 'asc');
         $trades = $query->paginate($this->perPage);
 
         $baseQuery = fn() => TradeOpen::onEnvironment($this->selectedEnvironment)

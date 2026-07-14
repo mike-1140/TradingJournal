@@ -4,6 +4,7 @@ namespace App\Livewire\Log;
 
 use App\Models\TradePlan;
 use App\Models\TradePlanLeg;
+use App\Models\User;
 use App\Traits\ManagesEnvironment;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
@@ -115,6 +116,12 @@ class LogForm extends Component
 
     private function applyQuickContext(): void
     {
+        // quickPrefix kommt aus der URL bzw. vom Client — nur Prefixe zulassen,
+        // die einem User in der users-Tabelle gehören, sonst auf eigenen Prefix zurückfallen
+        if ($this->quickPrefix !== '' && !User::where('table_prefix', $this->quickPrefix)->exists()) {
+            $this->quickPrefix = '';
+        }
+
         $env        = $this->quickEnvironment ?: $this->selectedEnvironment;
         $prefix     = $this->quickPrefix ?: (auth()->user()?->table_prefix ?? '');
         $connection = TradePlan::getConnectionForEnvironment($env);
