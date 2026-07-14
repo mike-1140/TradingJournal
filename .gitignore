@@ -24,3 +24,8 @@ Homestead.yaml
 Thumbs.db
 _gsdata_
 /.claude
+
+# === Echte Kontodaten im Root (nie committen) ===
+# IBKR Activity Statements / Kontoauszuege gehoeren nach C:\Trade_CSV, nicht ins Repo.
+/*.csv
+/*.pdf
