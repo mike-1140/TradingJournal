@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use App\Services\UserSwitchService;
 use App\Traits\UsesTradingDatabase;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 use Livewire\Component;
 use App\Models\AccountSnapshot;
@@ -60,10 +61,11 @@ class Dashboard extends Component
 
     public function switchUser($id)
     {
-        // flow_trace();
-        UserSwitchService::switchUser($id);
+        if (Gate::denies('switch-user')) {
+            return;
+        }
 
-        // Hard refresh, damit alles neu geladen wird
+        UserSwitchService::switchUser($id);
         return redirect()->route('dashboard');
     }
 

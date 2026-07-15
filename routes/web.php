@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Auth\LoginController;
 use App\Livewire\Trades\OpenOptionsDetail;
 use Illuminate\Support\Facades\Route;
 use App\Livewire\Dashboard;
@@ -33,53 +34,58 @@ use App\Livewire\Psychology\RulesetManager;
 
 use App\Livewire\Stats\StatsDashboard;
 
-Route::get('/', Dashboard::class)->name('dashboard');
+// ── Auth (öffentlich) ──────────────────────────────────────────────────────────
+Route::get('/login', [LoginController::class, 'showLogin'])->name('login');
+Route::post('/login', [LoginController::class, 'login']);
+Route::post('/logout', [LoginController::class, 'logout'])->name('logout')->middleware('auth');
 
-// Open Trades
-//Route::get('/trades/open', OpenTrades::class)->name('trades.open.all');
-Route::get('/trades/open/stocks', OpenStocks::class)->name('trades.open.stocks');
-Route::get('/trades/open/stocks/{id}', OpenStocksDetail::class)->name('trades.open.stocks.detail');
-Route::get('/trades/open/options', OpenOptions::class)->name('trades.open.options');
-Route::get('/trades/open/options/{id}', OpenOptionsDetail::class)->name('trades.open.options.detail');
+// ── App (Login erforderlich) ───────────────────────────────────────────────────
+Route::middleware('auth')->group(function () {
 
-// Closed Trades
-//Route::get('/trades/closed', ClosedTrades::class)->name('trades.closed.all');
-Route::get('/trades/closed/stocks', ClosedStocks::class)->name('trades.closed.stocks');
-Route::get('/trades/closed/stocks/{id}', ClosedStocksDetail::class)->name('trades.closed.stocks.detail');
-Route::get('/trades/closed/options', ClosedOptions::class)->name('trades.closed.options');
-Route::get('/trades/closed/options/{id}', ClosedOptionsDetail::class)->name('trades.closed.options.detail');
+    Route::get('/', Dashboard::class)->name('dashboard');
 
-// Raw Trades
-Route::get('/trades/raw', RawData::class)->name('trades.raw');
-Route::get('/trades/raw/{id}', RawTradeDetail::class)->name('trades.raw.detail');
+    // Open Trades
+    Route::get('/trades/open/stocks', OpenStocks::class)->name('trades.open.stocks');
+    Route::get('/trades/open/stocks/{id}', OpenStocksDetail::class)->name('trades.open.stocks.detail');
+    Route::get('/trades/open/options', OpenOptions::class)->name('trades.open.options');
+    Route::get('/trades/open/options/{id}', OpenOptionsDetail::class)->name('trades.open.options.detail');
 
-// Symbols
-Route::get('/symbols', SymbolList::class)->name('symbols');
-Route::get('/symbols/{symbol}', SymbolDetail::class)->name('symbols.detail');
+    // Closed Trades
+    Route::get('/trades/closed/stocks', ClosedStocks::class)->name('trades.closed.stocks');
+    Route::get('/trades/closed/stocks/{id}', ClosedStocksDetail::class)->name('trades.closed.stocks.detail');
+    Route::get('/trades/closed/options', ClosedOptions::class)->name('trades.closed.options');
+    Route::get('/trades/closed/options/{id}', ClosedOptionsDetail::class)->name('trades.closed.options.detail');
 
-// FX Trades
-//Route::get('/trades/fx', xFxTrades::class)->name('trades.fx');
+    // Raw Trades
+    Route::get('/trades/raw', RawData::class)->name('trades.raw');
+    Route::get('/trades/raw/{id}', RawTradeDetail::class)->name('trades.raw.detail');
 
-// Campains
-Route::get('/campaigns/campaigns', Campaigns::class)->name('campaigns.campaigns');
-Route::get('/campaigns/{campaignId}', CampaignDetail::class)->name('campaigns.campaign.detail');
+    // Symbols
+    Route::get('/symbols', SymbolList::class)->name('symbols');
+    Route::get('/symbols/{symbol}', SymbolDetail::class)->name('symbols.detail');
 
-// Spreads
-Route::get('/spreads', SpreadsList::class)->name('spreads.list');
-Route::get('/spreads/{opt_strategyID}', SpreadDetail::class)->name('spreads.detail');
+    // Campains
+    Route::get('/campaigns/campaigns', Campaigns::class)->name('campaigns.campaigns');
+    Route::get('/campaigns/{campaignId}', CampaignDetail::class)->name('campaigns.campaign.detail');
 
-// Stats
-Route::get('/stats', StatsDashboard::class)->name('stats.dashboard');
+    // Spreads
+    Route::get('/spreads', SpreadsList::class)->name('spreads.list');
+    Route::get('/spreads/{opt_strategyID}', SpreadDetail::class)->name('spreads.detail');
 
-// Trade Log
-Route::get('/log', LogList::class)->name('log.list');
-Route::get('/log/neu', LogForm::class)->name('log.create');
-Route::get('/log/schnell', LogForm::class)->name('log.quick');
-Route::get('/log/{id}', LogForm::class)->name('log.edit');
+    // Stats
+    Route::get('/stats', StatsDashboard::class)->name('stats.dashboard');
 
-// Psychology — spezifische Routen VOR /{id} definieren
-Route::get('/psychology', PsychologyList::class)->name('psychology.list');
-Route::get('/psychology/neu', PsychologyForm::class)->name('psychology.create');
-Route::get('/psychology/analytics', PsychologyAnalytics::class)->name('psychology.analytics');
-Route::get('/psychology/rulesets', RulesetManager::class)->name('psychology.rulesets');
-Route::get('/psychology/{id}', PsychologyForm::class)->name('psychology.edit');
+    // Trade Log
+    Route::get('/log', LogList::class)->name('log.list');
+    Route::get('/log/neu', LogForm::class)->name('log.create');
+    Route::get('/log/schnell', LogForm::class)->name('log.quick');
+    Route::get('/log/{id}', LogForm::class)->name('log.edit');
+
+    // Psychology — spezifische Routen VOR /{id} definieren
+    Route::get('/psychology', PsychologyList::class)->name('psychology.list');
+    Route::get('/psychology/neu', PsychologyForm::class)->name('psychology.create');
+    Route::get('/psychology/analytics', PsychologyAnalytics::class)->name('psychology.analytics');
+    Route::get('/psychology/rulesets', RulesetManager::class)->name('psychology.rulesets');
+    Route::get('/psychology/{id}', PsychologyForm::class)->name('psychology.edit');
+
+});

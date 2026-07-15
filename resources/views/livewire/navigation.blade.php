@@ -225,6 +225,19 @@
             <span class="badge bg-{{ $envColor }} fs-6 px-3 py-2">
                 <i class="bi bi-database"></i> {{ $selectedEnvironment }}
             </span>
+
+            {{-- User + Logout --}}
+            @auth
+            <div class="d-flex align-items-center gap-1">
+                <span class="text-muted small d-none d-md-inline">{{ auth()->user()->name }}</span>
+                <form method="POST" action="{{ route('logout') }}" class="d-inline">
+                    @csrf
+                    <button type="submit" class="btn btn-sm btn-outline-secondary" title="Abmelden">
+                        <i class="bi bi-box-arrow-right"></i>
+                    </button>
+                </form>
+            </div>
+            @endauth
         </div>
     </header>
 

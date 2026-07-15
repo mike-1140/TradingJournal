@@ -15,6 +15,10 @@ class SetDefaultUser
      */
     public function handle(Request $request, Closure $next): Response
     {
+        // Nur lokal: auf dem Server greift stattdessen die normale auth-Middleware
+        if (!app()->environment('local')) {
+            return $next($request);
+        }
 
         // Nur einmal pro Browser-Session ausführen
         if (!$request->session()->has('default_user_initialized')) {
