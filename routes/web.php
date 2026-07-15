@@ -29,6 +29,7 @@ use App\Livewire\Log\LogForm;
 use App\Livewire\Psychology\PsychologyList;
 use App\Livewire\Psychology\PsychologyForm;
 use App\Livewire\Psychology\PsychologyAnalytics;
+use App\Livewire\Psychology\RulesetManager;
 
 use App\Livewire\Stats\StatsDashboard;
 
@@ -80,5 +81,5 @@ Route::get('/log/{id}', LogForm::class)->name('log.edit');
 Route::get('/psychology', PsychologyList::class)->name('psychology.list');
 Route::get('/psychology/neu', PsychologyForm::class)->name('psychology.create');
 Route::get('/psychology/analytics', PsychologyAnalytics::class)->name('psychology.analytics');
-Route::get('/psychology/rulesets', PsychologyList::class)->name('psychology.rulesets');
+Route::get('/psychology/rulesets', RulesetManager::class)->name('psychology.rulesets');
 Route::get('/psychology/{id}', PsychologyForm::class)->name('psychology.edit');
