@@ -347,4 +347,10 @@
         </div>
     @endif
 
+    {{-- Psychologie --}}
+    @include('livewire.psychology.partials.entry-summary-card', [
+        'psychEntry'     => $psychEntry,
+        'psychCreateUrl' => route('psychology.create') . '?opt_strategyID=' . $opt_strategyID . '&trade_type=spread&symbol=' . ($this->spread['underlyingSymbol'] ?? ''),
+    ])
+
 </div>

@@ -8,6 +8,7 @@ use Livewire\Attributes\Computed;
 use Livewire\Attributes\Locked;
 use App\Models\TradeClose;
 use App\Models\TradeOpen;
+use App\Models\PsychologyEntry;
 use App\Traits\ManagesEnvironment;
 use Livewire\WithPagination;
 
@@ -124,7 +125,16 @@ class SpreadDetail extends Component
 
     public function render()
     {
-        return view('livewire.spreads.spread-detail');
+        $connection = TradeClose::getConnectionForEnvironment($this->selectedEnvironment);
+        $psychEntry = PsychologyEntry::on($connection)
+            ->where('opt_strategyID', $this->opt_strategyID)
+            ->where('environment', $this->selectedEnvironment)
+            ->with('complianceResults.rule')
+            ->first();
+
+        return view('livewire.spreads.spread-detail', [
+            'psychEntry' => $psychEntry,
+        ]);
     }
 
 }

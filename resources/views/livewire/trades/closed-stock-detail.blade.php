@@ -160,6 +160,11 @@
                 </table>
             </x-trade-card>
 
+            @include('livewire.psychology.partials.entry-summary-card', [
+                'psychEntry'     => $psychEntry,
+                'psychCreateUrl' => route('psychology.create') . '?trade_id=' . $trade->id . '&trade_type=closed&symbol=' . $trade->symbol,
+            ])
+
         </div>
 
     </div>
