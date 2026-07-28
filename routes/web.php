@@ -33,6 +33,7 @@ use App\Livewire\Psychology\PsychologyAnalytics;
 use App\Livewire\Psychology\RulesetManager;
 
 use App\Livewire\Stats\StatsDashboard;
+use App\Livewire\Stats\ActivityLog;
 
 // ── Auth (öffentlich) ──────────────────────────────────────────────────────────
 Route::get('/login', [LoginController::class, 'showLogin'])->name('login');
@@ -74,6 +75,7 @@ Route::middleware('auth')->group(function () {
 
     // Stats
     Route::get('/stats', StatsDashboard::class)->name('stats.dashboard');
+    Route::get('/stats/activity', ActivityLog::class)->name('stats.activity');
 
     // Trade Log
     Route::get('/log', LogList::class)->name('log.list');

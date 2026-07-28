@@ -179,9 +179,14 @@
                         <span class="sidebar-text">Symbole</span>
                     </a>
                     <a href="{{ route('stats.dashboard') }}"
-                       class="sidebar-link {{ request()->routeIs('stats.*') ? 'active' : '' }}">
+                       class="sidebar-link {{ request()->routeIs('stats.dashboard') ? 'active' : '' }}">
                         <i class="bi bi-graph-up"></i>
                         <span class="sidebar-text">Stats</span>
+                    </a>
+                    <a href="{{ route('stats.activity') }}"
+                       class="sidebar-link {{ request()->routeIs('stats.activity') ? 'active' : '' }}">
+                        <i class="bi bi-activity"></i>
+                        <span class="sidebar-text">Aktivität</span>
                     </a>
                     <a href="{{ route('trades.raw') }}"
                        class="sidebar-link {{ request()->routeIs('trades.raw*') ? 'active' : '' }}">
