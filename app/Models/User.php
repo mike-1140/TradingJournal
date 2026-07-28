@@ -17,6 +17,7 @@ class User extends Authenticatable
         'filter_from',
         'filter_to',
         'is_admin',
+        'dashboard_config',
     ];
 
     protected $hidden = [
@@ -25,9 +26,10 @@ class User extends Authenticatable
     ];
 
     protected $casts = [
-        'filter_from' => 'date',
-        'filter_to'   => 'date',
-        'is_admin'    => 'boolean',
+        'filter_from'      => 'date',
+        'filter_to'        => 'date',
+        'is_admin'         => 'boolean',
+        'dashboard_config' => 'array',
     ];
 
     /**

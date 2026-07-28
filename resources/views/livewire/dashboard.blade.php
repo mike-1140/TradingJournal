@@ -40,6 +40,12 @@
                 </ul>
             </div>
 
+            {{-- Kachel-Einstellungen --}}
+            <button wire:click="$toggle('showWidgetSettings')"
+                    class="btn btn-sm btn-outline-secondary" title="Kacheln konfigurieren">
+                <i class="bi bi-gear"></i>
+            </button>
+
             {{-- User Dropdown --}}
             <div class="dropdown">
                 <button class="btn btn-sm btn-outline-secondary dropdown-toggle d-flex align-items-center gap-2"
@@ -65,206 +71,99 @@
         </div>
     </div>
 
+    {{-- Kachel-Registry: nur Widgets aus der aktiven Section rendern, die in $activeWidgets stehen --}}
+    @php
+        $section = fn(string $name) => collect($widgets)
+            ->filter(fn($w, $key) => ($w['section'] ?? null) === $name && in_array($key, $activeWidgets, true));
+    @endphp
+
     <!-- KPI-Boxen: Fixe Perioden + Zeitraum -->
     <div class="row g-3 mb-3">
-        {{-- P&L Monat --}}
-        <div class="col-md-4">
-            <x-stat-card
-                title="Brutto P&L {{ \Carbon\Carbon::now()->translatedFormat('F Y') }}"
-                :value="'$ ' . number_format($monthProfit, 2)"
-                icon="calendar-check"
-                :color="$monthProfit >= 0 ? 'success' : 'danger'"
-                :trend="$monthTrend['direction']"
-                :trend-value="$monthTrend['label']"
-                :subtitle="'Netto: $ ' . number_format($monthNetProfit, 2)"
-            />
-        </div>
-        {{-- P&L YTD --}}
-        <div class="col-md-4">
-            <x-stat-card
-                title="Brutto P&L YTD {{ \Carbon\Carbon::now()->year }}"
-                :value="'$ ' . number_format($ytdProfit, 2)"
-                icon="calendar-range"
-                :color="$ytdProfit >= 0 ? 'success' : 'danger'"
-                :subtitle="'Netto: $ ' . number_format($ytdNetProfit, 2)"
-            />
-        </div>
-        {{-- P&L Zeitraum (zeitraumgefiltert) --}}
-        <div class="col-md-4">
-            <x-stat-card
-                title="Brutto P&L Zeitraum"
-                :value="'$ ' . number_format($totalProfit, 2)"
-                icon="graph-up-arrow"
-                :color="$totalProfit >= 0 ? 'success' : 'danger'"
-                :subtitle="'Netto: $ ' . number_format($periodNetProfit, 2) . ' · ' . $zeitraumLabel . ' · ' . number_format($closedTradesCount) . ' Trades'"
-            />
-        </div>
+        @foreach($section('kpi_primary') as $key => $w)
+            <div class="{{ $w['col'] }}">
+                @include($w['view'])
+            </div>
+        @endforeach
     </div>
 
     <div class="row g-3 mb-4">
-        {{-- Win Rate --}}
-        <div class="col-md-4">
-            <x-stat-card
-                title="Win Rate"
-                :value="$winRate . '%'"
-                icon="trophy"
-                :color="$winRate >= 50 ? 'success' : 'warning'"
-                :subtitle="number_format($closedTradesCount) . ' Trades · Ø ' . $avgDaysHeld . ' Tage'"
-            />
-        </div>
-        {{-- Ø P&L pro Trade --}}
-        <div class="col-md-4">
-            <x-stat-card
-                title="Ø Brutto P&L / Trade"
-                :value="'$ ' . number_format($avgProfitPerTrade, 2)"
-                icon="bar-chart-line"
-                :color="$avgProfitPerTrade >= 0 ? 'success' : 'danger'"
-                :subtitle="'Ø Netto: $ ' . number_format($avgNetProfitPerTrade, 2) . ' · Komm.: $ ' . number_format($totalCommissions, 2)"
-            />
-        </div>
-        {{-- Offene Kampagnen --}}
-        <div class="col-md-4">
-            <x-stat-card
-                title="Offene Kampagnen"
-                :value="number_format($activeCampaignsCount)"
-                icon="briefcase"
-                color="primary"
-                :subtitle="'Kapital gebunden: $ ' . number_format($capitalAtRisk, 0)"
-            />
-        </div>
+        @foreach($section('kpi_secondary') as $key => $w)
+            <div class="{{ $w['col'] }}">
+                @include($w['view'])
+            </div>
+        @endforeach
     </div>
+
+    <!-- Risiko-Kennzahlen -->
+    <div class="row g-3 mb-4">
+        @foreach($section('kpi_risk') as $key => $w)
+            <div class="{{ $w['col'] }}">
+                @include($w['view'])
+            </div>
+        @endforeach
+    </div>
+
+    <!-- Performance-Detail -->
+    <div class="row g-3 mb-4">
+        @foreach($section('kpi_performance') as $key => $w)
+            <div class="{{ $w['col'] }}">
+                @include($w['view'])
+            </div>
+        @endforeach
+    </div>
+
     <!-- NAV KPI-Karten (nur wenn Snapshot-Daten vorhanden) -->
     @if($navCurrent !== null)
     <div class="row g-3 mb-3">
-        <div class="col-md-4">
-            <x-stat-card
-                title="NAV aktuell"
-                :value="'€ ' . number_format($navCurrent, 2, ',', '.')"
-                icon="wallet2"
-                color="primary"
-                :subtitle="'Stand: ' . $navDate"
-            />
-        </div>
-        <div class="col-md-4">
-            <x-stat-card
-                title="NAV Änderung (Tag)"
-                :value="($navChange >= 0 ? '+' : '') . '€ ' . number_format($navChange, 2, ',', '.')"
-                icon="arrow-up-down"
-                :color="$navChange >= 0 ? 'success' : 'danger'"
-            />
-        </div>
-        <div class="col-md-4">
-            <x-stat-card
-                title="TWRR"
-                :value="number_format($navTwrr, 2, ',', '.') . ' %'"
-                icon="percent"
-                :color="$navTwrr >= 0 ? 'success' : 'danger'"
-                subtitle="Time-Weighted Rate of Return"
-            />
-        </div>
+        @foreach($section('nav_primary') as $key => $w)
+            <div class="{{ $w['col'] }}">
+                @include($w['view'])
+            </div>
+        @endforeach
     </div>
     <div class="row g-3 mb-3">
-        <div class="col-md-3">
-            <x-stat-card
-                title="Cash EUR"
-                :value="'€ ' . number_format($navCashEur ?? 0, 2, ',', '.')"
-                icon="cash-coin"
-                color="secondary"
-                :subtitle="'Stand: ' . $navDate"
-            />
-        </div>
-        <div class="col-md-3">
-            <x-stat-card
-                title="Cash USD"
-                :value="'$ ' . number_format($navCashUsd ?? 0, 2, ',', '.')"
-                icon="currency-dollar"
-                color="secondary"
-                :subtitle="'Stand: ' . $navDate"
-            />
-        </div>
-        <div class="col-md-3">
-            <x-stat-card
-                title="Realisiert (Tag)"
-                :value="($navRealizedPnl >= 0 ? '+' : '') . '€ ' . number_format($navRealizedPnl ?? 0, 2, ',', '.')"
-                icon="check-circle"
-                :color="($navRealizedPnl ?? 0) >= 0 ? 'success' : 'danger'"
-            />
-        </div>
-        <div class="col-md-3">
-            <x-stat-card
-                title="Unrealisiert (Tag)"
-                :value="($navUnrealizedPnl >= 0 ? '+' : '') . '€ ' . number_format($navUnrealizedPnl ?? 0, 2, ',', '.')"
-                icon="hourglass-split"
-                :color="($navUnrealizedPnl ?? 0) >= 0 ? 'success' : 'danger'"
-            />
-        </div>
+        @foreach($section('nav_secondary') as $key => $w)
+            <div class="{{ $w['col'] }}">
+                @include($w['view'])
+            </div>
+        @endforeach
     </div>
     @endif
 
     <!-- NAV-Kurve (immer im DOM, Sichtbarkeit per CSS) -->
-    <div class="row g-3 mb-3 {{ $navCurrent !== null ? '' : 'd-none' }}">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h6 class="mb-0"><i class="bi bi-graph-up"></i> NAV-Verlauf</h6>
-                    <small class="text-muted">Account-Wert täglich</small>
-                </div>
-                <div class="card-body p-2">
-                    <div id="chart-nav" wire:ignore></div>
-                </div>
+    @foreach($section('chart_nav_row') as $key => $w)
+        <div class="row g-3 mb-3 {{ $navCurrent !== null ? '' : 'd-none' }}">
+            <div class="{{ $w['col'] }}">
+                @include($w['view'])
             </div>
         </div>
+    @endforeach
+
+    <!-- Chart: Kumulativer P&L -->
+    <div class="row g-3 mb-3">
+        @foreach($section('charts_main') as $key => $w)
+            <div class="{{ $w['col'] }}">
+                @include($w['view'])
+            </div>
+        @endforeach
     </div>
 
-    <!-- Charts: Kumulativer P&L + Strategie-Donut -->
+    <!-- Charts: Spreads-Donut + Option/Aktie-Donut -->
     <div class="row g-3 mb-3">
-        <div class="col-md-8">
-            <div class="card h-100">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h6 class="mb-0"><i class="bi bi-graph-up-arrow"></i> Kumulativer P&L {{ now()->year }}</h6>
-                    <small class="text-muted">monatlich</small>
-                </div>
-                <div class="card-body p-2">
-                    <div id="chart-cumulative" wire:ignore></div>
-                </div>
+        @foreach($section('charts_secondary') as $key => $w)
+            <div class="{{ $w['col'] }}">
+                @include($w['view'])
             </div>
-        </div>
-
-        <div class="col-md-4">
-            <div class="card h-100">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h6 class="mb-0"><i class="bi bi-pie-chart"></i> P&L nach Spreads</h6>
-                    <small class="text-muted">{{ $zeitraumLabel }}</small>
-                </div>
-                <div class="card-body p-2">
-                    @if(count($chartStrategyValues) > 0)
-                        <div id="chart-strategy" wire:ignore></div>
-                    @else
-                        <div class="d-flex align-items-center justify-content-center text-muted" style="height:260px">
-                            <div class="text-center">
-                                <i class="bi bi-pie-chart fs-1"></i>
-                                <p class="mt-2 small">Keine positiven Spreads im Zeitraum</p>
-                            </div>
-                        </div>
-                    @endif
-                </div>
-            </div>
-        </div>
+        @endforeach
     </div>
 
     <!-- Chart: Monatlicher P&L -->
     <div class="row g-3 mb-4">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h6 class="mb-0"><i class="bi bi-bar-chart"></i> Monatlicher P&L</h6>
-                    <small class="text-muted">letzte 12 Monate</small>
-                </div>
-                <div class="card-body p-2">
-                    <div id="chart-monthly" wire:ignore></div>
-                </div>
+        @foreach($section('charts_monthly') as $key => $w)
+            <div class="{{ $w['col'] }}">
+                @include($w['view'])
             </div>
-        </div>
+        @endforeach
     </div>
 
     <script>
@@ -272,12 +171,15 @@
         var C = window.__dashCharts = window.__dashCharts || {};
 
         var d = {
-            cumulative:     @json($chartCumulative),
-            monthly:        @json($chartMonthly),
-            strategyLabels: @json($chartStrategyLabels),
-            strategyValues: @json($chartStrategyValues),
-            strategyActual: @json($chartStrategyActual),
-            nav:            @json($chartNav)
+            cumulative:       @json($chartCumulative),
+            monthly:          @json($chartMonthly),
+            strategyLabels:   @json($chartStrategyLabels),
+            strategyValues:   @json($chartStrategyValues),
+            strategyActual:   @json($chartStrategyActual),
+            instrumentLabels: @json($chartInstrumentLabels),
+            instrumentValues: @json($chartInstrumentValues),
+            instrumentActual: @json($chartInstrumentActual),
+            nav:              @json($chartNav)
         };
 
         function fmt0(v)  { return '$ ' + Math.round(v).toLocaleString('de-DE'); }
@@ -306,6 +208,29 @@
             C.strategy.render();
         }
 
+        function renderInstrument(data) {
+            var el = document.getElementById('chart-instrument');
+            if (!el || !data.instrumentValues || data.instrumentValues.length === 0) return;
+            if (C.instrument) { C.instrument.destroy(); C.instrument = null; }
+            var colors = data.instrumentActual.map(function(v) { return v >= 0 ? undefined : '#dc3545'; });
+            C.instrument = new ApexCharts(el, {
+                chart:       { type: 'donut', height: 260, fontFamily: 'inherit', accessibility: { enabled: false } },
+                series:      data.instrumentValues,
+                labels:      data.instrumentLabels,
+                colors:      colors.some(function(c) { return c; })
+                                 ? colors.map(function(c, i) { return c || ['#008FFB','#00E396'][i % 2]; })
+                                 : undefined,
+                legend:      { position: 'bottom', fontSize: '13px' },
+                dataLabels:  { formatter: function (val) { return val.toFixed(1) + '%'; } },
+                tooltip:     { y: { formatter: function(val, opts) {
+                    var actual = data.instrumentActual[opts.seriesIndex];
+                    return (actual >= 0 ? '$ ' : '−$ ') + Math.abs(actual).toFixed(2);
+                }}},
+                plotOptions: { pie: { donut: { size: '65%' } } }
+            });
+            C.instrument.render();
+        }
+
         function renderNav(data) {
             var el = document.getElementById('chart-nav');
             if (C.nav) { C.nav.destroy(); C.nav = null; }
@@ -318,7 +243,6 @@
                 colors:     ['#0d6efd'],
                 fill:       { type: 'gradient', gradient: { opacityFrom: 0.3, opacityTo: 0.03 } },
                 stroke:     { curve: 'smooth', width: 2 },
-                markers:    { size: 5, strokeWidth: 0 },
                 dataLabels: { enabled: false },
                 grid:       { borderColor: '#f0f0f0', strokeDashArray: 3 },
                 tooltip:    { x: { formatter: function(v, opts) { return data.nav[opts.dataPointIndex].x; } }, y: { formatter: function(v) { return '€ ' + v.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); } } }
@@ -364,6 +288,10 @@
             if (!C.strategy) {
                 renderStrategy(d);
             }
+
+            if (!C.instrument) {
+                renderInstrument(d);
+            }
         }
 
         document.readyState === 'loading'
@@ -381,67 +309,53 @@
                 // Donut destroy+recreate: Labels, Farben und Slice-Anzahl können sich komplett ändern
                 if (C.strategy) { C.strategy.destroy(); C.strategy = null; }
                 renderStrategy(u);
+                if (C.instrument) { C.instrument.destroy(); C.instrument = null; }
+                renderInstrument(u);
             });
         }
     })();
     </script>
 
     <!-- Aktuelle offene Positionen -->
-    <div class="card mb-4">
-        <div class="card-header">
-            <h5 class="mb-0"><i class="bi bi-list-ul"></i> Aktuelle offene Positionen</h5>
-        </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-hover">
-                    <thead>
-                    <tr>
-                        <th>Symbol</th>
-                        <th>Typ</th>
-                        <th>Einstieg</th>
-                        <th class="text-end">Qty</th>
-                        <th class="text-end">Preis</th>
-                        <th class="text-end">NetCash</th>
-                        <th>Strategie</th>
-                        <th>Status</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    @forelse($currentOpenTrades as $trade)
-                        <tr>
-                            <td>
-                                <strong>{{ $trade->symbol }}</strong>
-                                @if($trade->putCall)
-                                    <br><small class="text-muted">
-                                        {{ $trade->strike }} {{ $trade->putCall }}
-                                        @if($trade->expiry)
-                                            | {{ $trade->expiry->format('d.m.Y') }}
-                                        @endif
-                                    </small>
-                                @endif
-                            </td>
-                            <td>
-                                <span class="badge bg-secondary">{{ $trade->assetCategory }}</span>
-                            </td>
-                            <td>{{ $trade->dateTime?->format('d.m.Y') }}</td>
-                            <td class="text-end">{{ number_format($trade->quantity, 0) }}</td>
-                            <td class="text-end">{{ number_format($trade->tradePrice, 2) }}</td>
-                            <td class="text-end">{{ number_format($trade->netCash, 2) }}</td>
-                            <td><small>{{ $trade->strategy ?: '-' }}</small></td>
-                            <td>
-                                <span class="badge bg-primary">{{ $trade->status ?: 'OPEN' }}</span>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="8" class="text-center text-muted">Keine offenen Trades</td>
-                        </tr>
-                    @endforelse
-                    </tbody>
-                </table>
+    @foreach($section('table') as $key => $w)
+        @include($w['view'])
+    @endforeach
+
+    {{-- ── Kachel-Einstellungen Modal ─────────────────────────────────────── --}}
+    @if($showWidgetSettings)
+    <div class="modal d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);"
+         wire:click.self="$set('showWidgetSettings', false)">
+        <div class="modal-dialog modal-sm" style="margin-top: 60px; margin-left: auto; margin-right: 1rem;">
+            <div class="modal-content">
+                <div class="modal-header py-2">
+                    <h6 class="modal-title mb-0"><i class="bi bi-gear"></i> Kacheln für {{ $selectedEnvironment }}</h6>
+                    <button type="button" class="btn-close" wire:click="$set('showWidgetSettings', false)"></button>
+                </div>
+                <div class="modal-body p-3" style="max-height: 70vh; overflow-y: auto;">
+                    @php $groupedWidgets = collect($widgets)->groupBy('section', true); @endphp
+                    @foreach(config('dashboard_widget_sections') as $sectionKey => $sectionLabel)
+                        @continue(!$groupedWidgets->has($sectionKey))
+                        <div class="text-muted small text-uppercase fw-semibold mt-2 mb-1">{{ $sectionLabel }}</div>
+                        @foreach($groupedWidgets[$sectionKey] as $key => $w)
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox"
+                                       id="widget-{{ $key }}"
+                                       wire:click="toggleWidget('{{ $key }}')"
+                                       @checked(in_array($key, $activeWidgets, true))>
+                                <label class="form-check-label small" for="widget-{{ $key }}">
+                                    {{ $w['title'] }}
+                                    @if(($w['requires'] ?? null) === 'nav')
+                                        <span class="text-muted">(nur mit NAV-Daten)</span>
+                                    @endif
+                                </label>
+                            </div>
+                        @endforeach
+                    @endforeach
+                </div>
             </div>
         </div>
     </div>
+    @endif
 
 </div>
 

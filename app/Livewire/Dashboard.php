@@ -27,12 +27,25 @@ class Dashboard extends Component
     public $totalProfit;
     public $winRate;
     public $avgDaysHeld;
+    public $grossProfit;
+    public $grossLoss;
+    public $profitFactor;
+    public $avgWin;
+    public $avgLoss;
+    public $rewardRiskRatio;
+    public $largestWin;
+    public $largestWinSymbol;
+    public $largestWinDate;
+    public $largestLoss;
+    public $largestLossSymbol;
+    public $largestLossDate;
     public $totalCommissions;
     public $fxVolume;
     public $fxCommissions;
     public $spreadsCount;
     public $spreadsProfit;
     public $users;
+    public bool $showWidgetSettings = false;
 
     // KPI-Boxen: fixe Perioden
     public $monthProfit;
@@ -93,6 +106,35 @@ class Dashboard extends Component
 
         // Sende das Event an alle Livewire-Komponenten
         $this->dispatch('environment-changed', environment: $environment);
+    }
+
+    /**
+     * Liefert die Keys aller aktiven Dashboard-Kacheln für das aktuelle Environment.
+     * Ohne gespeicherte Auswahl (neuer User / neues Environment) sind alle Kacheln aktiv.
+     */
+    private function activeWidgetKeys(): array
+    {
+        $enabled = auth()->user()?->dashboard_config[$this->selectedEnvironment]['enabled'] ?? null;
+
+        return $enabled ?? array_keys(config('dashboard_widgets'));
+    }
+
+    public function toggleWidget(string $key): void
+    {
+        if (!array_key_exists($key, config('dashboard_widgets'))) {
+            return;
+        }
+
+        $enabled = $this->activeWidgetKeys();
+
+        $enabled = in_array($key, $enabled, true)
+            ? array_values(array_diff($enabled, [$key]))
+            : array_values([...$enabled, $key]);
+
+        $user = auth()->user();
+        $config = $user->dashboard_config ?? [];
+        $config[$this->selectedEnvironment] = ['enabled' => $enabled];
+        $user->update(['dashboard_config' => $config]);
     }
 
     public function loadStatistics()
@@ -195,6 +237,31 @@ class Dashboard extends Component
                 ? round($this->periodNetProfit / $this->closedTradesCount, 2)
                 : 0;
 
+            // Profit Factor: Bruttogewinn / Bruttoverlust (zeitraumgefiltert)
+            $this->grossProfit = (float) $closedTrades->where('profit', '>', 0)->sum('profit');
+            $this->grossLoss   = (float) abs($closedTrades->where('profit', '<', 0)->sum('profit'));
+            $this->profitFactor = ($this->closedTradesCount > 0 && $this->grossLoss > 0)
+                ? round($this->grossProfit / $this->grossLoss, 2)
+                : null;
+
+            // Reward/Risk-Ratio: Ø Gewinn / Ø Verlust
+            $losingTrades = $closedTrades->where('profit', '<', 0)->count();
+            $this->avgWin  = $winningTrades > 0 ? round($this->grossProfit / $winningTrades, 2) : 0;
+            $this->avgLoss = $losingTrades > 0 ? round($this->grossLoss / $losingTrades, 2) : 0;
+            $this->rewardRiskRatio = $this->avgLoss > 0 ? round($this->avgWin / $this->avgLoss, 2) : null;
+
+            // Größter Einzelgewinn / -verlust im Zeitraum
+            $bestTrade  = $closedTrades->where('profit', '>', 0)->sortByDesc('profit')->first();
+            $worstTrade = $closedTrades->where('profit', '<', 0)->sortBy('profit')->first();
+
+            $this->largestWin       = $bestTrade ? (float) $bestTrade->profit : null;
+            $this->largestWinSymbol = $bestTrade?->symbol;
+            $this->largestWinDate   = $bestTrade?->dateTimeClose?->format('d.m.Y');
+
+            $this->largestLoss       = $worstTrade ? (float) $worstTrade->profit : null;
+            $this->largestLossSymbol = $worstTrade?->symbol;
+            $this->largestLossDate   = $worstTrade?->dateTimeClose?->format('d.m.Y');
+
             // Spreads Statistiken - NUR die Zahlen, NICHT die Collection!
             $spreadsData = TradeClose::on($connection)
                 ->where('environment', $this->selectedEnvironment)
@@ -256,6 +323,16 @@ class Dashboard extends Component
             ->limit(10)
             ->get();
 
+        // Optionen, die in den nächsten 7 Tagen verfallen
+        $expiringOptions = TradeOpen::on($connection)
+            ->where('processed', 0)
+            ->where('environment', $this->selectedEnvironment)
+            ->whereIn('assetCategory', ['OPT', 'FOP'])
+            ->whereNotNull('expiry')
+            ->whereBetween('expiry', [Carbon::today(), Carbon::today()->addDays(7)])
+            ->orderBy('expiry')
+            ->get();
+
         // ===== CHART-DATEN =====
 
         // 1. Kumulativer P&L YTD (monatlich)
@@ -303,6 +380,21 @@ class Dashboard extends Component
         $chartStrategyValues = $strategyRows->pluck('profit')->map(fn($v) => round(abs((float) $v), 2))->toArray();
         $chartStrategyActual = $strategyRows->pluck('profit')->map(fn($v) => (float) $v)->toArray();
 
+        // 4. P&L nach Instrumenttyp: Option (OPT/FOP) vs. Aktie (STK), zeitraumgefiltert
+        $instrumentRows = $this->applyTimeFilter(
+            TradeClose::on($connection)
+                ->where('environment', $this->selectedEnvironment)
+                ->whereIn('assetCategory', ['STK', 'OPT', 'FOP']),
+            'dateTimeClose'
+        )->selectRaw("CASE WHEN assetCategory = 'STK' THEN 'Aktie' ELSE 'Option' END as typ, ROUND(SUM(profit), 2) as profit")
+         ->groupBy('typ')
+         ->orderBy('profit', 'desc')
+         ->get();
+
+        $chartInstrumentLabels = $instrumentRows->pluck('typ')->toArray();
+        $chartInstrumentValues = $instrumentRows->pluck('profit')->map(fn($v) => round(abs((float) $v), 2))->toArray();
+        $chartInstrumentActual = $instrumentRows->pluck('profit')->map(fn($v) => (float) $v)->toArray();
+
         // NAV-Kurve: alle Snapshots chronologisch
         $chartNav = AccountSnapshot::on($connection)
             ->where('environment', $this->selectedEnvironment)
@@ -312,14 +404,36 @@ class Dashboard extends Component
             ->values()
             ->toArray();
 
+        // Max Drawdown: größter Rückgang vom bisherigen Hoch entlang der NAV-Kurve
+        $maxDrawdownAbs = 0.0;
+        $maxDrawdownPct = 0.0;
+        $navPeak = null;
+        foreach ($chartNav as $point) {
+            $value = $point['y'];
+            if ($navPeak === null || $value > $navPeak) {
+                $navPeak = $value;
+            }
+            if ($navPeak > 0) {
+                $drawdown = $navPeak - $value;
+                $drawdownPct = ($drawdown / $navPeak) * 100;
+                if ($drawdownPct > $maxDrawdownPct) {
+                    $maxDrawdownPct = $drawdownPct;
+                    $maxDrawdownAbs = $drawdown;
+                }
+            }
+        }
+
         // Chart-Update an Alpine-Komponenten senden (für Environment-/Zeitraum-Wechsel)
         $this->dispatch('charts-data',
-            cumulative:      $chartCumulative,
-            monthly:         $chartMonthly,
-            strategyLabels:  $chartStrategyLabels,
-            strategyValues:  $chartStrategyValues,
-            strategyActual:  $chartStrategyActual,
-            nav:             $chartNav,
+            cumulative:       $chartCumulative,
+            monthly:          $chartMonthly,
+            strategyLabels:   $chartStrategyLabels,
+            strategyValues:   $chartStrategyValues,
+            strategyActual:   $chartStrategyActual,
+            instrumentLabels: $chartInstrumentLabels,
+            instrumentValues: $chartInstrumentValues,
+            instrumentActual: $chartInstrumentActual,
+            nav:              $chartNav,
         );
 
         // Trend P&L Monat vs. Vormonat
@@ -342,14 +456,22 @@ class Dashboard extends Component
 
         return view('livewire.dashboard', [
             'currentOpenTrades'   => $currentOpenTrades,
+            'expiringOptions'     => $expiringOptions,
             'monthTrend'          => $monthTrend,
             'zeitraumLabel'       => $zeitraumLabel,
             'chartCumulative'     => $chartCumulative,
             'chartMonthly'        => $chartMonthly,
-            'chartStrategyLabels' => $chartStrategyLabels,
-            'chartStrategyValues' => $chartStrategyValues,
-            'chartStrategyActual' => $chartStrategyActual,
-            'chartNav'            => $chartNav,
+            'chartStrategyLabels'   => $chartStrategyLabels,
+            'chartStrategyValues'   => $chartStrategyValues,
+            'chartStrategyActual'   => $chartStrategyActual,
+            'chartInstrumentLabels' => $chartInstrumentLabels,
+            'chartInstrumentValues' => $chartInstrumentValues,
+            'chartInstrumentActual' => $chartInstrumentActual,
+            'chartNav'              => $chartNav,
+            'maxDrawdownAbs'        => round($maxDrawdownAbs, 2),
+            'maxDrawdownPct'        => round($maxDrawdownPct, 2),
+            'widgets'             => config('dashboard_widgets'),
+            'activeWidgets'       => $this->activeWidgetKeys(),
         ]);
     }
 }
