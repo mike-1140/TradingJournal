@@ -7,7 +7,6 @@ use Illuminate\Support\Facades\Log;
 use Livewire\Component;
 use Livewire\WithPagination;
 use App\Models\TradeOpen;
-use App\Services\YahooFinanceService;
 use App\Traits\ManagesEnvironment;
 
 class OpenStocks extends Component
@@ -74,7 +73,7 @@ class OpenStocks extends Component
         }
     }
 
-    public function render(YahooFinanceService $yahoo)
+    public function render()
     {
         $query = TradeOpen::onEnvironment($this->selectedEnvironment)
             ->with('symbol')
@@ -140,7 +139,6 @@ class OpenStocks extends Component
             ->filter();
 
         foreach ($trades as $trade) {
-            $trade->current_price  = $yahoo->quote($trade->symbol);
             $trade->daysHeld = Carbon::parse($trade->dateTime)
                 ->diffInDays(Carbon::now());
         }

@@ -13,9 +13,6 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-//        $this->app->singleton(YahooFinanceService::class, function ($app) {
-//            return new YahooFinanceService();
-//        });
     }
 
     /**

@@ -74,7 +74,6 @@
                         @endif
                     </th>
                     <th class="text-end">Stücke</th>
-                    <th class="text-end">akt. Preis</th>
                     <th class="text-end" wire:click="sortBy('tradePrice')" style="cursor: pointer;">
                         Einstiegspreis
                         @if($sortField === 'tradePrice')
@@ -100,12 +99,6 @@
                         <td class="text-end">
                             {{ number_format($trade->quantity, 2, ',', '') }}
                         </td>
-                        <td class="text-end">---
-                            {{--
-                            <strong>{{ $trade->current_price }} </strong>
-                                <br><small class="text-muted">{{ $trade->last_trade_day }}</small>
-                            --}}
-                        </td>
                         <td class="text-end">{{ number_format($trade->tradePrice, 2, ',', '') }}</td>
                         <td class="text-end">
                             <strong>{{ number_format($trade->quantity * $trade->tradePrice,  2, ',', '') }}</strong>
@@ -124,7 +117,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="8">
+                        <td colspan="7">
                             {{-- 6. EMPTY STATE --}}
                             <x-empty-state
                                 icon="inbox"
