@@ -7,6 +7,52 @@
         </x-slot:actions>
     </x-page-header>
 
+    {{-- Nicht dokumentiert: Kampagnen ohne Log-Eintrag --}}
+    @if($unloggedCampaigns->isNotEmpty())
+        <div class="card mb-4 border-warning">
+            <div class="card-header bg-warning bg-opacity-25">
+                <i class="bi bi-exclamation-circle"></i>
+                {{ $unloggedCampaigns->count() }} Kampagne(n) ohne Log-Eintrag
+                <span class="text-muted small">(letzte {{ $unloggedWindowDays }} Tage, inkl. offene)</span>
+            </div>
+            <div class="list-group list-group-flush">
+                @foreach($unloggedCampaigns as $c)
+                    @php $candidates = $candidatesByCampaign[$c->id] ?? collect(); @endphp
+                    <div class="list-group-item d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <div>
+                            <strong class="fs-6">{{ $c->symbol }}</strong>
+                            <span class="text-muted small">{{ $c->strategy }}</span>
+                            <span class="badge bg-{{ $c->status === 'ACTIVE' ? 'primary' : ($c->status === 'PENDING' ? 'secondary' : 'success') }} ms-1">
+                                {{ $c->status }}
+                            </span>
+                            <div class="text-muted small">
+                                {{ $c->start_date?->format('d.m.Y') }}
+                                @if($c->end_date) &rarr; {{ $c->end_date->format('d.m.Y') }} @endif
+                            </div>
+                        </div>
+
+                        @if($candidates->isNotEmpty())
+                            <div class="d-flex flex-wrap gap-1">
+                                @foreach($candidates as $plan)
+                                    <button wire:click="linkPlanToCampaign({{ $plan->id }}, {{ $c->id }})"
+                                            wire:confirm="Vorab-Plan vom {{ $plan->date_open->format('d.m.Y') }} mit dieser Kampagne verknüpfen?"
+                                            class="btn btn-sm btn-outline-success">
+                                        <i class="bi bi-link-45deg"></i> Plan vom {{ $plan->date_open->format('d.m.Y') }} verknüpfen
+                                    </button>
+                                @endforeach
+                            </div>
+                        @else
+                            <a href="{{ route('log.create', ['campaign_id' => $c->id]) }}"
+                               class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-journal-plus"></i> Dokumentieren
+                            </a>
+                        @endif
+                    </div>
+                @endforeach
+            </div>
+        </div>
+    @endif
+
     {{-- Statistiken --}}
     <div class="row g-3 mb-4">
         <div class="col-md-4">

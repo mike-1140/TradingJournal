@@ -7,8 +7,10 @@ use App\Models\PsychologyEntry;
 use App\Models\PsychologyRule;
 use App\Models\PsychologyRuleset;
 use App\Models\TradeClose;
+use App\Models\TradeOpen;
 use App\Traits\ManagesEnvironment;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 
 class PsychologyForm extends Component
@@ -21,6 +23,11 @@ class PsychologyForm extends Component
     public ?string $prefillTradeId    = null;
     public ?string $prefillStrategyId = null;
     public ?string $prefillTradeType  = null;
+
+    // Manuelle Verknüpfungssuche — für nachträgliches/gezieltes Dokumentieren
+    // unabhängig vom Zeitpunkt, unabhängig davon ob der Trade noch in den
+    // normalen Listen auftaucht (z.B. bereits ausgeübte Legs)
+    public array $linkCandidates = [];
 
     // Erfassungs-Felder
     public string  $symbol       = '';
@@ -72,13 +79,15 @@ class PsychologyForm extends Component
             $this->autofillFromTrade();
         } elseif ($strategyId = request()->query('opt_strategyID')) {
             $this->prefillStrategyId = $strategyId;
-            $this->prefillTradeType  = 'spread';
+            $this->prefillTradeType  = request()->query('trade_type', 'spread');
             $this->autofillFromSpread();
         }
 
         if ($id) {
             $this->loadEntry($id);
         }
+
+        $this->refreshLinkCandidates();
     }
 
     // ── Daten laden ─────────────────────────────────────────────────────────
@@ -159,7 +168,22 @@ class PsychologyForm extends Component
 
     private function autofillFromTrade(): void
     {
-        $env        = $this->selectedEnvironment;
+        $env = $this->selectedEnvironment;
+
+        if ($this->prefillTradeType === 'open') {
+            $connection = TradeOpen::getConnectionForEnvironment($env);
+            $trade      = TradeOpen::on($connection)->find((int) $this->prefillTradeId);
+
+            if ($trade) {
+                $this->symbol    = $trade->symbol ?? '';
+                $this->pnl       = null; // Trade noch offen, kein PnL
+                $this->tradeDate = $trade->dateTime
+                    ? Carbon::parse($trade->dateTime)->format('Y-m-d')
+                    : now()->format('Y-m-d');
+            }
+            return;
+        }
+
         $connection = TradeClose::getConnectionForEnvironment($env);
         $trade      = TradeClose::on($connection)->find((int) $this->prefillTradeId);
 
@@ -174,7 +198,26 @@ class PsychologyForm extends Component
 
     private function autofillFromSpread(): void
     {
-        $env        = $this->selectedEnvironment;
+        $env = $this->selectedEnvironment;
+
+        if ($this->prefillTradeType === 'open_spread') {
+            $connection = TradeOpen::getConnectionForEnvironment($env);
+            $trades     = TradeOpen::on($connection)
+                ->where('opt_strategyID', $this->prefillStrategyId)
+                ->where('processed', 0)
+                ->get();
+
+            if ($trades->isNotEmpty()) {
+                $this->symbol    = $trades->first()->underlyingSymbol ?? $trades->first()->symbol ?? '';
+                $this->pnl       = null; // Spread noch offen, kein PnL
+                $maxOpen         = $trades->max('dateTime');
+                $this->tradeDate = $maxOpen
+                    ? Carbon::parse($maxOpen)->format('Y-m-d')
+                    : now()->format('Y-m-d');
+            }
+            return;
+        }
+
         $connection = TradeClose::getConnectionForEnvironment($env);
         $trades     = TradeClose::on($connection)
             ->where('opt_strategyID', $this->prefillStrategyId)
@@ -188,6 +231,157 @@ class PsychologyForm extends Component
                 ? Carbon::parse($maxClose)->format('Y-m-d')
                 : now()->format('Y-m-d');
         }
+    }
+
+    // ── Manuelle Verknüpfung ─────────────────────────────────────────────────
+
+    /**
+     * Sucht offene und geschlossene Trades zum aktuellen Symbol — unabhängig von
+     * Alter oder Sichtbarkeit in den normalen Listen (z.B. bereits ausgeübte/
+     * zugeteilte Legs, die aus "Offene Positionen" rausgefiltert sind, aber
+     * über ihre Detailseite weiterhin erreichbar bleiben).
+     */
+    private function refreshLinkCandidates(): void
+    {
+        $this->linkCandidates = [];
+        if ($this->prefillTradeId || $this->prefillStrategyId || empty($this->symbol)) {
+            return;
+        }
+
+        $env    = $this->selectedEnvironment;
+        $symbol = strtoupper(trim($this->symbol));
+
+        $openConn  = TradeOpen::getConnectionForEnvironment($env);
+        $closeConn = TradeClose::getConnectionForEnvironment($env);
+
+        $symbolMatch = fn ($q) => $q->where('symbol', 'like', $symbol . '%')->orWhere('underlyingSymbol', $symbol);
+        $hasStrategy = fn ($q) => $q->whereNotNull('opt_strategyID')->where('opt_strategyID', '!=', '');
+        $noStrategy  = fn ($q) => $q->whereNull('opt_strategyID')->orWhere('opt_strategyID', '');
+
+        // Offene Spread-Gruppen (mehrere Legs derselben opt_strategyID) — als ein
+        // Kandidat statt einzelner Legs, analog zur Spread-Detail-Seite.
+        $openSpreads = TradeOpen::on($openConn)
+            ->where('environment', $env)
+            ->where($symbolMatch)
+            ->where($hasStrategy)
+            ->select('opt_strategyID', 'opt_strategyName',
+                DB::raw('MAX(dateTime) as latest_date'), DB::raw('COUNT(*) as leg_count'))
+            ->groupBy('opt_strategyID', 'opt_strategyName')
+            ->orderByDesc('latest_date')
+            ->limit(10)
+            ->get();
+
+        foreach ($openSpreads as $spread) {
+            $this->linkCandidates[] = [
+                'type'  => 'open_spread',
+                'id'    => $spread->opt_strategyID,
+                'label' => $this->describeSpread($spread, 'latest_date') . ' · eröffnet',
+            ];
+        }
+
+        $opens = TradeOpen::on($openConn)
+            ->where('environment', $env)
+            ->where($symbolMatch)
+            ->where($noStrategy)
+            ->orderByDesc('dateTime')
+            ->limit(15)
+            ->get();
+
+        foreach ($opens as $trade) {
+            $this->linkCandidates[] = [
+                'type'  => 'open',
+                'id'    => $trade->id,
+                'label' => $this->describeTrade($trade, 'dateTime') . ' · eröffnet',
+            ];
+        }
+
+        // Geschlossene Spread-Gruppen
+        $closedSpreads = TradeClose::on($closeConn)
+            ->where('environment', $env)
+            ->where($symbolMatch)
+            ->where($hasStrategy)
+            ->select('opt_strategyID', 'opt_strategyName',
+                DB::raw('MAX(dateTimeClose) as latest_date'), DB::raw('COUNT(*) as leg_count'))
+            ->groupBy('opt_strategyID', 'opt_strategyName')
+            ->orderByDesc('latest_date')
+            ->limit(10)
+            ->get();
+
+        foreach ($closedSpreads as $spread) {
+            $this->linkCandidates[] = [
+                'type'  => 'spread',
+                'id'    => $spread->opt_strategyID,
+                'label' => $this->describeSpread($spread, 'latest_date') . ' · geschlossen',
+            ];
+        }
+
+        $closes = TradeClose::on($closeConn)
+            ->where('environment', $env)
+            ->where($symbolMatch)
+            ->where($noStrategy)
+            ->orderByDesc('dateTimeClose')
+            ->limit(15)
+            ->get();
+
+        foreach ($closes as $trade) {
+            $this->linkCandidates[] = [
+                'type'  => 'closed',
+                'id'    => $trade->id,
+                'label' => $this->describeTrade($trade, 'dateTimeClose') . ' · geschlossen',
+            ];
+        }
+    }
+
+    private function describeTrade($trade, string $dateField): string
+    {
+        $date = $trade->{$dateField} ? Carbon::parse($trade->{$dateField})->format('d.m.Y') : '?';
+
+        if ($trade->assetCategory === 'OPT' || $trade->assetCategory === 'FOP') {
+            $strike  = $trade->strike ? number_format((float) $trade->strike, 2, ',', '') : '';
+            $expiry  = $trade->expiry ? Carbon::parse($trade->expiry)->format('d.m.y') : '';
+            return trim("{$strike}{$trade->putCall} exp.{$expiry} · {$date}");
+        }
+
+        return "Aktie · {$date}";
+    }
+
+    private function describeSpread($spread, string $dateField): string
+    {
+        $date = $spread->{$dateField} ? Carbon::parse($spread->{$dateField})->format('d.m.Y') : '?';
+        $name = $spread->opt_strategyName ?: 'Spread';
+        return "{$name} ({$spread->leg_count} Legs) · {$date}";
+    }
+
+    public function updatedSymbol(): void
+    {
+        $this->refreshLinkCandidates();
+    }
+
+    /**
+     * Verknüpft einen bestehenden oder neuen Eintrag nachträglich mit einem
+     * konkreten Trade oder einer Spread-Gruppe — überschreibt keine bereits
+     * eingegebenen Felder (Emotion, Motivation, Lektion bleiben, wie
+     * prefillFromCampaign in LogForm).
+     */
+    public function linkToTrade(string $type, string $id): void
+    {
+        if (in_array($type, ['open_spread', 'spread'], true)) {
+            $this->prefillStrategyId = $id;
+            $this->prefillTradeId    = null;
+        } else {
+            $this->prefillTradeId    = $id;
+            $this->prefillStrategyId = null;
+        }
+        $this->prefillTradeType = $type;
+        $this->linkCandidates   = [];
+    }
+
+    public function unlinkTrade(): void
+    {
+        $this->prefillTradeId    = null;
+        $this->prefillStrategyId = null;
+        $this->prefillTradeType  = null;
+        $this->refreshLinkCandidates();
     }
 
     // ── Livewire-Hooks ───────────────────────────────────────────────────────

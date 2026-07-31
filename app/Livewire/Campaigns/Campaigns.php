@@ -6,6 +6,7 @@ use App\Traits\FilterableByTime;
 use Livewire\Component;
 use Livewire\WithPagination;
 use App\Models\Campaign;
+use App\Models\TradePlan;
 use App\Traits\ManagesEnvironment;
 use Livewire\Attributes\On;
 
@@ -87,11 +88,16 @@ class Campaigns extends Component
             ->orderBy('start_date', 'desc')
             ->paginate($this->perPage);
 
+        $loggedCampaignIds = TradePlan::whereIn('campaign_id', $campaigns->pluck('id'))
+            ->where('environment', $env)
+            ->pluck('campaign_id');
+
         return view('livewire.campaigns.campaigns-index', [
-            'campaigns'  => $campaigns,
-            'globalView' => $globalView,
-            'searchTerm' => strtoupper($this->search),
-            'summary'    => $summary,
+            'campaigns'         => $campaigns,
+            'globalView'        => $globalView,
+            'searchTerm'        => strtoupper($this->search),
+            'summary'           => $summary,
+            'loggedCampaignIds' => $loggedCampaignIds,
         ]);
     }
 }

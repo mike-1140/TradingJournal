@@ -120,6 +120,7 @@
                         <th class="text-end">Kommission</th>
                         <th class="text-end">Netto P&L</th>
                         <th class="text-center">Status</th>
+                        <th class="text-center" title="Trade Log">Log</th>
                         <th></th>
                     </tr>
                 </thead>
@@ -189,6 +190,13 @@
                                     {{ $campaign->status }}
                                 </span>
                             </td>
+                            <td class="text-center">
+                                @if($loggedCampaignIds->contains($campaign->id))
+                                    <i class="bi bi-journal-check text-success" title="Dokumentiert"></i>
+                                @else
+                                    <i class="bi bi-journal text-muted" title="Nicht dokumentiert" style="opacity: 0.4;"></i>
+                                @endif
+                            </td>
                             <td>
                                 <a href="{{ route('campaigns.campaign.detail', $campaign->id) }}"
                                    class="btn btn-outline-secondary btn-sm py-0 px-2"
@@ -212,7 +220,7 @@
                         <td class="text-end">
                             <x-currency-value :value="$metrics->total_net_pnl ?? 0" :currency="'USD'" :colored="true" />
                         </td>
-                        <td colspan="2"></td>
+                        <td colspan="3"></td>
                     </tr>
                 </tfoot>
                 @endif

@@ -9,6 +9,30 @@
         </x-slot:actions>
     </x-page-header>
 
+    @if($campaignId)
+        <div class="alert alert-success py-2 d-flex align-items-center gap-2 mb-3">
+            <i class="bi bi-link-45deg"></i>
+            Verknüpft mit importierter Kampagne — Kopfdaten und Legs wurden vorausgefüllt.
+        </div>
+    @elseif(count($campaignCandidates) > 0)
+        <div class="alert alert-info py-2 mb-3">
+            <div class="d-flex align-items-center gap-2 mb-2">
+                <i class="bi bi-search"></i>
+                Passende Kampagne(n) für {{ $underlying }} gefunden — nachträglich verknüpfen?
+            </div>
+            <div class="d-flex flex-wrap gap-2">
+                @foreach($campaignCandidates as $c)
+                    <button type="button" wire:click="linkCampaign({{ $c['id'] }})"
+                            class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-link-45deg"></i>
+                        {{ $c['start_date'] }}@if($c['end_date']) &ndash; {{ $c['end_date'] }} @endif
+                        <span class="badge bg-light text-dark border ms-1">{{ $c['status'] }}</span>
+                    </button>
+                @endforeach
+            </div>
+        </div>
+    @endif
+
     <form wire:submit="savePlan">
 
         {{-- ── Sektion 1: Kopfdaten ──────────────────────────────────────────── --}}
@@ -19,13 +43,13 @@
             <div class="card-body">
 
                 <div class="row g-3 mb-3">
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <label class="form-label">Datum <span class="text-danger">*</span></label>
                         <input type="date" class="form-control @error('date_open') is-invalid @enderror"
                                wire:model="date_open">
                         @error('date_open') <div class="invalid-feedback">{{ $message }}</div> @enderror
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <label class="form-label">Underlying <span class="text-danger">*</span></label>
                         <input type="text" class="form-control text-uppercase @error('underlying') is-invalid @enderror"
                                wire:model="underlying"
@@ -37,6 +61,12 @@
                         <input type="number" step="0.01" class="form-control @error('price_open') is-invalid @enderror"
                                wire:model="price_open">
                         @error('price_open') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Gebühren Open</label>
+                        <input type="number" step="0.01" class="form-control @error('fees_open') is-invalid @enderror"
+                               wire:model="fees_open">
+                        @error('fees_open') <div class="invalid-feedback">{{ $message }}</div> @enderror
                     </div>
                     <div class="col-md-2">
                         <label class="form-label">IVP</label>
@@ -77,8 +107,7 @@
                         <label class="form-label">Exit-Plan / Regeln</label>
                         <textarea class="form-control @error('exit_plan') is-invalid @enderror"
                                   wire:model="exit_plan"
-                                  rows="2"
-                                  placeholder="TP bei 50%, SL bei 2x Prämie..."></textarea>
+                                  rows="2"></textarea>
                         @error('exit_plan') <div class="invalid-feedback">{{ $message }}</div> @enderror
                     </div>
                 </div>

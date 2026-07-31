@@ -84,6 +84,11 @@
                                         {{ $campaign->symbol }}
                                     </a>
                                     <small class="text-muted">{{ $campaign->start_date->format('d.M.Y') }}</small>
+                                    @if($loggedCampaignIds->contains($campaign->id))
+                                        <span class="badge rounded-pill bg-success bg-opacity-25 text-success border border-success" style="font-size: 0.7rem;" title="Dokumentiert">Log</span>
+                                    @else
+                                        <span class="badge rounded-pill bg-light text-muted border" style="font-size: 0.7rem;" title="Nicht dokumentiert">Log</span>
+                                    @endif
                                     @if($campaign->status === 'PENDING')
                                         <span class="badge rounded-pill bg-warning text-dark" style="font-size: 0.7rem;">
                                             <i class="bi bi-clock-history"></i> Pending

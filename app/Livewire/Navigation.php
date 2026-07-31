@@ -5,7 +5,9 @@ namespace App\Livewire;
 use Carbon\Carbon;
 use Livewire\Component;
 use Livewire\Attributes\Computed;
+use App\Models\Campaign;
 use App\Models\TradeClose;
+use App\Models\TradePlan;
 use App\Helpers\TradingHelper;
 use App\Traits\FilterableByTime;
 
@@ -61,6 +63,36 @@ class Navigation extends Component
             return range((int) $minYear, now()->year);
         } catch (\Exception $e) {
             return [now()->year];
+        }
+    }
+
+    /**
+     * Anzahl Kampagnen ohne Log-Eintrag (offene + geschlossene der letzten 30 Tage) —
+     * sanfte Erinnerung als Sidebar-Badge, siehe LogList::render() für dieselbe Logik.
+     */
+    #[Computed]
+    public function unloggedCount(): int
+    {
+        try {
+            $connection = TradingHelper::getConnection($this->selectedEnvironment);
+
+            $linkedCampaignIds = TradePlan::on($connection)
+                ->where('environment', $this->selectedEnvironment)
+                ->whereNotNull('campaign_id')
+                ->pluck('campaign_id');
+
+            $cutoff = Carbon::now()->subDays(30);
+
+            return Campaign::on($connection)
+                ->where('environment', $this->selectedEnvironment)
+                ->whereNotIn('id', $linkedCampaignIds)
+                ->where(function ($q) use ($cutoff) {
+                    $q->where('status', '!=', 'CLOSED')
+                        ->orWhere('start_date', '>=', $cutoff);
+                })
+                ->count();
+        } catch (\Exception $e) {
+            return 0;
         }
     }
 

@@ -124,6 +124,9 @@
                class="sidebar-link {{ request()->routeIs('log.*') ? 'active' : '' }}">
                 <i class="bi bi-journal-plus"></i>
                 <span class="sidebar-text">Log</span>
+                @if($this->unloggedCount > 0)
+                    <span class="badge bg-warning text-dark ms-auto">{{ $this->unloggedCount }}</span>
+                @endif
             </a>
 
             {{-- Psychologie --}}

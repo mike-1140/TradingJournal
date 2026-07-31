@@ -10,12 +10,41 @@
     </x-page-header>
 
     @if($prefillTradeId || $prefillStrategyId)
-    <div class="alert alert-info py-2 mb-3 small">
+    <div class="alert alert-info py-2 mb-3 small d-flex align-items-center gap-2">
         <i class="bi bi-link-45deg"></i>
-        Verknüpft mit
-        @if($prefillTradeType === 'spread') Spread <strong>{{ $prefillStrategyId }}</strong>
-        @else Trade <strong>#{{ $prefillTradeId }}</strong>
+        <span>
+            Verknüpft mit
+            @if(in_array($prefillTradeType, ['spread', 'open_spread']))
+                Spread <strong>{{ $prefillStrategyId }}</strong>
+            @else
+                Trade <strong>#{{ $prefillTradeId }}</strong>
+            @endif
+        </span>
+        @if(in_array($prefillTradeType, ['open', 'open_spread']))
+            <span class="badge bg-primary">Eröffnung</span>
+        @else
+            <span class="badge bg-secondary">Abschluss</span>
         @endif
+        <button type="button" wire:click="unlinkTrade" class="btn btn-sm btn-link text-danger ms-auto py-0">
+            <i class="bi bi-x-circle"></i> Verknüpfung entfernen
+        </button>
+    </div>
+    @elseif(count($linkCandidates) > 0)
+    <div class="alert alert-warning py-2 mb-3 small">
+        <div class="d-flex align-items-center gap-2 mb-2">
+            <i class="bi bi-search"></i>
+            Trades zu <strong>{{ strtoupper($symbol) }}</strong> gefunden — gezielt nachträglich verknüpfen?
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+            @foreach($linkCandidates as $c)
+                @php $isOpenSide = in_array($c['type'], ['open', 'open_spread'], true); @endphp
+                <button type="button" wire:click="linkToTrade('{{ $c['type'] }}', '{{ $c['id'] }}')"
+                        class="btn btn-sm btn-outline-{{ $isOpenSide ? 'primary' : 'secondary' }}">
+                    <i class="bi {{ in_array($c['type'], ['open_spread', 'spread'], true) ? 'bi-diagram-3' : 'bi-link-45deg' }}"></i>
+                    {{ $c['label'] }}
+                </button>
+            @endforeach
+        </div>
     </div>
     @endif
 

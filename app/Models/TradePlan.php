@@ -13,9 +13,11 @@ class TradePlan extends BaseTradingModel
 
     protected $fillable = [
         'environment',
+        'campaign_id',
         'underlying',
         'date_open',
         'price_open',
+        'fees_open',
         'ivp_open',
         'ivr_open',
         'strategy',
@@ -46,6 +48,7 @@ class TradePlan extends BaseTradingModel
         'date_open'     => 'date',
         'date_close'    => 'date',
         'price_open'    => 'decimal:2',
+        'fees_open'     => 'decimal:2',
         'price_close'   => 'decimal:2',
         'premium_close' => 'decimal:2',
         'fees_close'    => 'decimal:2',
@@ -57,6 +60,11 @@ class TradePlan extends BaseTradingModel
     public function legs()
     {
         return $this->hasMany(TradePlanLeg::class, 'plan_id')->orderBy('sort_order');
+    }
+
+    public function campaign()
+    {
+        return $this->belongsTo(Campaign::class, 'campaign_id');
     }
 
     public function scopeOnEnvironment($query, $environment)

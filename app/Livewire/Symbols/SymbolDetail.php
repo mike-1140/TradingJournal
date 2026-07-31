@@ -4,6 +4,7 @@ namespace App\Livewire\Symbols;
 
 use App\Models\Campaign;
 use App\Models\CampaignLedger;
+use App\Models\TradePlan;
 use App\Traits\FilterableByTime;
 use App\Traits\ManagesEnvironment;
 use Carbon\Carbon;
@@ -39,16 +40,21 @@ class SymbolDetail extends Component
 
         if ($campaignIds->isEmpty()) {
             return view('livewire.symbols.symbol-detail', [
-                'campaigns'      => $campaigns,
-                'campaignStats'  => collect(),
-                'metrics'        => null,
-                'winRate'        => null,
-                'winCount'       => 0,
-                'closedCount'    => 0,
-                'chartData'      => [],
-                'latestCampaign' => null,
+                'campaigns'          => $campaigns,
+                'campaignStats'      => collect(),
+                'metrics'            => null,
+                'winRate'            => null,
+                'winCount'           => 0,
+                'closedCount'        => 0,
+                'chartData'          => [],
+                'latestCampaign'     => null,
+                'loggedCampaignIds'  => collect(),
             ]);
         }
+
+        $loggedCampaignIds = TradePlan::whereIn('campaign_id', $campaignIds)
+            ->where('environment', $this->selectedEnvironment)
+            ->pluck('campaign_id');
 
         // Zeitgefilterte Basis für Metriken oben + Chart
         $filteredQuery = fn() => $this->applyTimeFilter(
@@ -119,14 +125,15 @@ class SymbolDetail extends Component
         $latestCampaign = $campaigns->sortByDesc('start_date')->first();
 
         return view('livewire.symbols.symbol-detail', [
-            'campaigns'      => $campaigns,
-            'campaignStats'  => $campaignStats,
-            'metrics'        => $metrics,
-            'winRate'        => $winRate,
-            'winCount'       => $winCount,
-            'closedCount'    => $closedCount,
-            'chartData'      => $chartData,
-            'latestCampaign' => $latestCampaign,
+            'campaigns'         => $campaigns,
+            'campaignStats'     => $campaignStats,
+            'metrics'           => $metrics,
+            'winRate'           => $winRate,
+            'winCount'          => $winCount,
+            'closedCount'       => $closedCount,
+            'chartData'         => $chartData,
+            'latestCampaign'    => $latestCampaign,
+            'loggedCampaignIds' => $loggedCampaignIds,
         ]);
     }
 }

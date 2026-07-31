@@ -7,6 +7,7 @@ use App\Traits\FilterableByTime;
 use Livewire\Component;
 use Livewire\WithPagination;
 use App\Models\CampaignLedger;
+use App\Models\TradePlan;
 use App\Traits\ManagesEnvironment;
 
 class CampaignDetail extends Component
@@ -143,6 +144,10 @@ class CampaignDetail extends Component
 
     public function render()
     {
+        $linkedPlan = TradePlan::where('campaign_id', $this->campaignId)
+            ->where('environment', $this->selectedEnvironment)
+            ->first();
+
         $query = CampaignLedger::where('campaign_id', $this->campaignId)
             ->where('environment', $this->selectedEnvironment);
         $query = $this->applyTimeFilter($query, 'dateTime');
@@ -232,6 +237,7 @@ class CampaignDetail extends Component
             'dayStartBalances' => $dayStartBalances,
             'dailySummaries'   => $dailySummaries,
             'chartData'        => $chartData,
+            'linkedPlan'       => $linkedPlan,
         ]);
     }
 

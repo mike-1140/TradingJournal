@@ -5,6 +5,7 @@ namespace App\Livewire\Trades;
 use Livewire\Component;
 use App\Models\TradeOpen;
 use App\Models\TradeRaw;
+use App\Models\PsychologyEntry;
 use App\Traits\ManagesEnvironment;
 use Illuminate\Support\Collection;
 
@@ -56,9 +57,17 @@ class OpenOptionsDetail extends Component
                 ->get();
         }
 
+        $psychEntry = PsychologyEntry::on($connection)
+            ->where('trade_id', (string) $this->trade->id)
+            ->where('trade_type', 'open')
+            ->where('environment', $this->trade->environment)
+            ->with('complianceResults.rule')
+            ->first();
+
         return view('livewire.trades.open-options-detail', [
             'relatedRawTrades' => $relatedRawTrades,
             'relatedTrades' => $relatedTrades,
+            'psychEntry'    => $psychEntry,
         ]);
     }
 }

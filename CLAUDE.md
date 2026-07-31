@@ -21,6 +21,20 @@
 - Property: `$selectedEnvironment`
 - Session-Key: `trading_environment`
 
+## Wichtig: `BaseTradingModel::getConnectionName()` überschreibt `::on($connection)`
+`BaseTradingModel::getConnectionName()` liest **immer** `session('trading_environment')` und ignoriert
+eine explizit per `Model::on($connection)` gesetzte Connection. Im normalen Web-Request funktioniert
+`TradePlan::on($connection)->...` (Pattern in `LogForm`/`LogList`) trotzdem korrekt, weil
+`ManagesEnvironment::mountManagesEnvironment()`/`setEnvironment()` die Session synchron zu
+`$selectedEnvironment` hält — `::on()` ist dort de facto redundant, aber harmlos.
+**Für Tinker/Artisan-Commands außerhalb des Request-Zyklus** muss die Session und der Connection-Prefix
+manuell gesetzt werden, sonst greift der Default (meist `trading_test`):
+```php
+session(['trading_environment' => 'MONEY']);
+Config::set('database.connections.trading_money.prefix', 'mike_');
+DB::purge('trading_money');
+```
+
 ## Datenbankfeld für applyTimeFilter
 - `TradeClose` → `applyTimeFilter($query, 'dateTimeClose')`
 - `Campaign` → `applyTimeFilter($query, 'end_date')`
