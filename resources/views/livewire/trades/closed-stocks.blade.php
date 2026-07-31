@@ -66,7 +66,7 @@
             <span class="badge bg-primary">{{ $trades->total() }}</span>
         </x-slot:actions>
         <div class="table-responsive">
-            <table class="table table-hover closed-stocks-table">
+            <table class="table table-hover closed-stocks-table list-table-sticky-action">
                 <thead>
                 <tr>
                     <th class="text-truncate w-30" style="max-width: 130px;" rowspan="2" wire:click="sortBy('symbol')" style="cursor: pointer;">
@@ -154,8 +154,8 @@
 
                         <td class="text-end">{{ number_format($trade->ibCommission, 2, ',', '') }}</td>
                         <td class="text-end">
-                            @if($trade->strategy)
-                                <small>{{ $trade->strategy }}</small>
+                            @if($trade->display_strategy)
+                                <small>{{ $trade->display_strategy }}</small>
                             @else
                                 <small class="text-muted">-</small>
                             @endif

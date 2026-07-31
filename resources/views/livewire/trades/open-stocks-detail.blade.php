@@ -53,9 +53,6 @@
                         <tr><th>Description</th><td>{{ $trade->description ?? '—' }}</td></tr>
                         <tr><th>Asset Category</th><td><span class="badge bg-primary">{{ $trade->assetCategory }}</span></td></tr>
                         <tr><th>Sub Category</th><td>{{ $trade->subCategory ?? '—' }}</td></tr>
-                        <tr><th>Conid</th><td><code>{{ $trade->conid ?? '—' }}</code></td></tr>
-                        <tr><th>Underlying Conid</th><td><code>{{ $trade->underlyingConid ?? '—' }}</code></td></tr>
-                        <tr><th>Sym ID</th><td><code>{{ $trade->symID ?? '—' }}</code></td></tr>
                         <tr><th>Environment</th><td><span class="badge bg-secondary">{{ $trade->environment }}</span></td></tr>
                     </tbody>
                 </table>
@@ -70,13 +67,10 @@
                         </td></tr>
                         <tr><th>Quantity</th><td>{{ number_format(abs($trade->quantity), 0) }}</td></tr>
                         <tr><th>Status</th><td><span class="badge bg-info">{{ $trade->status ?? '—' }}</span></td></tr>
-                        <tr><th>Strategie</th><td>{{ $trade->strategy ?? '—' }}</td></tr>
+                        <tr><th>Strategie</th><td>{{ $trade->display_strategy ?? '—' }}</td></tr>
                         <tr><th>Opt. Strategie</th><td>{{ $trade->opt_strategy ?? '—' }}</td></tr>
                         <tr><th>Opt. Strategie Name</th><td>{{ $trade->opt_strategyName ?? '—' }}</td></tr>
                         <tr><th>Opt. Strategie ID</th><td><code>{{ $trade->opt_strategyID ?? '—' }}</code></td></tr>
-                        <tr><th>Link ID</th><td><code>{{ $trade->linkID ?? '—' }}</code></td></tr>
-                        <tr><th>Processed</th><td>{{ $trade->processed ?? '—' }}</td></tr>
-                        <tr><th>Checksum</th><td><small><code>{{ $trade->checksum ?? '—' }}</code></small></td></tr>
                     </tbody>
                 </table>
             </x-trade-card>
@@ -106,25 +100,33 @@
                 </table>
             </x-trade-card>
 
-            {{-- 5. Währung --}}
-            <x-trade-card title="Währung" icon="currency-exchange" class="mb-4">
-                <table class="table table-sm mb-0">
-                    <tbody>
-                        <tr><th style="width:40%">Currency</th><td>{{ $trade->currency ?? '—' }}</td></tr>
-                        <tr><th>FX Rate to Base</th><td><code>{{ $trade->fxRateToBase ?? '—' }}</code></td></tr>
-                    </tbody>
-                </table>
-            </x-trade-card>
-
-            {{-- 6. Trade IDs --}}
-            <x-trade-card title="Trade IDs" icon="hash" class="mb-4">
-                <table class="table table-sm mb-0">
-                    <tbody>
-                        <tr><th style="width:40%">Trade ID</th><td><code>{{ $trade->tradeID ?? '—' }}</code></td></tr>
-                        <tr><th>IB Order ID</th><td><code>{{ $trade->ibOrderID ?? '—' }}</code></td></tr>
-                    </tbody>
-                </table>
-            </x-trade-card>
+            {{-- 5b. Herkunft bei Options-Zuteilung --}}
+            @if($assignmentOption)
+                @php
+                    $premiumReceived = (float) $assignmentOption->netCashOpen;
+                    $effectiveCost   = (float) $trade->netCash + $premiumReceived;
+                    $effectivePrice  = $trade->quantity != 0 ? abs($effectiveCost / $trade->quantity) : null;
+                @endphp
+                <x-trade-card title="Herkunft: Options-Zuteilung" icon="arrow-left-right" class="mb-4">
+                    <table class="table table-sm mb-0">
+                        <tbody>
+                            <tr><th style="width:40%">Option</th><td>
+                                <a href="{{ route('trades.closed.options.detail', $assignmentOption->id) }}">
+                                    {{ number_format($assignmentOption->strike, 2) }}
+                                    {{ $assignmentOption->putCall === 'P' ? 'PUT' : 'CALL' }}
+                                    · Expiry {{ \Carbon\Carbon::parse($assignmentOption->expiry)->format('d.m.Y') }}
+                                </a>
+                            </td></tr>
+                            <tr><th>Zugeteilt am</th><td>{{ \Carbon\Carbon::parse($assignmentOption->dateTimeClose)->format('d.m.Y') }}</td></tr>
+                            <tr><th>Prämie vereinnahmt</th><td><x-currency-value :value="$premiumReceived" currency="USD" :colored="true" /></td></tr>
+                            <tr><th>Effektiver Einstand (inkl. Prämie)</th><td>
+                                <strong>{{ $effectivePrice !== null ? number_format($effectivePrice, 2, ',', '.') . ' $/Stk.' : '—' }}</strong>
+                                <small class="text-muted">({{ number_format(abs($effectiveCost), 2, ',', '.') }} $ gesamt statt {{ number_format(abs($trade->netCash), 2, ',', '.') }} $)</small>
+                            </td></tr>
+                        </tbody>
+                    </table>
+                </x-trade-card>
+            @endif
 
             @include('livewire.psychology.partials.entry-summary-card', [
                 'psychEntry'     => $psychEntry,

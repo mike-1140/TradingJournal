@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use App\Traits\UsesTradingDatabase;
+use App\Traits\FormatsIbkrStrategyLabel;
 
 class TradeOpen extends BaseTradingModel
 {
-    use UsesTradingDatabase;
+    use UsesTradingDatabase, FormatsIbkrStrategyLabel;
     // protected $connection = 'trading';
     protected $table = 'trades_open';
 

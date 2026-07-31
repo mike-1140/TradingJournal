@@ -55,9 +55,6 @@
                         <tr><th>Description</th><td>{{ $trade->description ?? '—' }}</td></tr>
                         <tr><th>Asset Category</th><td><span class="badge bg-primary">{{ $trade->assetCategory }}</span></td></tr>
                         <tr><th>Sub Category</th><td>{{ $trade->subCategory ?? '—' }}</td></tr>
-                        <tr><th>Conid</th><td><code>{{ $trade->conid ?? '—' }}</code></td></tr>
-                        <tr><th>Underlying Conid</th><td><code>{{ $trade->underlyingConid ?? '—' }}</code></td></tr>
-                        <tr><th>Sym ID</th><td><code>{{ $trade->symID ?? '—' }}</code></td></tr>
                         <tr><th>Environment</th><td><span class="badge bg-secondary">{{ $trade->environment }}</span></td></tr>
                     </tbody>
                 </table>
@@ -76,11 +73,10 @@
                         <tr><th>Quantity</th><td>{{ number_format(abs($trade->quantity), 0) }}</td></tr>
                         <tr><th>Status</th><td><span class="badge bg-info">{{ $trade->status ?? '—' }}</span></td></tr>
                         <tr><th>Closed By</th><td>{{ $trade->closedBy ?? '—' }}</td></tr>
-                        <tr><th>Strategie</th><td>{{ $trade->strategy ?? '—' }}</td></tr>
+                        <tr><th>Strategie</th><td>{{ $trade->display_strategy ?? '—' }}</td></tr>
                         <tr><th>Opt. Strategie</th><td>{{ $trade->opt_strategy ?? '—' }}</td></tr>
                         <tr><th>Opt. Strategie Name</th><td>{{ $trade->opt_strategyName ?? '—' }}</td></tr>
                         <tr><th>Opt. Strategie ID</th><td><code>{{ $trade->opt_strategyID ?? '—' }}</code></td></tr>
-                        <tr><th>Link ID</th><td><code>{{ $trade->linkID ?? '—' }}</code></td></tr>
                         <tr><th>Multiplier</th><td>{{ $trade->multiplier ?? '—' }}</td></tr>
                     </tbody>
                 </table>
@@ -99,8 +95,6 @@
                             <small class="text-muted ms-2">{{ $trade->dateTimeClose?->diffForHumans() }}</small>
                         </td></tr>
                         <tr><th>Days Held</th><td>{{ $trade->daysHeld }}</td></tr>
-                        <tr><th>Total Seconds</th><td>{{ number_format($trade->totalSeconds) }}</td></tr>
-                        <tr><th>Duration</th><td><code>{{ $trade->durationStr ?? '—' }}</code></td></tr>
                     </tbody>
                 </table>
             </x-trade-card>
@@ -115,47 +109,54 @@
                 </table>
             </x-trade-card>
 
-            {{-- 5. Cashflows USD --}}
-            <x-trade-card title="Cashflows (USD)" icon="cash-coin" class="mb-4">
+            {{-- 5. Cashflows --}}
+            <x-trade-card title="Cashflows" icon="cash-coin" class="mb-4">
                 <table class="table table-sm mb-0">
+                    <thead>
+                        <tr class="text-muted small text-uppercase">
+                            <th style="width:20%">USD</th>
+                            <th style="width:30%"></th>
+                            <th style="width:20%">EUR</th>
+                            <th style="width:30%"></th>
+                        </tr>
+                    </thead>
                     <tbody>
-                        <tr><th style="width:40%">Net Cash Open</th><td><x-currency-value :value="$trade->netCashOpen" currency="USD" :colored="true" /></td></tr>
-                        <tr><th>Net Cash Close</th><td><x-currency-value :value="$trade->netCashClose" currency="USD" :colored="true" /></td></tr>
-                        <tr><th>Proceeds Open</th><td><x-currency-value :value="$trade->prceedsOpen" currency="USD" /></td></tr>
-                        <tr><th>Proceeds Close</th><td><x-currency-value :value="$trade->prceedsClose" currency="USD" /></td></tr>
-                        <tr><th>Kommission</th><td><x-currency-value :value="$trade->ibCommission" currency="USD" /></td></tr>
-                        <tr><th>Profit/Loss</th><td><x-currency-value :value="$trade->profit" currency="USD" :colored="true" /></td></tr>
-                        <tr><th>ROI</th><td>
-                            <span class="{{ $trade->ROI >= 0 ? 'text-success' : 'text-danger' }}">
-                                {{ number_format($trade->ROI, 2) }} %
-                            </span>
-                        </td></tr>
-                    </tbody>
-                </table>
-            </x-trade-card>
-
-            {{-- 6. Cashflows EUR --}}
-            <x-trade-card title="Cashflows (EUR)" icon="currency-euro" class="mb-4">
-                <table class="table table-sm mb-0">
-                    <tbody>
-                        <tr><th style="width:40%">FX Rate (Open)</th><td><code>{{ $trade->fxRateToBase_open ?? '—' }}</code></td></tr>
-                        <tr><th>FX Rate (Close)</th><td><code>{{ $trade->fxRateToBase_close ?? '—' }}</code></td></tr>
-                        <tr><th>Net Cash Open (EUR)</th><td><x-currency-value :value="$trade->netCashOpen_EUR" currency="EUR" :colored="true" /></td></tr>
-                        <tr><th>Net Cash Close (EUR)</th><td><x-currency-value :value="$trade->netCashClose_EUR" currency="EUR" :colored="true" /></td></tr>
-                        <tr><th>Kommission (EUR)</th><td><x-currency-value :value="$trade->ibCommission_EUR" currency="EUR" /></td></tr>
-                        <tr><th>Profit/Loss (EUR)</th><td><x-currency-value :value="$trade->profit_EUR" currency="EUR" :colored="true" /></td></tr>
-                    </tbody>
-                </table>
-            </x-trade-card>
-
-            {{-- 7. Trade IDs --}}
-            <x-trade-card title="Trade IDs" icon="hash" class="mb-4">
-                <table class="table table-sm mb-0">
-                    <tbody>
-                        <tr><th style="width:40%">Trade ID Open</th><td><code>{{ $trade->tradeIDOpen ?? '—' }}</code></td></tr>
-                        <tr><th>Trade ID Close</th><td><code>{{ $trade->tradeIDClose ?? '—' }}</code></td></tr>
-                        <tr><th>IB Order ID Open</th><td><code>{{ $trade->ibOrderIDOpen ?? '—' }}</code></td></tr>
-                        <tr><th>IB Order ID Close</th><td><code>{{ $trade->ibOrderIDClose ?? '—' }}</code></td></tr>
+                        <tr>
+                            <th>Net Cash Open</th><td><x-currency-value :value="$trade->netCashOpen" currency="USD" :colored="true" /></td>
+                            <th>Net Cash Open</th><td><x-currency-value :value="$trade->netCashOpen_EUR" currency="EUR" :colored="true" /></td>
+                        </tr>
+                        <tr>
+                            <th>Net Cash Close</th><td><x-currency-value :value="$trade->netCashClose" currency="USD" :colored="true" /></td>
+                            <th>Net Cash Close</th><td><x-currency-value :value="$trade->netCashClose_EUR" currency="EUR" :colored="true" /></td>
+                        </tr>
+                        <tr>
+                            <th>Proceeds Open</th><td><x-currency-value :value="$trade->prceedsOpen" currency="USD" /></td>
+                            <th></th><td class="text-muted">—</td>
+                        </tr>
+                        <tr>
+                            <th>Proceeds Close</th><td><x-currency-value :value="$trade->prceedsClose" currency="USD" /></td>
+                            <th></th><td class="text-muted">—</td>
+                        </tr>
+                        <tr>
+                            <th>Kommission</th><td><x-currency-value :value="$trade->ibCommission" currency="USD" /></td>
+                            <th>Kommission</th><td><x-currency-value :value="$trade->ibCommission_EUR" currency="EUR" /></td>
+                        </tr>
+                        <tr>
+                            <th>Profit/Loss</th><td><x-currency-value :value="$trade->profit" currency="USD" :colored="true" /></td>
+                            <th>Profit/Loss</th><td><x-currency-value :value="$trade->profit_EUR" currency="EUR" :colored="true" /></td>
+                        </tr>
+                        <tr>
+                            <th>ROI</th><td>
+                                <span class="{{ $trade->ROI >= 0 ? 'text-success' : 'text-danger' }}">
+                                    {{ number_format($trade->ROI, 2) }} %
+                                </span>
+                            </td>
+                            <th>FX Rate (Open)</th><td><code>{{ $trade->fxRateToBase_open ?? '—' }}</code></td>
+                        </tr>
+                        <tr>
+                            <th></th><td></td>
+                            <th>FX Rate (Close)</th><td><code>{{ $trade->fxRateToBase_close ?? '—' }}</code></td>
+                        </tr>
                     </tbody>
                 </table>
             </x-trade-card>

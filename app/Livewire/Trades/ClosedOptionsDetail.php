@@ -71,12 +71,14 @@ class ClosedOptionsDetail extends Component
                 ->get();
         }
 
-        $psychEntry = PsychologyEntry::on($connection)
-            ->where('trade_id', (string) $this->trade->id)
-            ->where('trade_type', 'closed')
-            ->where('environment', $this->trade->environment)
-            ->with('complianceResults.rule')
-            ->first();
+        $psychEntry = PsychologyEntry::tableExistsFor($connection)
+            ? PsychologyEntry::on($connection)
+                ->where('trade_id', (string) $this->trade->id)
+                ->where('trade_type', 'closed')
+                ->where('environment', $this->trade->environment)
+                ->with('complianceResults.rule')
+                ->first()
+            : null;
 
         return view('livewire.trades.closed-option-detail', [
             'relatedRawTrades' => $relatedRawTrades,

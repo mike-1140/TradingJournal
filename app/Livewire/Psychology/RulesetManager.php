@@ -5,11 +5,12 @@ namespace App\Livewire\Psychology;
 use App\Models\PsychologyRuleset;
 use App\Models\PsychologyRule;
 use App\Traits\ManagesEnvironment;
+use App\Traits\RequiresPsychologyModule;
 use Livewire\Component;
 
 class RulesetManager extends Component
 {
-    use ManagesEnvironment;
+    use ManagesEnvironment, RequiresPsychologyModule;
 
     // Auswahl
     public ?int $selectedRulesetId = null;
@@ -207,6 +208,10 @@ class RulesetManager extends Component
 
     public function render()
     {
+        if ($this->psychologyModuleMissing()) {
+            return $this->moduleNotInstalledView();
+        }
+
         $conn     = PsychologyRuleset::getConnectionForEnvironment($this->selectedEnvironment);
         $rulesets = PsychologyRuleset::on($conn)
             ->where('environment', $this->selectedEnvironment)

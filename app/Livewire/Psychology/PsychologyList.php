@@ -4,12 +4,13 @@ namespace App\Livewire\Psychology;
 
 use App\Models\PsychologyEntry;
 use App\Traits\ManagesEnvironment;
+use App\Traits\RequiresPsychologyModule;
 use Livewire\Component;
 use Livewire\WithPagination;
 
 class PsychologyList extends Component
 {
-    use WithPagination, ManagesEnvironment;
+    use WithPagination, ManagesEnvironment, RequiresPsychologyModule;
 
     public string  $filterMotivation = '';
     public string  $search           = '';
@@ -42,6 +43,10 @@ class PsychologyList extends Component
 
     public function render()
     {
+        if ($this->psychologyModuleMissing()) {
+            return $this->moduleNotInstalledView();
+        }
+
         $env        = $this->selectedEnvironment;
         $connection = PsychologyEntry::getConnectionForEnvironment($env);
 

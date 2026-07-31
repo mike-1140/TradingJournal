@@ -4,6 +4,7 @@ namespace App\Livewire\Trades;
 
 use Livewire\Component;
 use App\Models\TradeOpen;
+use App\Models\TradeClose;
 use App\Models\TradeRaw;
 use App\Models\PsychologyEntry;
 use App\Traits\ManagesEnvironment;
@@ -57,17 +58,31 @@ class OpenStocksDetail extends Component
                 ->get();
         }
 
-        $psychEntry = PsychologyEntry::on($connection)
-            ->where('trade_id', (string) $this->trade->id)
-            ->where('trade_type', 'open')
-            ->where('environment', $this->trade->environment)
-            ->with('complianceResults.rule')
-            ->first();
+        $psychEntry = PsychologyEntry::tableExistsFor($connection)
+            ? PsychologyEntry::on($connection)
+                ->where('trade_id', (string) $this->trade->id)
+                ->where('trade_type', 'open')
+                ->where('environment', $this->trade->environment)
+                ->with('complianceResults.rule')
+                ->first()
+            : null;
+
+        // Herkunft bei Zuteilung/Ausübung: die auslösende Option teilt sich die linkID
+        // mit diesem Stock-Trade (siehe xml_proj: book_trades.py + migrate_backfill_assignment_linkid.py)
+        $assignmentOption = null;
+        if ($this->trade->linkID) {
+            $assignmentOption = TradeClose::on($connection)
+                ->where('environment', $this->trade->environment)
+                ->where('linkID', $this->trade->linkID)
+                ->whereIn('assetCategory', ['OPT', 'FOP'])
+                ->first();
+        }
 
         return view('livewire.trades.open-stocks-detail', [
             'relatedRawTrades' => $relatedRawTrades,
             'relatedTrades' => $relatedTrades,
             'psychEntry'    => $psychEntry,
+            'assignmentOption' => $assignmentOption,
         ]);
     }
 }

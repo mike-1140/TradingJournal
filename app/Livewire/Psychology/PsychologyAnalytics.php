@@ -7,11 +7,12 @@ use App\Models\PsychologyComplianceResult;
 use App\Models\PsychologyRule;
 use App\Traits\ManagesEnvironment;
 use App\Traits\FilterableByTime;
+use App\Traits\RequiresPsychologyModule;
 use Livewire\Component;
 
 class PsychologyAnalytics extends Component
 {
-    use ManagesEnvironment, FilterableByTime;
+    use ManagesEnvironment, FilterableByTime, RequiresPsychologyModule;
 
     protected $listeners = [
         'environment-changed' => '$refresh',
@@ -26,6 +27,10 @@ class PsychologyAnalytics extends Component
 
     public function render()
     {
+        if ($this->psychologyModuleMissing()) {
+            return $this->moduleNotInstalledView();
+        }
+
         $env        = $this->selectedEnvironment;
         $connection = PsychologyEntry::getConnectionForEnvironment($env);
 

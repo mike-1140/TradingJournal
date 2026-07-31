@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Traits\UsesTradingDatabase;
+use Illuminate\Support\Facades\Schema;
 
 class PsychologyEntry extends BaseTradingModel
 {
@@ -11,6 +12,20 @@ class PsychologyEntry extends BaseTradingModel
     protected $appends = [];
     protected $table = 'psychology_entries';
     public $timestamps = true;
+
+    protected static array $tableExistsCache = [];
+
+    /**
+     * Nicht jeder User/jede Environment hat das Psychology-Modul eingerichtet
+     * (z.B. karola_/MONEY) — Trade-/Spread-Detailseiten fragen psychology_entries
+     * aber unabhängig davon ab. Ohne diesen Check wirft eine fehlende Tabelle
+     * MySQL-Fehler 1146, den der globale Handler als harten "Datenbanktabelle
+     * nicht gefunden"-Fehler anzeigt statt einfach "kein Eintrag vorhanden".
+     */
+    public static function tableExistsFor(string $connection): bool
+    {
+        return static::$tableExistsCache[$connection] ??= Schema::connection($connection)->hasTable((new static())->getTable());
+    }
 
     protected $fillable = [
         'trade_id',

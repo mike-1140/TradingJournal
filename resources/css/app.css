@@ -262,3 +262,13 @@ body {
     white-space: nowrap;
     line-height: 1.2; /* kompakter text */
 }
+
+/* Breite Listen-Tabellen (viele Spalten): Action-Spalte (Detail-Button) bleibt beim
+   horizontalen Scrollen sichtbar, statt unbemerkt rechts aus dem Viewport zu laufen. */
+.list-table-sticky-action th:last-child,
+.list-table-sticky-action td:last-child {
+    position: sticky;
+    right: 0;
+    background: var(--bs-body-bg, #fff);
+    box-shadow: -6px 0 6px -6px rgba(0, 0, 0, 0.15);
+}

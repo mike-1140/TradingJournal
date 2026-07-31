@@ -159,12 +159,14 @@ class SpreadDetail extends Component
     public function render()
     {
         $connection = TradeClose::getConnectionForEnvironment($this->selectedEnvironment);
-        $psychEntry = PsychologyEntry::on($connection)
-            ->where('opt_strategyID', $this->opt_strategyID)
-            ->where('trade_type', $this->status === 'open' ? 'open_spread' : 'spread')
-            ->where('environment', $this->selectedEnvironment)
-            ->with('complianceResults.rule')
-            ->first();
+        $psychEntry = PsychologyEntry::tableExistsFor($connection)
+            ? PsychologyEntry::on($connection)
+                ->where('opt_strategyID', $this->opt_strategyID)
+                ->where('trade_type', $this->status === 'open' ? 'open_spread' : 'spread')
+                ->where('environment', $this->selectedEnvironment)
+                ->with('complianceResults.rule')
+                ->first()
+            : null;
 
         return view('livewire.spreads.spread-detail', [
             'psychEntry' => $psychEntry,

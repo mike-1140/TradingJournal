@@ -165,8 +165,8 @@
                             @endif
                         </td>
                         <td>
-                            @if($trade->strategy)
-                                <small>{{ $trade->strategy }}</small>
+                            @if($trade->display_strategy)
+                                <small>{{ $trade->display_strategy }}</small>
                             @else
                                 <small class="text-muted">-</small>
                             @endif

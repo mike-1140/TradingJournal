@@ -84,7 +84,7 @@
         </x-slot:actions>
 
         <div class="table-responsive">
-            <table class="table table-hover table-sm">
+            <table class="table table-hover table-sm list-table-sticky-action">
                 <thead>
                 <tr>
                     <th wire:click="sortBy('underlyingSymbol')" style="cursor: pointer;">
@@ -169,8 +169,8 @@
                         </td>
                         <td class="text-end"><x-currency-value :value="$trade->ibCommission" currency="USD" /></td>
                         <td>
-                            @if($trade->strategy)
-                                <small>{{ $trade->strategy }}</small>
+                            @if($trade->display_strategy)
+                                <small>{{ $trade->display_strategy }}</small>
                             @else
                                 <small class="text-muted">-</small>
                             @endif

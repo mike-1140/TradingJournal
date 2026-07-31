@@ -9,13 +9,16 @@ use App\Models\PsychologyRuleset;
 use App\Models\TradeClose;
 use App\Models\TradeOpen;
 use App\Traits\ManagesEnvironment;
+use App\Traits\RequiresPsychologyModule;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 
 class PsychologyForm extends Component
 {
-    use ManagesEnvironment;
+    use ManagesEnvironment, RequiresPsychologyModule;
+
+    public bool $moduleInstalled = true;
 
     public ?int $entryId = null;
 
@@ -67,6 +70,12 @@ class PsychologyForm extends Component
     public function mount(?int $id = null): void
     {
         $this->mountManagesEnvironment();
+
+        if ($this->psychologyModuleMissing()) {
+            $this->moduleInstalled = false;
+            return;
+        }
+
         $this->tradeDate = now()->format('Y-m-d');
         $this->entryId   = $id;
 
@@ -484,6 +493,10 @@ class PsychologyForm extends Component
 
     public function render()
     {
+        if (!$this->moduleInstalled) {
+            return $this->moduleNotInstalledView();
+        }
+
         return view('livewire.psychology.psychology-form');
     }
 }

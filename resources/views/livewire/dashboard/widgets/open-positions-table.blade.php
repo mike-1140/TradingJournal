@@ -38,7 +38,7 @@
                         <td class="text-end">{{ number_format($trade->quantity, 0) }}</td>
                         <td class="text-end">{{ number_format($trade->tradePrice, 2) }}</td>
                         <td class="text-end">{{ number_format($trade->netCash, 2) }}</td>
-                        <td><small>{{ $trade->strategy ?: '-' }}</small></td>
+                        <td><small>{{ $trade->display_strategy ?: '-' }}</small></td>
                         <td>
                             <span class="badge bg-primary">{{ $trade->status ?: 'OPEN' }}</span>
                         </td>
