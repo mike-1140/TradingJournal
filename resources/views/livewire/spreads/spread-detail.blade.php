@@ -54,6 +54,29 @@
                     icon="receipt" />
             </div>
         </div>
+
+        @if($this->statistics['assignment_stock_profit'] != 0 || $this->assignmentTrades->isNotEmpty())
+        <div class="alert alert-warning py-2 mb-4 small d-flex align-items-start gap-2">
+            <i class="bi bi-arrow-left-right mt-1"></i>
+            <div>
+                Dieser Spread wurde per <strong>Zuteilung/Ausübung</strong> glattgestellt — die reinen Options-Legs
+                ergeben <strong>{{ number_format($this->statistics['options_profit'], 2, ',', '') }} $</strong>,
+                die dadurch ausgelöste Aktien-Transaktion bringt
+                <strong class="{{ $this->statistics['assignment_stock_profit'] >= 0 ? 'text-success' : 'text-danger' }}">
+                    {{ $this->statistics['assignment_stock_profit'] >= 0 ? '+' : '' }}{{ number_format($this->statistics['assignment_stock_profit'], 2, ',', '') }} $
+                </strong>
+                dazu. Gesamtergebnis oben bereits inklusive.
+                @foreach($this->assignmentTrades as $stk)
+                    <div class="text-muted mt-1">
+                        <i class="bi bi-arrow-right"></i>
+                        {{ \Carbon\Carbon::parse($stk->dateTimeClose)->format('d.m.Y') }} ·
+                        {{ number_format(abs($stk->quantity), 0) }} Stk. {{ $stk->buySellOpen }}→{{ $stk->buySellClose }} ·
+                        <x-currency-value :value="$stk->profit" currency="USD" :colored="true" />
+                    </div>
+                @endforeach
+            </div>
+        </div>
+        @endif
     @else
         <div class="row g-3 mb-4">
             <div class="col-md-4">

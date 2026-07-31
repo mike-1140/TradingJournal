@@ -187,6 +187,10 @@
                                 <strong class="{{ $spread->total_profit >= 0 ? 'text-success' : 'text-danger' }}">
                                     {{ number_format($spread->total_profit, 2, ',', '') }} $
                                 </strong>
+                                @if(isset($spread->assignment_stock_profit))
+                                    <i class="bi bi-info-circle text-warning"
+                                       title="Inkl. Aktien-Zuteilung: {{ $spread->assignment_stock_profit >= 0 ? '+' : '' }}{{ number_format($spread->assignment_stock_profit, 2, ',', '') }} $ — reine Options-Legs: {{ number_format($spread->total_profit - $spread->assignment_stock_profit, 2, ',', '') }} $"></i>
+                                @endif
                                 <br>
                                 <small class="text-muted">
                                     <span class="text-success">{{ number_format($spread->profit_sell, 2, ',', '') }}</span>

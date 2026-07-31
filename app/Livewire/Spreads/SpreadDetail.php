@@ -94,6 +94,31 @@ class SpreadDetail extends Component
     }
 
     /**
+     * Stock-Trades aus Assignment/Exercise eines Legs (Zwangskauf/-verkauf zum Strike,
+     * meist sofort glattgestellt), verknüpft über linkID (siehe xml_proj: book_trades.py
+     * + migrate_backfill_assignment_linkid.py). Eigene Query, da anderer assetCategory
+     * (STK) als die Options-Legs und daher nicht über opt_strategyID auffindbar.
+     */
+    #[Computed]
+    public function assignmentTrades()
+    {
+        if ($this->status !== 'closed') {
+            return collect();
+        }
+
+        $linkIds = $this->legs->pluck('linkID')->filter()->unique()->values();
+        if ($linkIds->isEmpty()) {
+            return collect();
+        }
+
+        return TradeClose::onEnvironment($this->selectedEnvironment)
+            ->where('environment', $this->selectedEnvironment)
+            ->where('assetCategory', 'STK')
+            ->whereIn('linkID', $linkIds)
+            ->get();
+    }
+
+    /**
      * ✅ Computed Property für Statistiken
      */
     #[Computed]
@@ -102,15 +127,23 @@ class SpreadDetail extends Component
         $legs = $this->legs;
 
         if ($this->status === 'closed') {
+            $legsProfit = (float) $legs->sum('profit');
+            $legsCommission = (float) $legs->sum('ibCommission');
+            $assignmentProfit = (float) $this->assignmentTrades->sum('profit');
+            $assignmentCommission = (float) $this->assignmentTrades->sum('ibCommission');
+
             return [
-                'total_profit' => $legs->sum('profit'),
-                'total_commission' => $legs->sum('ibCommission'),
-                'net_profit' => $legs->sum('profit') - $legs->sum('ibCommission'),
+                'total_profit' => $legsProfit + $assignmentProfit,
+                'total_commission' => $legsCommission + $assignmentCommission,
+                'net_profit' => ($legsProfit + $assignmentProfit) - ($legsCommission + $assignmentCommission),
                 'avg_days_held' => $legs->avg('daysHeld'),
                 'earliest_open' => $legs->min('dateTimeOpen'),
                 'latest_close' => $legs->max('dateTimeClose'),
                 'total_premium_received' => $legs->where('buySellOpen', 'SELL')->sum('netCashOpen'),
                 'total_premium_paid' => abs($legs->where('buySellOpen', 'BUY')->sum('netCashOpen')),
+                'options_profit' => $legsProfit,
+                'assignment_stock_profit' => $assignmentProfit,
+                'assignment_stock_commission' => $assignmentCommission,
             ];
         } else {
             return [

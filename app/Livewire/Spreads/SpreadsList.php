@@ -153,6 +153,7 @@ class SpreadsList extends Component
                     DB::raw('(MAX(strike) - MIN(strike)) as spread_width'),
                     DB::raw('SUM(netCashOpen) as net_credit_open'),
                     DB::raw('MIN(multiplier) as multiplier'),
+                    DB::raw("GROUP_CONCAT(DISTINCT NULLIF(linkID, '')) as link_ids"),
                 )
                 ->groupBy('opt_strategyID', 'opt_strategyName', 'underlyingSymbol');
         }
@@ -162,7 +163,75 @@ class SpreadsList extends Component
         $sortField = in_array($this->sortField, $sortable, true) ? $this->sortField : 'latest_date';
         $query->orderBy($sortField, strtolower($this->sortDirection) === 'asc' ? 'asc' : 'desc');
 
-        return $query->paginate($this->perPage);
+        $spreads = $query->paginate($this->perPage);
+
+        if ($this->filterStatus === 'closed') {
+            $this->mergeAssignmentStockPnl($spreads->items(), $connection, 'total_profit', 'total_commission');
+        }
+
+        return $spreads;
+    }
+
+    /**
+     * Bei Assignment/Exercise entsteht neben den Options-Legs ein Stock-Trade
+     * (Zwangskauf/-verkauf zum Strike, meist sofort glattgestellt), der über die
+     * gemeinsame linkID mit dem auslösenden Options-Leg verknüpft ist (siehe xml_proj:
+     * book_trades.py + migrate_backfill_assignment_linkid.py). Der reine Options-P&L
+     * einer Spread-Gruppe ignoriert diesen Stock-Trade komplett — hier wird er
+     * nachträglich eingerechnet, damit ein per Assignment glattgestellter Spread nicht
+     * künstlich profitabel wirkt (Beispiel: Bull Put Spread zeigt +118 aus den reinen
+     * Options-Legs, tatsächliches Ergebnis inkl. Aktienzuteilung ist -382).
+     *
+     * $rows: iterable von Objekten mit ->link_ids (Komma-Liste) und ->{$profitField}.
+     */
+    private function mergeAssignmentStockPnl(iterable $rows, string $connection, string $profitField, ?string $commissionField = null): void
+    {
+        $rows = collect($rows);
+        $linkIds = $rows->pluck('link_ids')
+            ->filter()
+            ->flatMap(fn($ids) => explode(',', $ids))
+            ->unique()
+            ->values();
+
+        if ($linkIds->isEmpty()) {
+            return;
+        }
+
+        $stockPnl = TradeClose::on($connection)
+            ->where('environment', $this->selectedEnvironment)
+            ->where('assetCategory', 'STK')
+            ->whereIn('linkID', $linkIds)
+            ->select('linkID', DB::raw('SUM(profit) as profit'), DB::raw('SUM(ibCommission) as commission'))
+            ->groupBy('linkID')
+            ->get()
+            ->keyBy('linkID');
+
+        if ($stockPnl->isEmpty()) {
+            return;
+        }
+
+        foreach ($rows as $row) {
+            if (empty($row->link_ids)) {
+                continue;
+            }
+
+            $assignmentProfit = 0.0;
+            $assignmentCommission = 0.0;
+            foreach (explode(',', $row->link_ids) as $linkId) {
+                if (isset($stockPnl[$linkId])) {
+                    $assignmentProfit += (float) $stockPnl[$linkId]->profit;
+                    $assignmentCommission += (float) $stockPnl[$linkId]->commission;
+                }
+            }
+
+            if ($assignmentProfit != 0.0 || $assignmentCommission != 0.0) {
+                $row->assignment_stock_profit = $assignmentProfit;
+                $row->{$profitField} = (float) $row->{$profitField} + $assignmentProfit;
+                if ($commissionField) {
+                    $row->{$commissionField} = (float) $row->{$commissionField} + $assignmentCommission;
+                }
+            }
+        }
     }
 
     private function getAvailableStrategies()
@@ -207,9 +276,12 @@ class SpreadsList extends Component
             $closedSpreadsQuery = $this->applyStrategyFilter($closedSpreadsQuery);
 
             $closedSpreads = $closedSpreadsQuery
-                ->select('opt_strategyID', DB::raw('SUM(profit) as spread_profit'))
+                ->select('opt_strategyID', DB::raw('SUM(profit) as spread_profit'),
+                    DB::raw("GROUP_CONCAT(DISTINCT NULLIF(linkID, '')) as link_ids"))
                 ->groupBy('opt_strategyID')
                 ->get();
+
+            $this->mergeAssignmentStockPnl($closedSpreads, $connection, 'spread_profit');
 
             $totalSpreads = $closedSpreads->count();
             $totalProfit = $closedSpreads->sum('spread_profit');
