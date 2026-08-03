@@ -69,52 +69,36 @@
             <table class="table table-hover closed-stocks-table list-table-sticky-action">
                 <thead>
                 <tr>
-                    <th class="text-truncate w-30" style="max-width: 130px;" rowspan="2" wire:click="sortBy('symbol')" style="cursor: pointer;">
+                    <th class="text-truncate w-30" style="max-width: 130px;" wire:click="sortBy('symbol')" style="cursor: pointer;">
                         Symbol
                         @if($sortField === 'symbol')
                             <i class="bi bi-arrow-{{ $sortDirection === 'asc' ? 'up' : 'down' }}"></i>
                         @endif
                     </th>
-                    <th rowspan="2" wire:click="sortBy('dateTimeOpen')" style="cursor: pointer;">
-                        Eröffnet
-                        @if($sortField === 'dateTimeOpen')
-                            <i class="bi bi-arrow-{{ $sortDirection === 'asc' ? 'up' : 'down' }}"></i>
-                        @endif
-                    </th>
-                    <th rowspan="2" wire:click="sortBy('dateTimeClose')" style="cursor: pointer;">
-                        Geschlossen
+                    <th wire:click="sortBy('dateTimeClose')" style="cursor: pointer;">
+                        Eröffnet &rarr; Geschlossen
                         @if($sortField === 'dateTimeClose')
                             <i class="bi bi-arrow-{{ $sortDirection === 'asc' ? 'up' : 'down' }}"></i>
                         @endif
                     </th>
-                    <th rowspan="2" class="text-end">Daysheld</th>
-                    <th rowspan="2" class="text-end">Buy/Sell</th>
-                    <th colspan="2" class="text-end">NetCash</th>
-                    <th  rowspan="2" class="text-end" wire:click="sortBy('profit')" style="cursor: pointer;">
-                        Brutto PnL
+                    <th class="text-end">Daysheld</th>
+                    <th class="text-end">Buy/Sell</th>
+                    <th class="text-end" wire:click="sortBy('profit')" style="cursor: pointer;">
+                        Brutto P&L
                         @if($sortField === 'profit')
                             <i class="bi bi-arrow-{{ $sortDirection === 'asc' ? 'up' : 'down' }}"></i>
                         @endif
                         <br><small class="text-muted fw-normal" style="font-size: 0.65rem;">/ Netto</small>
                     </th>
-                    <th rowspan="2" class="text-end" wire:click="sortBy('ROI')" style="cursor: pointer;">
+                    <th class="text-end" wire:click="sortBy('ROI')" style="cursor: pointer;">
                         ROI
                         @if($sortField === 'ROI')
                             <i class="bi bi-arrow-{{ $sortDirection === 'asc' ? 'up' : 'down' }}"></i>
                         @endif
                     </th>
-                    <th colspan="2" class="text-end">Stückpreis</th>
-                    <th rowspan="2" class="text-end">Stück</th>
-                    <th rowspan="2" class="text-end">Kommision</th>
-                    <th rowspan="2" class="text-end">Strategie</th>
-                    <th rowspan="2"></th>
-                </tr>
-                <tr>
-                    <th class="text-end">opened</th>
-                    <th class="text-end">closed</th>
-
-                    <th class="text-end">opened</th>
-                    <th class="text-end">closed</th>
+                    <th class="text-end">Stück</th>
+                    <th class="text-end">Strategie</th>
+                    <th></th>
                 </tr>
                 </thead>
                 <tbody>
@@ -123,22 +107,15 @@
                         <td><strong class="fs-5">{{ $trade->symbol }}</strong>
                             <br class="text-muted font-monospace">{{ $trade->description }}</td>
                         <td>
-                            {{ $trade->dateTimeOpen?->format('d.m.Y') }}
-                            <br><small class="text-muted">{{ $trade->dateTimeOpen?->diffForHumans() }}</small>
+                            {{ $trade->dateTimeOpen?->format('d.m.Y') }} &rarr; {{ $trade->dateTimeClose?->format('d.m.Y') }}
+                            <br><small class="text-muted">geschlossen {{ $trade->dateTimeClose?->diffForHumans() }}</small>
                         </td>
-                        <td>
-                            {{ $trade->dateTimeClose?->format('d.m.Y') }}
-                            <br><small class="text-muted">{{ $trade->dateTimeClose?->diffForHumans() }}</small>
-                        </td>
-
                         <td class="text-end">{{ number_format($trade->daysHeld, 0) }}</td>
                         <td class="text-end">
                             <span class="badge bg-{{ $trade->buySellOpen === 'BUY' ? 'success' : 'danger' }}">
                                 {{ $trade->buySellOpen }}
                             </span>
                         </td>
-                        <td class="text-end">{{ number_format($trade->netCashOpen, 2, ',', '') }}</td>
-                        <td class="text-end">{{ number_format($trade->netCashClose, 2, ',', '') }}</td>
                         <td class="text-end">
                             <x-currency-value :value="$trade->profit" :currency="$trade->currency" :colored="true" />
                             <br><small class="text-muted" style="font-size: 0.75rem;">
@@ -146,13 +123,7 @@
                             </small>
                         </td>
                         <td class="text-end">{{ number_format($trade->ROI, 2, ',', '') }}</td>
-
-                        <td class="text-end">{{ number_format($trade->tradePriceOpen, 2, ',', '') }}</td>
-                        <td class="text-end">{{ number_format($trade->tradePriceClose, 2, ',', '') }}</td>
                         <td class="text-end">{{ number_format($trade->quantity, 2, ',', '') }}</td>
-
-
-                        <td class="text-end">{{ number_format($trade->ibCommission, 2, ',', '') }}</td>
                         <td class="text-end">
                             @if($trade->display_strategy)
                                 <small>{{ $trade->display_strategy }}</small>
@@ -168,7 +139,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="15">
+                        <td colspan="9">
                             <x-empty-state
                                 icon="inbox"
                                 title="Keine geschlossenen Stock-Positionen gefunden"

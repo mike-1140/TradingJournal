@@ -27,6 +27,10 @@ class OpenStocks extends Component
         'sortDirection' => ['except' => 'desc'],
     ];
 
+    protected $listeners = [
+        'environment-changed' => '$refresh',
+    ];
+
     public function mount()
     {
         $this->mountManagesEnvironment();
@@ -80,13 +84,6 @@ class OpenStocks extends Component
             ->where('processed', 0)
             ->where('environment', $this->selectedEnvironment)
             ->where('assetCategory', 'STK');
-
-//        dbg('Checkpoint 1');
-//        // Zeigt die SQL-Query ohne sie auszuführen
-//        dbg($query->toSql());
-//        // Mit den Parametern
-//        dbg($query->toRawSql());
-
 
         if ($this->search) {
             $query->where(function($q) {
@@ -143,7 +140,7 @@ class OpenStocks extends Component
             $trade->daysHeld = Carbon::parse($trade->dateTime)
                 ->diffInDays(Carbon::now());
         }
-        // dbg($trades[0]);
+
         return view('livewire.trades.open-stocks', [
             'trades' => $trades,
             'totalTrades' => $totalTrades,

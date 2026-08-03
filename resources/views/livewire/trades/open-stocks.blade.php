@@ -117,7 +117,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="7">
+                        <td colspan="8">
                             {{-- 6. EMPTY STATE --}}
                             <x-empty-state
                                 icon="inbox"
@@ -131,9 +131,9 @@
         </div>
 
         {{-- 7. PAGINATION --}}
-        <div class="card-footer bg-white">
+        <x-slot:footer>
             {{ $trades->links('components.pagination') }}
-        </div>
+        </x-slot:footer>
     </x-trade-card>
 </div>
 

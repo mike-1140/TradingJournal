@@ -93,7 +93,6 @@
                             <i class="bi bi-arrow-{{ $sortDirection === 'asc' ? 'up' : 'down' }}"></i>
                         @endif
                     </th>
-                    <th class="text-end">Put/Call</th>
                     <th class="text-end">Buy/Sell</th>
                     <th class="text-end" wire:click="sortBy('strike')" style="cursor: pointer;">
                         Strike
@@ -102,14 +101,8 @@
                         @endif
                     </th>
                     <th class="text-center">Contracts</th>
-                    <th wire:click="sortBy('dateTimeOpen')" style="cursor: pointer;">
-                        Eröffnet
-                        @if($sortField === 'dateTimeOpen')
-                            <i class="bi bi-arrow-{{ $sortDirection === 'asc' ? 'up' : 'down' }}"></i>
-                        @endif
-                    </th>
                     <th wire:click="sortBy('dateTimeClose')" style="cursor: pointer;">
-                        Geschlossen
+                        Eröffnet &rarr; Geschlossen
                         @if($sortField === 'dateTimeClose')
                             <i class="bi bi-arrow-{{ $sortDirection === 'asc' ? 'up' : 'down' }}"></i>
                         @endif
@@ -137,26 +130,19 @@
                             <br><small class="text-muted font-monospace">{{ $trade->formatted_option }}</small>
                         </td>
                         <td class="text-end">
-                            <span class="badge bg-{{ $trade->putCall === 'P' ? 'success' : 'danger' }}">
-                                {{ $trade->putCall === 'P' ? 'PUT' : 'CALL' }}
-                            </span>
-                        </td>
-                        <td class="text-end">
                             <span class="badge bg-{{ $trade->buySellOpen === 'BUY' ? 'success' : 'danger' }}">
                                 {{ $trade->buySellOpen }}
                             </span>
                         </td>
                         <td class="text-end">
-                            <strong>{{ number_format($trade->strike, 2) }}</strong>
+                            <strong class="{{ $trade->putCall === 'P' ? 'text-danger' : 'text-success' }}">
+                                {{ $trade->putCall === 'P' ? 'P' : 'C' }} {{ number_format($trade->strike, 2) }}
+                            </strong>
                         </td>
                         <td class="text-center">{{ number_format(abs($trade->quantity), 0) }}</td>
                         <td>
-                            {{ $trade->dateTimeOpen?->format('d.m.Y') }}
-                            <br><small class="text-muted">{{ $trade->dateTimeOpen?->diffForHumans() }}</small>
-                        </td>
-                        <td>
-                            {{ $trade->dateTimeClose?->format('d.m.Y') }}
-                            <br><small class="text-muted">{{ $trade->dateTimeClose?->diffForHumans() }}</small>
+                            {{ $trade->dateTimeOpen?->format('d.m.Y') }} &rarr; {{ $trade->dateTimeClose?->format('d.m.Y') }}
+                            <br><small class="text-muted">geschlossen {{ $trade->dateTimeClose?->diffForHumans() }}</small>
                         </td>
                         <td class="text-center">{{ number_format($trade->daysHeld, 0) }}</td>
                         <td class="text-end">{{ number_format($trade->tradePriceOpen, 2, ',', '') }}</td>
@@ -183,7 +169,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="14">
+                        <td colspan="12">
                             <x-empty-state
                                 icon="inbox"
                                 title="Keine geschlossenen Options-Positionen gefunden"

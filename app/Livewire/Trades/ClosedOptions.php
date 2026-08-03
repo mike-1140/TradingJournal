@@ -121,7 +121,6 @@ class ClosedOptions extends Component
         $totalTrades = $baseQuery()->count();
 
         $totalPremium = $baseQuery()->sum('profit');
-        flow_log("Premium", [$totalTrades, $totalPremium], true);
 
         $totalCommissions = $baseQuery()->sum('ibCommission');
 

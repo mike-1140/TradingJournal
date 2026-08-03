@@ -24,6 +24,10 @@ class OpenOptions extends Component
         'sortDirection' => ['except' => 'asc'],
     ];
 
+    protected $listeners = [
+        'environment-changed' => '$refresh',
+    ];
+
     public function mount()
     {
         $this->mountManagesEnvironment();

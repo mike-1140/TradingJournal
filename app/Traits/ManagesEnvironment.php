@@ -6,7 +6,6 @@ namespace App\Traits;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use App\Helpers\TradingHelper;
-use Illuminate\Support\Facades\Log;
 
 trait ManagesEnvironment
 {
@@ -15,20 +14,12 @@ trait ManagesEnvironment
 
     public function mountManagesEnvironment()
     {
-        // flow_trace();
-
-        // 1. Environments laden
-        $this->environments = TradingHelper::getEnvironments();
-
-        // flow_log('TradingHelper::getEnvironments()', [
-        //     'returned Environment' => $this->environments,
-        // ]);
+        // 1. Environments laden (nur die, in denen der User Tabellen hat; TEST immer dabei)
+        $this->environments = TradingHelper::getInstalledEnvironments();
 
         // 2. Environment aus Session holen oder Default
         $this->selectedEnvironment = $this->getOrInitializeEnvironment();
-        // flow_log('ManagesEnvironment - $this->getOrInitializeEnvironment()', [
-        //     'returned Environment' => $this->selectedEnvironment,
-        // ]);
+
         // 3. Database Context setzen (nur wenn User eingeloggt)
         $this->applyUserPrefix();
     }
@@ -38,19 +29,7 @@ trait ManagesEnvironment
      */
     protected function getOrInitializeEnvironment(): string
     {
-        // flow_trace();
-
         $sessionEnv = session('trading_environment');
-
-        // flow_log('trading_environment:', [
-        //     'from' => $sessionEnv,
-        // ]);
-//
-        //////////////////////
-//        $default = config('trading.default_environment', 'TEST');
-//        session(['trading_environment' => $default]);
-//        $sessionEnv = session('trading_environment');
-        //////////////////
 
         // Wenn nicht gesetzt oder ungültig
         if (!TradingHelper::isValidEnvironment($sessionEnv)) {
@@ -70,19 +49,13 @@ trait ManagesEnvironment
 
     public function updatedSelectedEnvironment($value)
     {
-        // flow_trace();
         $this->setEnvironment($value);
     }
 
     public function setEnvironment($environment)
     {
-        // flow_trace();
         // Validierung & Normalisierung
         if (!TradingHelper::isValidEnvironment($environment)) {
-            // flow_log('Invalid environment selected', [
-            //     'environment' => $environment,
-            //     'component' => static::class,
-            // ]);
             return;
         }
 
@@ -100,32 +73,13 @@ trait ManagesEnvironment
      */
     protected function applyUserPrefix()
     {
-        // flow_trace();
         // Kein User eingeloggt → nichts zu tun
         if (!auth()->check()) {
-            // flow_log('applyUserPrefix skipped: No authenticated user');
             return;
         }
 
         $user = auth()->user();
         $prefix = $user->table_prefix ?? '';
-//        flow_log('User has table_prefix', [
-//            'user_id' => $user->id,
-//            'prefix' => $prefix,
-//        ]);
-        // $prefix = 'mike_';
-
-        // Warning wenn User keinen Präfix hat
-        if (empty($prefix)) {
-           //  flow_log('User has no table_prefix in Livewire', [
-           //      'user_id' => $user->id,
-           //      'environment' => $this->selectedEnvironment,
-           //      'connection' => $connection,
-           // ]);
-
-            // Optional: Auto-generieren
-            // $prefix = $this->generatePrefixForUser($user);
-        }
 
         $connection = TradingHelper::getConnection($this->selectedEnvironment);
 
@@ -160,7 +114,6 @@ trait ManagesEnvironment
 
     public function getTradingConnectionName()
     {
-        // flow_trace();
         return TradingHelper::getConnection($this->selectedEnvironment);
     }
 }

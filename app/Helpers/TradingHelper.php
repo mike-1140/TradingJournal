@@ -2,7 +2,9 @@
 // app/Helpers/TradingHelper.php
 namespace App\Helpers;
 
-use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class TradingHelper
 {
@@ -13,18 +15,13 @@ class TradingHelper
     {
         // Fallback auf Default wenn leer oder null
         if (empty($environment)) {
-            $environment = config('trading.default_environment', 'PAPER');
+            $environment = config('trading.default_environment', 'TEST');
         }
 
         $environments = config('trading.environments', []);
 
         // Prüfen ob Environment existiert
         if (!isset($environments[$environment])) {
-//            Log::channel('debug')->warning("Unknown trading environment:", [
-//                'Environments' => $environments,
-//                'Environment' => $environment,
-//                //'Environments[Environment]' => $environments[$environment],
-//            ]);
             $environment = config('trading.default_environment', 'TEST');
         }
 
@@ -32,17 +29,50 @@ class TradingHelper
     }
 
     /**
-     * Gibt alle verfügbaren Environments zurück
+     * Gibt nur die Environments zurück, die der übergebene User tatsächlich nutzt.
+     * TEST ist immer dabei, da es nie fehlen soll (Default-Fallback).
+     * Es gibt keine explizite User-Environment-Zuordnung — "genutzt" wird daran
+     * erkannt, ob in der jeweiligen Environment-DB eine Tabelle mit dem
+     * table_prefix des Users existiert (z.B. karola_trades_close in ibkr_money).
+     * Ergebnis wird pro Prefix gecacht, da der Schema-Check einen echten
+     * DB-Roundtrip pro Environment auslöst.
      */
-    public static function getEnvironments(): array
+    public static function getInstalledEnvironments(?string $tablePrefix = null): array
     {
-        $envs = array_keys(config('trading.environments', []));
+        if ($tablePrefix === null) {
+            $tablePrefix = auth()->user()?->table_prefix ?? '';
+        }
 
-//        flow_log('TradingHelper - Enter: getEnvironments', [
-//            'environments' => $envs,
-//        ]);
+        $cacheKey = 'trading.installed_environments.' . ($tablePrefix !== '' ? $tablePrefix : '_none');
 
-        return $envs;
+        return Cache::remember($cacheKey, now()->addMinutes(10), function () use ($tablePrefix) {
+            $environments = config('trading.environments', []);
+            $installed = [];
+
+            foreach ($environments as $key => $cfg) {
+                if ($key === 'TEST') {
+                    $installed[] = $key;
+                    continue;
+                }
+
+                $connection = $cfg['connection'] ?? null;
+                if (!$connection || $tablePrefix === '') {
+                    continue;
+                }
+
+                try {
+                    if (Schema::connection($connection)->hasTable($tablePrefix . 'trades_close')) {
+                        $installed[] = $key;
+                    }
+                } catch (\Throwable $e) {
+                    // Environment (noch) nicht installiert oder DB nicht erreichbar
+                } finally {
+                    DB::purge($connection);
+                }
+            }
+
+            return $installed;
+        });
     }
 
     /**
@@ -50,9 +80,6 @@ class TradingHelper
      */
     public static function getEnvironmentLabel(string $environment): string
     {
-//        flow_log('TradingHelper - Enter: getEnvironmentLabel', [
-//            'Environment' => $environment,
-//        ]);
         return config("trading.environments.{$environment}.label", $environment);
     }
 
@@ -61,9 +88,6 @@ class TradingHelper
      */
     public static function isValidEnvironment(?string $environment): bool
     {
-//        flow_log('TradingHelper - Enter: isValidEnvironment', [
-//            'Environment' => $environment,
-//        ]);
         if (empty($environment)) {
             return false;
         }
@@ -76,13 +100,10 @@ class TradingHelper
      */
     public static function normalizeEnvironment(?string $environment): string
     {
-//        flow_log('TradingHelper - Enter: normalizeEnvironment', [
-//            'Environment' => $environment,
-//        ]);
         if (self::isValidEnvironment($environment)) {
             return $environment;
         }
 
-        return config('trading.default_environment', 'PAPER');
+        return config('trading.default_environment', 'TEST');
     }
 }
