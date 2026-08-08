@@ -1,4 +1,4 @@
-# TradingJournal2
+# TradingJournal
 
 Persönliches Trading-Journal zur Auswertung von IBKR-Trades (Interactive Brokers).
 
@@ -31,7 +31,7 @@ Persönliches Trading-Journal zur Auswertung von IBKR-Trades (Interactive Broker
 
 ```bash
 git clone <repo-url>
-cd TradingJournal2
+cd TradingJournal
 
 composer install
 npm install

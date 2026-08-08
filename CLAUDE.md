@@ -1,4 +1,4 @@
-# TradingJournal2 – Projektkontext für Claude Code
+# TradingJournal – Projektkontext für Claude Code
 
 ## Stack
 - Laravel + Livewire 3
