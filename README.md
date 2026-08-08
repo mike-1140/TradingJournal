@@ -80,6 +80,13 @@ Laravel-eigene Tabellen (users, cache, sessions):
 php artisan migrate
 ```
 
+Vorschritt (einmalig): `is_admin`-Spalte anlegen — hat keine Migration, sonst schlaegt
+`auth:create-user --admin` mit "Column not found: is_admin" fehl:
+
+```bash
+php artisan setup:auth
+```
+
 Ersten User anlegen (Prefix muss zum oben initialisierten Prefix passen):
 
 ```bash
