@@ -42,36 +42,48 @@ php artisan key:generate
 
 ### .env konfigurieren
 
-Die App nutzt mehrere Datenbankverbindungen. In `.env` müssen folgende Verbindungen eingetragen werden:
+Die App nutzt mehrere Datenbankverbindungen. `.env.example` liefert als Laravel-Standard
+`DB_CONNECTION=sqlite` — für dieses Projekt auf MySQL umstellen:
 
 ```env
 DB_CONNECTION=mysql
 DB_HOST=127.0.0.1
 DB_PORT=3306
-DB_DATABASE=trading_money
+DB_DATABASE=ibkr_laravel
 DB_USERNAME=...
 DB_PASSWORD=...
 
-DB_MONEY_DATABASE=trading_money
-DB_PAPER_DATABASE=trading_paper
-DB_TEST_DATABASE=trading_test
-DB_AUTOM_MONEY_DATABASE=trading_autom_money
-DB_AUTOM_PAPER_DATABASE=trading_autom_paper
+TRADING_DB_HOST=127.0.0.1
+TRADING_DB_PORT=3306
+TRADING_DB_USERNAME=...
+TRADING_DB_PASSWORD=...
 ```
+
+`DB_*` ist die Laravel-eigene Datenbank (users, sessions, cache). `TRADING_DB_*` sind die
+Zugangsdaten für die fünf Trading-Datenbanken — deren Namen (`ibkr_money`, `ibkr_paper`,
+`ibkr_test`, `ibkr_autom_money`, `ibkr_autom_paper`) sind in `config/database.php` fest
+hinterlegt, nicht über `.env` konfigurierbar, und müssen mit `xml_proj/.env` (`DB_NAME_*`)
+übereinstimmen.
 
 ### Datenbank einrichten
 
-Das Schema wird durch das Python-Skript verwaltet — **keine Laravel-Migrations** für die Trading-Tabellen:
+Das Schema wird durch `xml_proj` verwaltet — **keine Laravel-Migrations** für die Trading-Tabellen:
 
 ```bash
-python python/reset_IBKR_DB.py
+cd ../xml_proj
+python -m tools.maintenance.reset_IBKR_DB money mike_
 ```
 
 Laravel-eigene Tabellen (users, cache, sessions):
 
 ```bash
 php artisan migrate
-php artisan db:seed
+```
+
+Ersten User anlegen (Prefix muss zum oben initialisierten Prefix passen):
+
+```bash
+php artisan auth:create-user "Mike" mike@example.com "PASSWORT" --prefix=mike_ --admin
 ```
 
 ### Assets bauen
