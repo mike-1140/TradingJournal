@@ -13,20 +13,46 @@ use Illuminate\Support\Facades\DB;
  * (ibkr_test) mit einem eigenen, nur fuer automatisierte Tests reservierten
  * Praefix ('phpunit_'), NIE die echten karola_/mike_-Tabellen darin.
  *
- * Jeder Test laeuft in einer Transaktion, die am Ende zurueckgerollt wird --
- * kein Aufraeum-Code noetig, keine Seiteneffekte zwischen Tests.
+ * WICHTIG: ManagesEnvironment::applyUserPrefix() ruft bei JEDEM Component-
+ * mount() DB::purge($connection) auf (auch wenn sich der Praefix nicht
+ * aendert) -- das verwirft eine bereits offene Transaktion samt allem
+ * unfertigen Inhalt. Deshalb sind Praefix-Setup und Transaktion getrennt:
+ *
+ *   - Tests OHNE Livewire::test() (reine DB-Zugriffe): setUpTradingTestConnection()/
+ *     tearDownTradingTestConnection() wie gewohnt in setUp()/tearDown().
+ *   - Tests MIT Livewire::test() auf einer ManagesEnvironment-Komponente:
+ *     nur setPhpunitPrefix() in setUp(); beginTradingTransaction() ERST NACH
+ *     dem ersten ->test()-Aufruf (also nach dem Mounten) manuell im Testfall
+ *     aufrufen, danach ganz normal rollbackTradingTransaction() in tearDown().
  */
 trait UsesTradingTestConnection
 {
     protected function setUpTradingTestConnection(): void
     {
-        Config::set('database.connections.trading_test.prefix', 'phpunit_');
-        DB::purge('trading_test');
-        DB::connection('trading_test')->beginTransaction();
+        $this->setPhpunitPrefix();
+        $this->beginTradingTransaction();
     }
 
     protected function tearDownTradingTestConnection(): void
     {
-        DB::connection('trading_test')->rollBack();
+        $this->rollbackTradingTransaction();
+    }
+
+    protected function setPhpunitPrefix(): void
+    {
+        Config::set('database.connections.trading_test.prefix', 'phpunit_');
+        DB::purge('trading_test');
+    }
+
+    protected function beginTradingTransaction(): void
+    {
+        DB::connection('trading_test')->beginTransaction();
+    }
+
+    protected function rollbackTradingTransaction(): void
+    {
+        if (DB::connection('trading_test')->transactionLevel() > 0) {
+            DB::connection('trading_test')->rollBack();
+        }
     }
 }

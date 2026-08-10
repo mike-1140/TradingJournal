@@ -91,12 +91,11 @@ class Dashboard extends Component
 
     public function mount()
     {
-        // ZUERST den Zeitraum aus der Session holen (via Trait Methode)
         $this->mountFilterableByTime();
 
         $this->users = \App\Models\User::all();
         $this->mountManagesEnvironment();
-        $this->loadStatistics(); // Hier wird jetzt der korrekte Zeitraum genutzt
+        $this->loadStatistics();
     }
 
     public function changeEnvironment($environment)

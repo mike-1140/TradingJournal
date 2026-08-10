@@ -30,14 +30,45 @@ php artisan test
 | `mysql` (Haupt-DB, `ibkr_laravel_test`) | `users`, `cache`, Sessions — echte Laravel-Migrationen | `RefreshDatabase`-Trait (migriert frisch pro Testklasse) |
 | `trading_test` (`ibkr_test`, Präfix `phpunit_`) | `TradeClose`, `Campaign`, `CampaignLedger`, … | `Tests\Concerns\UsesTradingTestConnection` (Transaktion pro Test, Rollback in `tearDown()`) |
 
-Für Tests, die Trading-Daten anfassen: Trait einbinden und `setUpTradingTestConnection()`/`tearDownTradingTestConnection()` in `setUp()`/`tearDown()` aufrufen (siehe `TradingConnectionSmokeTest.php`). Nie direkt gegen `karola_*`/`mike_*` schreiben — die gehören zum manuellen TEST-Environment des Nutzers, nicht zu automatisierten Tests.
+Nie direkt gegen `karola_*`/`mike_*` schreiben — die gehören zum manuellen TEST-Environment des Nutzers, nicht zu automatisierten Tests.
 
-## Testdateien (Stand: Grundgerüst)
+### Falle: `ManagesEnvironment::applyUserPrefix()` killt eine schon offene Transaktion
+
+`applyUserPrefix()` ruft bei **jedem** Component-`mount()` `DB::purge('trading_test')` auf — auch wenn sich der Präfix gar nicht ändert. Das verwirft die aktive PDO-Connection samt einer eventuell offenen Transaktion. Zwei Nutzungsmuster je nachdem, ob der Test eine Livewire-Komponente mountet:
+
+**Kein `Livewire::test()` beteiligt** (reine DB-Zugriffe, z.B. `TradingConnectionSmokeTest.php`):
+```php
+protected function setUp(): void { parent::setUp(); $this->setUpTradingTestConnection(); }
+protected function tearDown(): void { $this->tearDownTradingTestConnection(); parent::tearDown(); }
+```
+
+**Eine `ManagesEnvironment`-Komponente wird gemountet** (praktisch jede Livewire-Komponente in dieser App, z.B. `SpreadAssignmentPnlTest.php`): Präfix in `setUp()` setzen, aber die Transaktion **erst nach dem ersten `Livewire::test()`-Aufruf** beginnen — sonst ist sie beim Mounten schon wieder weg:
+```php
+protected function setUp(): void { parent::setUp(); $this->setPhpunitPrefix(); }
+protected function tearDown(): void { $this->rollbackTradingTransaction(); parent::tearDown(); }
+
+public function test_...(): void
+{
+    $test = Livewire::actingAs($user)->test(MyComponent::class); // mount() -> purge()
+    $this->beginTradingTransaction();                            // JETZT erst
+    DB::connection('trading_test')->table(...)->insert(...);
+    $test->call('irgendeineHarmloseAction')->viewData(...);      // erzwingt Re-Render nach dem Insert
+}
+```
+
+## Testdateien (Stand 2026-08-10)
 
 | Datei | Prüft |
 |---|---|
 | `Unit/TradingHelperTest.php` | `TradingHelper` — reine Environment-/Connection-Logik, kein DB-Zugriff |
+| `Unit/DashboardListenerConfigTest.php` | Bug: Livewire-Self-Refresh-Antipattern — Dashboard darf auf kein Event hören, das es selbst dispatched |
 | `Feature/UserAccountSmokeTest.php` | Haupt-DB-Verbindung zeigt korrekt auf `ibkr_laravel_test`, `User::factory()` funktioniert |
 | `Feature/TradingConnectionSmokeTest.php` | `UsesTradingTestConnection` isoliert wirklich — Test 2 beweist, dass Test 1s Rollback nichts hinterlassen hat |
+| `Feature/Campaigns/CampaignsStartDateDisplayTest.php` | Bug: `$this->startDateProperty`-Typo — Zeitfenster wird korrekt angezeigt, nicht immer "Alle historischen Daten" |
+| `Feature/Spreads/SpreadAssignmentPnlTest.php` | Bug: Spread-Assignment-linkID — Aktienzuteilung wird ins Spread-P&L eingerechnet (TXN-Beispiel: 118 → -382) |
 
-Noch nicht getestet (nächste Schritte): `FilterableByTime`/`ManagesEnvironment` (Traits), die 5 bekannten, bereits gefixten Bugs aus `CLAUDE.md` (Computed-Property-Typo in `campaigns-index.blade.php`, fehlender `mountFilterableByTime()`-Aufruf, Trait-Reihenfolge, Livewire-Self-Refresh-Antipattern, Spread-Assignment-linkID-Anzeige), Livewire-Komponententests mit echten Trading-Daten.
+Alle Bug-Regressionstests per Tripwire verifiziert (Fix testweise zurückgedreht, Test schlägt fehl, zurückgesetzt).
+
+**Als gegenstandslos eingestuft, keine Tests:** die ursprünglich in `CLAUDE.md` dokumentierten Bugs "fehlender `mountFilterableByTime()`-Aufruf" und "Trait-Reihenfolge" — seit dem DB-basierten Zeitfilter-Umbau (2026-03-04) ist `mountFilterableByTime()` ein reiner No-Op, ein Test dafür würde nur beweisen, dass eine leere Funktion leer bleibt.
+
+Noch nicht getestet: `FilterableByTime`/`ManagesEnvironment` (Traits) direkt, weitere Livewire-Komponenten mit echten Trading-Daten.

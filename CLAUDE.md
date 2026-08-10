@@ -10,11 +10,10 @@
 ## Architektur: Zwei globale Filter-Traits
 
 ### `FilterableByTime` (`app/Traits/FilterableByTime.php`)
-- Property: `$timeRange` (Session-Key: `trading_time_range`, Default: `'ytd'`)
-- Werte: `13w`, `6m`, `ytd`, `all`
-- Methoden: `mountFilterableByTime()`, `startDate()` (#[Computed]), `applyTimeFilter($query, $dateColumn)`
-- Event dispatch: `time-range-changed`
-- **Wichtig:** `mountFilterableByTime()` MUSS in `mount()` VOR `mountManagesEnvironment()` aufgerufen werden
+- DB-basiert (siehe "Zeitraumfilter" weiter unten) — `mountFilterableByTime()` ist ein reiner No-Op-Hook (Werte kommen direkt aus `auth()->user()`), Aufrufreihenfolge zu `mountManagesEnvironment()` spielt keine Rolle mehr
+- Werte: `13w`, `6m`, `ytd`, `all`, oder Custom-Range (`filter_from`/`filter_to`)
+- Methoden: `mountFilterableByTime()`, `startDate()`/`endDate()` (#[Computed]), `applyTimeFilter($query, $dateColumn)`
+- Event dispatch: `time-range-changed` (ohne Payload — Komponenten lesen aus DB)
 - In Blade-Templates: `$this->startDate` (Computed Property)
 
 ### `ManagesEnvironment` (`app/Traits/ManagesEnvironment.php`)
@@ -51,19 +50,13 @@ class MyComponent extends Component
 
     protected $listeners = [
         'environment-changed' => '$refresh',
-        'time-range-changed'  => 'updateTimeRangeFromEvent',
+        'time-range-changed'  => '$refresh',
     ];
 
     public function mount()
     {
-        $this->mountFilterableByTime();      // ZUERST
+        $this->mountFilterableByTime();
         $this->mountManagesEnvironment();
-    }
-
-    public function updateTimeRangeFromEvent($range)
-    {
-        $this->timeRange = $range;
-        $this->resetPage();
     }
 
     public function render()
@@ -170,6 +163,6 @@ Python berechnet EUR-Werte vor — Laravel zeigt sie nur an, keine Berechnung in
 **`CampaignLedger.php`**: `fxRateToBase` (decimal:6), `netcash_eur`, `proceeds_eur`, `commission_eur` (decimal:4), `tradePrice`, `strike`, `multiplier` (decimal:4), `expiry` (date), `putCall` (VARCHAR 5), `buySell` (VARCHAR 10)
 
 ## Bekannte Bugs (behoben)
-- `campaigns-index.blade.php` nutzte `$this->startDateProperty` statt `$this->startDate`
-- `Campaigns.php` fehlte `mountFilterableByTime()` in `mount()`
+- `campaigns-index.blade.php` nutzte `$this->startDateProperty` statt `$this->startDate` — Regressionstest: `tests/Feature/Campaigns/CampaignsStartDateDisplayTest.php`
+- `Campaigns.php` fehlte `mountFilterableByTime()` in `mount()` — durch den DB-basierten Zeitfilter-Umbau (2026-03-04) inzwischen gegenstandslos, `mountFilterableByTime()` ist heute ein No-Op
 - `#[Computed]` in Traits funktioniert in Livewire 3 korrekt
