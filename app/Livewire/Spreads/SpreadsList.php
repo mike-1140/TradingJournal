@@ -36,7 +36,6 @@ class SpreadsList extends Component
 
     public function mount()
     {
-        $this->mountFilterableByTime();
         $this->mountManagesEnvironment();
     }
 

@@ -26,7 +26,6 @@ class CampaignDetail extends Component
 
     public function mount($campaignId)
     {
-        $this->mountFilterableByTime();
         $this->mountManagesEnvironment();
         $this->campaignId = $campaignId;
         $this->campaign   = Campaign::findOrFail($campaignId);

@@ -6,11 +6,6 @@ use Livewire\Attributes\Computed;
 
 trait FilterableByTime
 {
-    public function mountFilterableByTime()
-    {
-        // Kein lokaler State nötig — Werte kommen direkt aus auth()->user()
-    }
-
     #[Computed]
     public function startDate(): ?Carbon
     {

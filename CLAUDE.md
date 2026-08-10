@@ -10,9 +10,9 @@
 ## Architektur: Zwei globale Filter-Traits
 
 ### `FilterableByTime` (`app/Traits/FilterableByTime.php`)
-- DB-basiert (siehe "Zeitraumfilter" weiter unten) — `mountFilterableByTime()` ist ein reiner No-Op-Hook (Werte kommen direkt aus `auth()->user()`), Aufrufreihenfolge zu `mountManagesEnvironment()` spielt keine Rolle mehr
+- DB-basiert (siehe "Zeitraumfilter" weiter unten) — kein `mount*()`-Hook nötig, Werte kommen direkt aus `auth()->user()`
 - Werte: `13w`, `6m`, `ytd`, `all`, oder Custom-Range (`filter_from`/`filter_to`)
-- Methoden: `mountFilterableByTime()`, `startDate()`/`endDate()` (#[Computed]), `applyTimeFilter($query, $dateColumn)`
+- Methoden: `startDate()`/`endDate()` (#[Computed]), `applyTimeFilter($query, $dateColumn)`
 - Event dispatch: `time-range-changed` (ohne Payload — Komponenten lesen aus DB)
 - In Blade-Templates: `$this->startDate` (Computed Property)
 
@@ -55,7 +55,6 @@ class MyComponent extends Component
 
     public function mount()
     {
-        $this->mountFilterableByTime();
         $this->mountManagesEnvironment();
     }
 
@@ -164,5 +163,5 @@ Python berechnet EUR-Werte vor — Laravel zeigt sie nur an, keine Berechnung in
 
 ## Bekannte Bugs (behoben)
 - `campaigns-index.blade.php` nutzte `$this->startDateProperty` statt `$this->startDate` — Regressionstest: `tests/Feature/Campaigns/CampaignsStartDateDisplayTest.php`
-- `Campaigns.php` fehlte `mountFilterableByTime()` in `mount()` — durch den DB-basierten Zeitfilter-Umbau (2026-03-04) inzwischen gegenstandslos, `mountFilterableByTime()` ist heute ein No-Op
+- `Campaigns.php` fehlte `mountFilterableByTime()` in `mount()` — durch den DB-basierten Zeitfilter-Umbau (2026-03-04) gegenstandslos geworden; die Methode war zuletzt ein reiner No-Op und wurde 2026-08-10 komplett entfernt (Trait + alle 11 Aufrufstellen)
 - `#[Computed]` in Traits funktioniert in Livewire 3 korrekt

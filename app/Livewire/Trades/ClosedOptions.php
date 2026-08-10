@@ -33,7 +33,6 @@ class ClosedOptions extends Component
 
     public function mount()
     {
-        $this->mountFilterableByTime();
         $this->mountManagesEnvironment();
     }
 

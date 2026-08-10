@@ -22,7 +22,6 @@ class PsychologyAnalytics extends Component
     public function mount(): void
     {
         $this->mountManagesEnvironment();
-        $this->mountFilterableByTime();
     }
 
     public function render()

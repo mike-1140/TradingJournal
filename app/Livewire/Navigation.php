@@ -27,7 +27,6 @@ class Navigation extends Component
 
     public function mount()
     {
-        $this->mountFilterableByTime();
         $this->selectedEnvironment = session('trading_environment', 'PAPER');
     }
 

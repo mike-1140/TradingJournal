@@ -28,7 +28,6 @@ class SpreadDetail extends Component
 
     public function mount($opt_strategyID)
     {
-        $this->mountFilterableByTime();
         $this->mountManagesEnvironment();
         $this->opt_strategyID = $opt_strategyID;
 

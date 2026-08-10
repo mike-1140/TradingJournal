@@ -26,7 +26,6 @@ class GlobalSymbolDetail extends Component
 
     public function mount($symbol)
     {
-        $this->mountFilterableByTime();
         $this->mountManagesEnvironment();
         $this->symbol = strtoupper($symbol);
         $this->resetPage('globalPage');

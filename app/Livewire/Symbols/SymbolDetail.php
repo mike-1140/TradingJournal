@@ -23,7 +23,6 @@ class SymbolDetail extends Component
 
     public function mount(string $symbol)
     {
-        $this->mountFilterableByTime();
         $this->mountManagesEnvironment();
         $this->symbol = strtoupper($symbol);
     }

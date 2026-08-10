@@ -69,6 +69,6 @@ public function test_...(): void
 
 Alle Bug-Regressionstests per Tripwire verifiziert (Fix testweise zurückgedreht, Test schlägt fehl, zurückgesetzt).
 
-**Als gegenstandslos eingestuft, keine Tests:** die ursprünglich in `CLAUDE.md` dokumentierten Bugs "fehlender `mountFilterableByTime()`-Aufruf" und "Trait-Reihenfolge" — seit dem DB-basierten Zeitfilter-Umbau (2026-03-04) ist `mountFilterableByTime()` ein reiner No-Op, ein Test dafür würde nur beweisen, dass eine leere Funktion leer bleibt.
+**Als gegenstandslos eingestuft, keine Tests:** die ursprünglich in `CLAUDE.md` dokumentierten Bugs "fehlender `mountFilterableByTime()`-Aufruf" und "Trait-Reihenfolge" — seit dem DB-basierten Zeitfilter-Umbau (2026-03-04) war `mountFilterableByTime()` nur noch ein reiner No-Op. Ein Test dafür hätte nur bewiesen, dass eine leere Funktion leer bleibt — die Methode wurde stattdessen komplett entfernt (Trait + alle 11 Aufrufstellen, 2026-08-10).
 
 Noch nicht getestet: `FilterableByTime`/`ManagesEnvironment` (Traits) direkt, weitere Livewire-Komponenten mit echten Trading-Daten.

@@ -91,8 +91,6 @@ class Dashboard extends Component
 
     public function mount()
     {
-        $this->mountFilterableByTime();
-
         $this->users = \App\Models\User::all();
         $this->mountManagesEnvironment();
         $this->loadStatistics();
