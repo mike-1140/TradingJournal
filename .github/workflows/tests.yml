@@ -1,0 +1,90 @@
+name: Tests
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  phpunit:
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ALLOW_EMPTY_PASSWORD: yes
+          MYSQL_DATABASE: ibkr_laravel_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      - name: TradingJournal auschecken
+        uses: actions/checkout@v4
+
+      # xml_proj ist (noch) privat -- solange Phase 5 des Open-Source-Fahrplans
+      # nicht erledigt ist, braucht dieser Schritt ein Fine-grained PAT mit
+      # Read-Zugriff auf xml_proj, hinterlegt als Repo-Secret
+      # XMLPROJ_CHECKOUT_TOKEN (Settings > Secrets and variables > Actions).
+      # Sobald xml_proj public ist, kann "token:" entfallen.
+      - name: xml_proj auschecken (liefert das Trading-DB-Schema)
+        uses: actions/checkout@v4
+        with:
+          repository: mike-1140/xml_proj
+          token: ${{ secrets.XMLPROJ_CHECKOUT_TOKEN }}
+          path: xml_proj
+
+      - name: PHP einrichten
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.3"
+          extensions: mbstring, pdo, pdo_mysql, bcmath, xml, ctype, json, tokenizer, fileinfo
+          coverage: none
+
+      - name: Python einrichten (fuer reset_IBKR_DB.py)
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      - name: Node einrichten
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: xml_proj-Abhaengigkeiten installieren
+        working-directory: xml_proj
+        run: pip install -r requirements.txt
+
+      - name: Trading-Test-Schema anlegen (phpunit_-Praefix in ibkr_test)
+        working-directory: xml_proj
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_USER: root
+          DB_PASS: ""
+        run: python -m tools.maintenance.reset_IBKR_DB test phpunit_
+
+      - name: Composer-Abhaengigkeiten installieren
+        run: composer install --no-interaction --prefer-dist
+
+      - name: NPM-Abhaengigkeiten installieren + Assets bauen
+        run: |
+          npm ci
+          npm run build
+
+      - name: .env.testing anlegen
+        run: |
+          cp .env.testing.example .env.testing
+          php artisan key:generate --env=testing
+
+      - name: "Migrationen ausfuehren (Haupt-DB: users, cache, ...)"
+        run: php artisan migrate --env=testing --force
+
+      - name: Tests ausfuehren
+        run: php artisan test

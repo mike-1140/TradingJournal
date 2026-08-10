@@ -19,6 +19,12 @@
 php artisan test
 ```
 
+## CI (GitHub Actions)
+
+`.github/workflows/tests.yml` — läuft auf jedem Push/PR: MySQL-Service-Container, checkt zusätzlich `xml_proj` aus (liefert das Trading-Schema, s.o.), baut Assets, migriert die Haupt-DB, führt `php artisan test` aus.
+
+**Einmaliger Setup-Schritt nötig, solange `xml_proj` noch privat ist:** Fine-grained PAT mit Read-Zugriff auf `xml_proj` erzeugen und als Repo-Secret `XMLPROJ_CHECKOUT_TOKEN` hinterlegen (Settings → Secrets and variables → Actions). Entfällt automatisch, sobald `xml_proj` public ist (Phase 5 im Open-Source-Fahrplan) — dann kann die `token:`-Zeile im Checkout-Step raus.
+
 ## Warum kein SQLite
 
 `phpunit.xml` sah ursprünglich eine SQLite-In-Memory-DB vor — funktioniert aber nicht für diese App: mehrere Livewire-Komponenten (`Dashboard`, `SpreadsList`, `CampaignDetail`, `Navigation`, …) nutzen MySQL-spezifisches Raw-SQL (`DATE_FORMAT()`, `YEAR()`, `GROUP_CONCAT(... SEPARATOR ...)`), das es in SQLite nicht gibt — die Queries würden mit "no such function" abbrechen. Das Schema selbst ist außerdem reines MySQL-DDL (`xml_proj/sql/*.sql`), keine Laravel-Migrations. Tests laufen deshalb bewusst gegen echtes MySQL.
