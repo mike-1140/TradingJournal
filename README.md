@@ -78,7 +78,7 @@ Das Schema wird durch `xml_proj` verwaltet — **keine Laravel-Migrations** für
 
 ```bash
 cd ../xml_proj
-python -m tools.maintenance.reset_IBKR_DB money mike_
+python -m tools.maintenance.reset_IBKR_DB money dein_user_
 ```
 
 Laravel-eigene Tabellen (users, cache, sessions):
@@ -97,7 +97,7 @@ php artisan setup:auth
 Ersten User anlegen (Prefix muss zum oben initialisierten Prefix passen):
 
 ```bash
-php artisan auth:create-user "Mike" mike@example.com "PASSWORT" --prefix=mike_ --admin
+php artisan auth:create-user "Dein Name" dein_name@example.com "PASSWORT" --prefix=dein_user_ --admin
 ```
 
 ### Assets bauen
@@ -146,6 +146,8 @@ npm install
 | Datei | Inhalt |
 |---|---|
 | `CLAUDE.md` | Entwickler-Notizen (Traits, Event-System, Environment-Handling, bekannte Bugs) |
+| `docs/setup/tradingjournal-setup(-einsteiger).md` | Setup-Anleitung für dieses Repo, technisch bzw. für Einsteiger |
+| `docs/setup/ui-first-run.md` | UI-Erstkonfiguration nach dem Setup (Environment-Switcher, Nutzer wechseln, ...) |
 | `tests/README.md` | Test-Setup gegen echtes MySQL, Environment-Isolation |
 | `CONTRIBUTING.md` | Wie beitragen — Konventionen, Test-Erwartung, PR-Ablauf |
 | `SECURITY.md` | Meldeweg für Sicherheitslücken |
