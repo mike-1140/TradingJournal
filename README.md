@@ -11,7 +11,7 @@ Web-Oberfläche über die Daten, die [xml_proj](https://github.com/mike-1140/xml
 
 ## Stack
 
-- **Backend:** Laravel 11 + Livewire 3
+- **Backend:** Laravel 12 + Livewire 3
 - **Frontend:** Bootstrap 5 + Bootstrap Icons
 - **Datenbank:** MySQL (mehrere Verbindungen, Schema via Python verwaltet)
 - **Datenimport:** Python-Skript (`reset_IBKR_DB.py`, aus xml_proj)
