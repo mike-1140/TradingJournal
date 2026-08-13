@@ -20,6 +20,22 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withExceptions(function (Exceptions $exceptions): void {
 
         $exceptions->renderable(function (
+            \App\Exceptions\DemoModeWriteBlockedException $e,
+            \Illuminate\Http\Request $request
+        ) {
+            session()->flash('demo_blocked', $e->getMessage());
+
+            if ($request->hasHeader('X-Livewire')) {
+                // Bewusst 403 statt null/500: der bestehende 500-Toast-Hook zeigt einen
+                // festen "wahrscheinlich ein Datenbankproblem"-Text, der hier irrefuehrend
+                // waere. Eigener 403-Hook in app.js zeigt stattdessen die echte Meldung.
+                return response()->json(['message' => $e->getMessage()], 403);
+            }
+
+            return back()->withInput();
+        });
+
+        $exceptions->renderable(function (
             \Illuminate\Database\QueryException $e,
             \Illuminate\Http\Request $request
         ) {

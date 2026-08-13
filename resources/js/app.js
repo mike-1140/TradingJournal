@@ -35,13 +35,21 @@ window.showDbErrorToast = function (message) {
 // Livewire-Hook: 500-Fehler abfangen und Toast zeigen
 document.addEventListener('livewire:init', () => {
     Livewire.hook('request', ({ fail }) => {
-        fail(({ status, preventDefault }) => {
+        fail(({ status, content, preventDefault }) => {
             if (status === 500) {
                 preventDefault(); // Livewire-eigene Fehlermeldung unterdrücken
                 showDbErrorToast(
                     'Serverfehler (500) — wahrscheinlich ein Datenbankproblem. ' +
                     '<a href="javascript:location.reload()" class="text-white text-decoration-underline">Seite neu laden</a> für Details.'
                 );
+            } else if (status === 403) {
+                // Demo-Modus-Sperre (DemoModeWriteBlockedException) — eigene, akkurate Meldung
+                preventDefault();
+                let message = 'Diese Demo ist read-only — Änderungen werden nicht gespeichert.';
+                try {
+                    message = JSON.parse(content).message || message;
+                } catch (e) { /* Fallback-Text reicht */ }
+                showDbErrorToast(message);
             }
         });
     });

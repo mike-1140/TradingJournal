@@ -43,6 +43,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Demo-Modus
+    |--------------------------------------------------------------------------
+    |
+    | Wenn aktiv, blockiert ein globaler Eloquent-Guard (siehe AppServiceProvider)
+    | jeden schreibenden Zugriff — fuer die oeffentliche Read-only-Demo.
+    |
+    */
+
+    'demo_mode' => (bool) env('DEMO_MODE', false),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application URL
     |--------------------------------------------------------------------------
     |

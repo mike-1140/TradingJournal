@@ -15,6 +15,24 @@
 
 <div id="content-wrapper" class="content-wrapper">
 
+    {{-- Demo-Modus: dauerhafter Hinweis, solange DEMO_MODE aktiv ist --}}
+    @if(config('app.demo_mode'))
+        <div class="px-4 pt-3">
+            <x-alert-message type="info" icon="lock-fill" :dismissible="true">
+                <strong>Demo-Modus:</strong> Änderungen werden nicht gespeichert.
+            </x-alert-message>
+        </div>
+    @endif
+
+    {{-- Demo-Modus-Sperre aus Session (nach Redirect ohne Livewire sichtbar) --}}
+    @if(session('demo_blocked'))
+        <div class="px-4 pt-3">
+            <x-alert-message type="warning" icon="lock-fill" :dismissible="true">
+                {{ session('demo_blocked') }}
+            </x-alert-message>
+        </div>
+    @endif
+
     {{-- DB-Fehler aus Session (nach Redirect oder Reload sichtbar) --}}
     @if(session('db_error'))
         <div class="px-4 pt-3">
