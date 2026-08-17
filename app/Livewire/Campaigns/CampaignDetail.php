@@ -15,7 +15,7 @@ class CampaignDetail extends Component
     use WithPagination, ManagesEnvironment, FilterableByTime;
 
     public $campaignId;
-    public $perPage = 5; // Tage pro Seite
+    public $perPage = 100; // Tage pro Seite
     public Campaign $campaign;
     public string $backUrl = '';
 

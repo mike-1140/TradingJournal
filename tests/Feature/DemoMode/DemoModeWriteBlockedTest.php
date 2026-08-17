@@ -13,8 +13,8 @@ use Tests\TestCase;
  * Regressionstest fuer die Demo-Modus-Schreibsperre
  * (AppServiceProvider::registerDemoModeGuard). Deckt sowohl das Blockieren
  * (demo_mode=true) als auch die Tripwire-Gegenprobe (demo_mode=false -> normales
- * Schreiben funktioniert weiterhin) sowie die remember_token-Ausnahme fuer den
- * Login mit "Angemeldet bleiben" ab.
+ * Schreiben funktioniert weiterhin) sowie die Ausnahmen fuer remember_token (Login
+ * mit "Angemeldet bleiben") und die Zeitraum-Filter-Felder ab.
  */
 class DemoModeWriteBlockedTest extends TestCase
 {
@@ -70,13 +70,39 @@ class DemoModeWriteBlockedTest extends TestCase
         $this->makeTradePlan();
     }
 
-    public function test_user_update_wird_im_demo_modus_blockiert(): void
+    public function test_user_update_auf_nicht_erlaubtes_feld_wird_im_demo_modus_blockiert(): void
     {
-        $user = User::factory()->create(['table_prefix' => 'phpunit_', 'filter_preset' => null]);
+        $user = User::factory()->create(['table_prefix' => 'phpunit_']);
         config(['app.demo_mode' => true]);
 
         $this->expectException(DemoModeWriteBlockedException::class);
-        $user->update(['filter_preset' => 'ytd']);
+        $user->update(['table_prefix' => 'hacked_']);
+    }
+
+    public function test_zeitraum_filter_update_bleibt_im_demo_modus_erlaubt(): void
+    {
+        // Reine Anzeige-Praeferenz, keine Trading-Datenmutation — ohne diese Ausnahme
+        // koennte ein Demo-Besucher den Dashboard-Zeitraum nie wechseln.
+        $user = User::factory()->create(['table_prefix' => 'phpunit_', 'filter_preset' => null]);
+        config(['app.demo_mode' => true]);
+
+        $user->update(['filter_preset' => 'ytd', 'filter_from' => null, 'filter_to' => null]);
+
+        $this->assertDatabaseHas('users', [
+            'id' => $user->id,
+            'filter_preset' => 'ytd',
+        ]);
+    }
+
+    public function test_zeitraum_filter_update_zusammen_mit_gesperrtem_feld_bleibt_blockiert(): void
+    {
+        // Tripwire: die Ausnahme darf nicht dazu fuehren, dass ein gemischtes Update
+        // (erlaubtes + gesperrtes Feld in einem Aufruf) durchrutscht.
+        $user = User::factory()->create(['table_prefix' => 'phpunit_']);
+        config(['app.demo_mode' => true]);
+
+        $this->expectException(DemoModeWriteBlockedException::class);
+        $user->update(['filter_preset' => 'ytd', 'table_prefix' => 'hacked_']);
     }
 
     public function test_tripwire_schreiben_bleibt_ohne_demo_modus_weiterhin_moeglich(): void

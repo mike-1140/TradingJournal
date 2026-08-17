@@ -38,8 +38,11 @@ class AppServiceProvider extends ServiceProvider
      * POST-Endpunkt ab, eine Routen-Middleware koennte "harmloses" Livewire-POST
      * (Pagination, Filter) nicht von echten Writes unterscheiden. Laravels eigene
      * Session-/Cache-Tabellen laufen ueber den Query Builder, nicht ueber Eloquent,
-     * und bleiben davon unberuehrt. Ausnahme: Login mit "Angemeldet bleiben" speichert
-     * nur den remember_token — ohne die faellt der Login im Demo-Modus aus.
+     * und bleiben davon unberuehrt. Ausnahmen: Login mit "Angemeldet bleiben" speichert
+     * nur den remember_token — ohne die faellt der Login im Demo-Modus aus. Ebenso die
+     * Zeitraum-Filter-Felder (filter_preset/filter_from/filter_to) — reine
+     * Anzeige-Praeferenz des eingeloggten Demo-Users, keine Trading-Datenmutation;
+     * ohne die Ausnahme koennte ein Demo-Besucher den Zeitraum nie wechseln.
      *
      * Der config()-Check sitzt bewusst INNERHALB der Closures (nicht als fruehes
      * Return beim Registrieren) — Listener werden immer registriert, demo_mode wird
@@ -60,8 +63,9 @@ class AppServiceProvider extends ServiceProvider
                 return;
             }
             $model = $data[0];
+            $allowedUserFields = ['remember_token', 'filter_preset', 'filter_from', 'filter_to'];
             if ($model instanceof User
-                && array_diff(array_keys($model->getDirty()), ['remember_token']) === []) {
+                && array_diff(array_keys($model->getDirty()), $allowedUserFields) === []) {
                 return;
             }
             throw new DemoModeWriteBlockedException();

@@ -9,7 +9,9 @@ return [
             'driver' => 'mysql',
             'host' => env('DB_HOST', '127.0.0.1'),
             'port' => env('DB_PORT', '3306'),
-            'database' => env('DB_DATABASE', 'ibkr_laravel'),
+            // DEMO_MODE schaltet die komplette App auf die isolierte Demo-DB um
+            // (Login, Users, Psychology-Tabellen) — analog zum App-Switch bei Naikido.
+            'database' => env('DEMO_MODE', false) ? 'ibkr_demo' : env('DB_DATABASE', 'ibkr_laravel'),
             'username' => env('DB_USERNAME', 'root'),
             'password' => env('DB_PASSWORD', ''),
             'unix_socket' => env('DB_SOCKET', ''),
@@ -45,7 +47,11 @@ return [
             'driver' => 'mysql',
             'host' => env('TRADING_DB_HOST', '127.0.0.1'),
             'port' => env('TRADING_DB_PORT', '3306'),
-            'database' => 'ibkr_test',
+            // DEMO_MODE zeigt hier auf dieselbe ibkr_demo-DB wie die Haupt-Connection —
+            // die Demo-Trading-Daten liegen unter Environment TEST mit Prefix "demo_"
+            // (siehe xml_proj/tools/demo/README.md). Prefix bleibt dynamisch (ManagesEnvironment
+            // liest table_prefix des eingeloggten Users, für den Demo-User bereits "demo_").
+            'database' => env('DEMO_MODE', false) ? 'ibkr_demo' : 'ibkr_test',
             'username' => env('TRADING_DB_USERNAME', 'root'),
             'password' => env('TRADING_DB_PASSWORD', ''),
             'unix_socket' => env('DB_SOCKET', ''),
