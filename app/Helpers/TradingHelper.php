@@ -3,6 +3,7 @@
 namespace App\Helpers;
 
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
@@ -60,6 +61,15 @@ class TradingHelper
                     continue;
                 }
 
+                // Der Tabellenname wird unten manuell mit $tablePrefix zusammengesetzt —
+                // die Connection selbst darf hier keinen eigenen Prefix mitbringen, sonst
+                // wird doppelt prefixt (z.B. "karola_mike_trades_close", falls die
+                // Connection von einem vorherigen Aufruf noch einen anderen User-Prefix
+                // gesetzt hat) und die Prüfung schlägt faelschlich fehl.
+                $originalPrefix = config("database.connections.{$connection}.prefix");
+                Config::set("database.connections.{$connection}.prefix", '');
+                DB::purge($connection);
+
                 try {
                     if (Schema::connection($connection)->hasTable($tablePrefix . 'trades_close')) {
                         $installed[] = $key;
@@ -67,6 +77,7 @@ class TradingHelper
                 } catch (\Throwable $e) {
                     // Environment (noch) nicht installiert oder DB nicht erreichbar
                 } finally {
+                    Config::set("database.connections.{$connection}.prefix", $originalPrefix);
                     DB::purge($connection);
                 }
             }

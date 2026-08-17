@@ -57,6 +57,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/trades/closed/options', ClosedOptions::class)->name('trades.closed.options');
     Route::get('/trades/closed/options/{id}', ClosedOptionsDetail::class)->name('trades.closed.options.detail');
 
+    // FX Trades
+    Route::get('/trades/fx', FxTrades::class)->name('trades.fx');
+
     // Raw Trades
     Route::get('/trades/raw', RawData::class)->name('trades.raw');
     Route::get('/trades/raw/{id}', RawTradeDetail::class)->name('trades.raw.detail');
@@ -89,5 +92,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/psychology/analytics', PsychologyAnalytics::class)->name('psychology.analytics');
     Route::get('/psychology/rulesets', RulesetManager::class)->name('psychology.rulesets');
     Route::get('/psychology/{id}', PsychologyForm::class)->name('psychology.edit');
+
+    // Handbuch
+    Route::view('/hilfe', 'docs')->name('docs');
 
 });

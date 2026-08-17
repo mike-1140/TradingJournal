@@ -166,7 +166,7 @@
             <div class="sidebar-divider"></div>
 
             {{-- Analyse --}}
-            @php $analyseOpen = request()->routeIs('symbols') || request()->routeIs('symbols.detail') || request()->routeIs('stats.*') || request()->routeIs('trades.raw*'); @endphp
+            @php $analyseOpen = request()->routeIs('symbols') || request()->routeIs('symbols.detail') || request()->routeIs('stats.*') || request()->routeIs('trades.fx*') || request()->routeIs('trades.raw*'); @endphp
             <a class="sidebar-link sidebar-toggle-btn {{ $analyseOpen ? 'active' : '' }}"
                data-bs-toggle="collapse" href="#nav-analyse"
                aria-expanded="{{ $analyseOpen ? 'true' : 'false' }}">
@@ -191,6 +191,11 @@
                         <i class="bi bi-activity"></i>
                         <span class="sidebar-text">Aktivität</span>
                     </a>
+                    <a href="{{ route('trades.fx') }}"
+                       class="sidebar-link {{ request()->routeIs('trades.fx*') ? 'active' : '' }}">
+                        <i class="bi bi-currency-exchange"></i>
+                        <span class="sidebar-text">FX-Trades</span>
+                    </a>
                     <a href="{{ route('trades.raw') }}"
                        class="sidebar-link {{ request()->routeIs('trades.raw*') ? 'active' : '' }}">
                         <i class="bi bi-database"></i>
@@ -198,6 +203,13 @@
                     </a>
                 </div>
             </div>
+
+            {{-- Hilfe --}}
+            <a href="{{ route('docs') }}" target="_blank" rel="noopener"
+               class="sidebar-link {{ request()->routeIs('docs') ? 'active' : '' }}">
+                <i class="bi bi-question-circle"></i>
+                <span class="sidebar-text">Hilfe</span>
+            </a>
 
         </nav>
     </aside>
