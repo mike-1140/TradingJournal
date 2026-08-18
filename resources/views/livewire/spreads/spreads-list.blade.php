@@ -1,8 +1,9 @@
 <div>
     @php
-        $pageTitle = match($filterStrategyGroup) {
-            'verticals' => 'Vertical Spreads',
-            default     => 'Options Spreads',
+        $pageTitle = match(true) {
+            $filterStrategyGroup === 'verticals' => 'Vertical Spreads',
+            $filterStrategy === 'Iron Condor'    => 'Iron Condors',
+            default                              => 'Options Spreads',
         };
     @endphp
     <x-page-header
