@@ -354,11 +354,11 @@
                     <i class="bi bi-speedometer2 fs-4 text-success"></i>
                     <div>
                         <h2 class="h4 mb-0">Analyse</h2>
-                        <div class="docs-route">/symbols · /stats · /trades/raw</div>
+                        <div class="docs-route">/symbols · /stats · /trades/fx · /trades/raw</div>
                     </div>
                 </div>
                 <p class="text-muted" style="max-width: 68ch;">
-                    Vier Ansichten für alle, die tiefer graben wollen, als es das Tagesgeschäft erlaubt — vom
+                    Fünf Ansichten für alle, die tiefer graben wollen, als es das Tagesgeschäft erlaubt — vom
                     Symbol über die reine Statistik bis hinunter zum unbearbeiteten Rohdatensatz aus dem
                     Broker-Import.
                 </p>
@@ -385,6 +385,15 @@
                         <h3 class="h6 d-flex align-items-baseline gap-2 flex-wrap">Aktivität <span class="docs-route">stats.activity</span></h3>
                         <ul class="text-muted mb-0">
                             <li>Eine wochenweise durchblätterbare Buchungshistorie über alle Symbole hinweg — dieselbe Detailtiefe wie die Kampagnen-Historie, nur nicht auf ein einzelnes Symbol beschränkt, sondern als lückenloses Logbuch über die ganze Woche</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card docs-subcard mb-3">
+                    <div class="card-body">
+                        <h3 class="h6 d-flex align-items-baseline gap-2 flex-wrap">FX-Trades <span class="docs-route">trades.fx</span></h3>
+                        <ul class="text-muted mb-0">
+                            <li class="mb-2">Reine Währungsumtausch-Trades (z.B. USD ↔ EUR), losgelöst von einer einzelnen Kampagne — Kacheln zur Anzahl der FX-Trades und zur Kommission gesamt, dazu eine Tabelle mit Datum, Paar, Von-/Nach-Betrag, Kurs und Kommission, filterbar nach Zielwährung und durchsuchbar</li>
+                            <li>IBKR füllt manche Umtausch-Orders in mehreren Teilausführungen (Fills) statt in einer einzigen — solche zusammengehörigen Fills (gleiche Order-ID) fasst die Tabelle zu einer Summenzeile zusammen; ein Klick klappt die einzelnen Fills darunter auf</li>
                         </ul>
                     </div>
                 </div>
