@@ -2,7 +2,7 @@
     <x-page-header
         :title="$this->spread['opt_strategyName'] . ' auf ' . $this->spread['underlyingSymbol']"
         icon="bezier2"
-        backRoute="spreads.list">
+        :backUrl="$backUrl">
         <x-slot:actions>
             <span class="badge bg-{{ $status === 'open' ? 'warning' : 'success' }} fs-6">
                 <i class="bi bi-{{ $status === 'open' ? 'hourglass-split' : 'check-circle' }}"></i>

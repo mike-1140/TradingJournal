@@ -9,15 +9,15 @@ use Livewire\WithPagination;
 use App\Models\CampaignLedger;
 use App\Models\TradePlan;
 use App\Traits\ManagesEnvironment;
+use App\Traits\HasSmartBackUrl;
 
 class CampaignDetail extends Component
 {
-    use WithPagination, ManagesEnvironment, FilterableByTime;
+    use WithPagination, ManagesEnvironment, FilterableByTime, HasSmartBackUrl;
 
     public $campaignId;
     public $perPage = 100; // Tage pro Seite
     public Campaign $campaign;
-    public string $backUrl = '';
 
     protected $listeners = [
         'environment-changed' => '$refresh',
@@ -30,11 +30,7 @@ class CampaignDetail extends Component
         $this->campaignId = $campaignId;
         $this->campaign   = Campaign::findOrFail($campaignId);
 
-        // Herkunfts-URL für Zurück-Button — nur interne URLs akzeptieren
-        $previous        = url()->previous();
-        $this->backUrl   = str_starts_with($previous, url('/'))
-            ? $previous
-            : route('campaigns.campaigns');
+        $this->setBackUrl('campaigns.campaigns');
     }
 
     public function getActionBadgeClass($action): string

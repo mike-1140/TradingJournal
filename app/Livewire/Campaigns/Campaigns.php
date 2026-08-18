@@ -18,6 +18,11 @@ class Campaigns extends Component
     public $filterStatus = 'OPEN';
     public $perPage = 20;
 
+    protected $queryString = [
+        'search'       => ['except' => ''],
+        'filterStatus' => ['except' => 'OPEN'],
+    ];
+
     public function setStatus($status)
     {
         $this->filterStatus = $status;

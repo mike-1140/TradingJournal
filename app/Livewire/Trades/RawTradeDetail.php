@@ -5,11 +5,12 @@ namespace App\Livewire\Trades;
 use Livewire\Component;
 use App\Models\TradeRaw;
 use App\Traits\ManagesEnvironment;
+use App\Traits\HasSmartBackUrl;
 use Illuminate\Support\Collection;
 
 class RawTradeDetail extends Component
 {
-    use ManagesEnvironment;
+    use ManagesEnvironment, HasSmartBackUrl;
 
     public TradeRaw $trade;
     public $tradeId;
@@ -28,6 +29,8 @@ class RawTradeDetail extends Component
         if (!$this->trade) {
             abort(404, "Trade #{$id} nicht gefunden im {$this->selectedEnvironment} Environment");
         }
+
+        $this->setBackUrl('trades.raw');
     }
 
     public function render()

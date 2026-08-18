@@ -10,11 +10,12 @@ use App\Models\TradeClose;
 use App\Models\TradeOpen;
 use App\Models\PsychologyEntry;
 use App\Traits\ManagesEnvironment;
+use App\Traits\HasSmartBackUrl;
 use Livewire\WithPagination;
 
 class SpreadDetail extends Component
 {
-    use WithPagination, ManagesEnvironment, FilterableByTime;
+    use WithPagination, ManagesEnvironment, FilterableByTime, HasSmartBackUrl;
 
     #[Locked]
     public $opt_strategyID;
@@ -34,6 +35,7 @@ class SpreadDetail extends Component
         // Status aus Query-String holen
         $this->status = request()->query('status', 'closed');
 
+        $this->setBackUrl('spreads.list');
     }
 
     public function changeEnvironment($environment)

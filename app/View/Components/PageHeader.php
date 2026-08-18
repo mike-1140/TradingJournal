@@ -10,6 +10,7 @@ class PageHeader extends Component
     public $subtitle;
     public $icon;
     public $backRoute;
+    public $backUrl;
     public $backText;
 
     public function __construct(
@@ -17,12 +18,14 @@ class PageHeader extends Component
         $subtitle = null,
         $icon = null,
         $backRoute = null,
+        $backUrl = null,
         $backText = 'Zurück'
     ) {
         $this->title = $title;
         $this->subtitle = $subtitle;
         $this->icon = $icon;
         $this->backRoute = $backRoute;
+        $this->backUrl = $backUrl;
         $this->backText = $backText;
     }
 

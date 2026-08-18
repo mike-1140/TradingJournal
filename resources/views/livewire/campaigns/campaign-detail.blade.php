@@ -18,7 +18,9 @@
             <span class="badge fs-6 bg-{{ $campaign->status === 'ACTIVE' ? 'success' : ($campaign->status === 'PENDING' ? 'warning text-dark' : 'secondary') }}">
                 {{ $campaign->status }}
             </span>
-            <a href="{{ $backUrl }}" class="btn btn-outline-secondary btn-sm">
+            <a href="{{ $backUrl }}"
+               onclick="if (window.history.length > 1) { history.back(); return false; }"
+               class="btn btn-outline-secondary btn-sm">
                 <i class="bi bi-arrow-left"></i> Zurück
             </a>
         </div>

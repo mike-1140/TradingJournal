@@ -13,8 +13,10 @@
         </div>
 
         <div class="d-flex gap-2">
-            @if($backRoute)
-                <a href="{{ route($backRoute) }}" class="btn btn-outline-secondary">
+            @if($backUrl || $backRoute)
+                <a href="{{ $backUrl ?: route($backRoute) }}"
+                   onclick="if (window.history.length > 1) { history.back(); return false; }"
+                   class="btn btn-outline-secondary">
                     <i class="bi bi-arrow-left"></i> {{ $backText }}
                 </a>
             @endif

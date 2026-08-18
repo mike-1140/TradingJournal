@@ -78,10 +78,11 @@
                                  style="cursor: pointer;">
                                 <div class="card-header d-flex justify-content-between align-items-center">
                                     <a href="{{ route('symbols.detail', $campaign->symbol) }}"
-                                       class="badge bg-dark fs-6 text-decoration-none"
+                                       class="badge bg-dark fs-6 text-decoration-none campaign-symbol-link"
                                        onclick="event.stopPropagation()"
-                                       title="Symbol-Übersicht öffnen">
+                                       title="Symbol-Übersicht öffnen (statt Kampagnen-Detail)">
                                         {{ $campaign->symbol }}
+                                        <i class="bi bi-box-arrow-up-right" style="font-size: 0.65em;"></i>
                                     </a>
                                     <small class="text-muted">{{ $campaign->start_date->format('d.M.Y') }}</small>
                                     @if($loggedCampaignIds->contains($campaign->id))
@@ -156,6 +157,9 @@
         .campaign-card:hover {
             transform: translateY(-2px);
             box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.15) !important;
+        }
+        .campaign-symbol-link:hover {
+            background-color: var(--bs-primary) !important;
         }
     </style>
 </div>

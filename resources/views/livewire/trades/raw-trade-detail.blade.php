@@ -3,7 +3,7 @@
         title="Raw Trade: {{ $trade->symbol }}"
         :subtitle="$trade->description"
         icon="database"
-        backRoute="trades.raw">
+        :backUrl="$backUrl">
         <x-slot:actions>
             @php
                 $envColor = match($trade->environment) {

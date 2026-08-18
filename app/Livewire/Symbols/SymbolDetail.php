@@ -7,12 +7,13 @@ use App\Models\CampaignLedger;
 use App\Models\TradePlan;
 use App\Traits\FilterableByTime;
 use App\Traits\ManagesEnvironment;
+use App\Traits\HasSmartBackUrl;
 use Carbon\Carbon;
 use Livewire\Component;
 
 class SymbolDetail extends Component
 {
-    use ManagesEnvironment, FilterableByTime;
+    use ManagesEnvironment, FilterableByTime, HasSmartBackUrl;
 
     public string $symbol;
 
@@ -25,6 +26,7 @@ class SymbolDetail extends Component
     {
         $this->mountManagesEnvironment();
         $this->symbol = strtoupper($symbol);
+        $this->setBackUrl('symbols');
     }
 
     public function render()
