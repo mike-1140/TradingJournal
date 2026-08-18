@@ -100,9 +100,10 @@ class ClosedStocks extends Component
 
         $totalTrades = $baseQuery()->count();
 
-        $totalValue = $baseQuery()
-            ->selectRaw('SUM(ABS(profit)) as total')
-            ->value('total');
+        $totalProfit = $baseQuery()->sum('profit');
+
+        $winningTrades = $baseQuery()->where('profit', '>', 0)->count();
+        $winRate = $totalTrades > 0 ? round(($winningTrades / $totalTrades) * 100, 2) : 0;
 
         $totalCommissions = $baseQuery()->sum('ibCommission');
 
@@ -116,7 +117,8 @@ class ClosedStocks extends Component
         return view('livewire.trades.closed-stocks', [
             'trades' => $trades,
             'totalTrades' => $totalTrades,
-            'totalValue' => $totalValue,
+            'totalProfit' => $totalProfit,
+            'winRate' => $winRate,
             'totalCommissions' => $totalCommissions,
             'strategies' => $strategies,
         ]);

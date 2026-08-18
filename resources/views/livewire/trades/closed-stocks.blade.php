@@ -9,21 +9,28 @@
 
     {{-- Statistiken --}}
     <div class="row g-3 mb-4">
-        <div class="col-md-4">
+        <div class="col-md-3">
             <x-stat-card
                 title="Anzahl Stock Positionen"
                 :value="number_format($totalTrades)"
                 color="primary"
                 icon="hash" />
         </div>
-        <div class="col-md-4">
+        <div class="col-md-3">
             <x-stat-card
-                title="Gebundenes Kapital"
-                :value="number_format($totalValue ?? 0, 2, ',', '') . ' $'"
-                color="info"
-                icon="cash-stack" />
+                title="Gesamt Brutto-P&L"
+                :value="number_format($totalProfit ?? 0, 2, ',', '') . ' $'"
+                :color="($totalProfit ?? 0) >= 0 ? 'success' : 'danger'"
+                icon="graph-up" />
         </div>
-        <div class="col-md-4">
+        <div class="col-md-3">
+            <x-stat-card
+                title="Win Rate"
+                :value="$winRate . '%'"
+                color="info"
+                icon="trophy" />
+        </div>
+        <div class="col-md-3">
             <x-stat-card
                 title="Gesamte Kommissionen"
                 :value="number_format($totalCommissions, 2, ',', '') . ' $'"
