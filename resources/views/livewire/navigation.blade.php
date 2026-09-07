@@ -212,6 +212,13 @@
             </a>
 
         </nav>
+
+        @if($this->buildVersion)
+            <div class="sidebar-footer small" title="{{ $this->buildVersion['tag'] }} &middot; {{ $this->buildVersion['built_at'] }}">
+                <i class="bi bi-tag"></i>
+                <span class="sidebar-text">Build: {{ $this->buildVersion['hash'] }}</span>
+            </div>
+        @endif
     </aside>
 
     {{-- ── Topbar ───────────────────────────────────────────────────────────── --}}

@@ -45,6 +45,27 @@ class Navigation extends Component
         };
     }
 
+    /**
+     * Liest die vom Update-Skript geschriebene storage/app/version.json aus (Tag + Kurz-Hash
+     * des letzten `git pull`) - kein Git-Aufruf zur Laufzeit, funktioniert daher auch ohne
+     * installiertes Git auf dem Server.
+     */
+    #[Computed]
+    public function buildVersion(): ?array
+    {
+        $path = storage_path('app/version.json');
+        if (!is_file($path)) {
+            return null;
+        }
+
+        $data = json_decode(file_get_contents($path), true);
+        if (!is_array($data) || empty($data['hash'])) {
+            return null;
+        }
+
+        return $data;
+    }
+
     #[Computed]
     public function availableYears(): array
     {
