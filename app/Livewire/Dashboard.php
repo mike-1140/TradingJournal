@@ -91,7 +91,9 @@ class Dashboard extends Component
 
     public function mount()
     {
-        $this->users = \App\Models\User::all();
+        // Nur befüllen, wenn Nutzerwechsel erlaubt ist (lokal + Admin) — sonst wären
+        // Namen aller User als öffentliche Livewire-Property für jeden sichtbar.
+        $this->users = Gate::allows('switch-user') ? \App\Models\User::all() : collect();
         $this->mountManagesEnvironment();
         $this->loadStatistics();
     }

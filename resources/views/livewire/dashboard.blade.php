@@ -46,7 +46,8 @@
                 <i class="bi bi-gear"></i>
             </button>
 
-            {{-- User Dropdown --}}
+            {{-- User Dropdown — nur sichtbar mit Nutzerwechsel-Berechtigung (lokal + Admin) --}}
+            @can('switch-user')
             <div class="dropdown">
                 <button class="btn btn-sm btn-outline-secondary dropdown-toggle d-flex align-items-center gap-2"
                         type="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -68,6 +69,7 @@
                     @endforeach
                 </ul>
             </div>
+            @endcan
         </div>
     </div>
 

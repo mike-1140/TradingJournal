@@ -29,6 +29,17 @@ php artisan test
 
 `phpunit.xml` sah ursprünglich eine SQLite-In-Memory-DB vor — funktioniert aber nicht für diese App: mehrere Livewire-Komponenten (`Dashboard`, `SpreadsList`, `CampaignDetail`, `Navigation`, …) nutzen MySQL-spezifisches Raw-SQL (`DATE_FORMAT()`, `YEAR()`, `GROUP_CONCAT(... SEPARATOR ...)`), das es in SQLite nicht gibt — die Queries würden mit "no such function" abbrechen. Das Schema selbst ist außerdem reines MySQL-DDL (`xml_proj/sql/*.sql`), keine Laravel-Migrations. Tests laufen deshalb bewusst gegen echtes MySQL.
 
+## Falle: veralteter Config-Cache überschreibt `.env.testing`
+
+Falls `bootstrap/cache/config.php` existiert (z. B. nach einem früheren
+`php artisan config:cache`, etwa durch `update.ps1`), liest `config('app.env')` — und damit
+`app()->environment()` — den zur Cache-Zeit eingefrorenen Wert aus der damals aktiven
+`.env`, **nicht** mehr `.env.testing`s `APP_ENV=testing`. Symptom: `env('APP_ENV')` zeigt
+korrekt `testing`, aber `app()->environment()`/`config('app.env')` zeigt trotzdem `local`
+(oder was auch immer beim Cachen aktiv war) — jeder auf `app()->environment(...)` basierende
+Test verhält sich dadurch falsch, ohne dass der Grund offensichtlich ist. Fix:
+`php artisan config:clear` vor dem Testlauf.
+
 ## Zwei getrennte DB-Verbindungen in Tests
 
 | Verbindung | Wofür | Isolation |

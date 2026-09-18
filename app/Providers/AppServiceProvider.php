@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Exceptions\DemoModeWriteBlockedException;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Pagination\Paginator;
@@ -23,11 +24,16 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        $this->guardAgainstTestingOnRealDatabase();
+
         Paginator::useBootstrapFive();
         setlocale(LC_TIME, 'de_DE.utf8', 'de_DE', 'deu_deu');
         \Carbon\Carbon::setLocale(config('app.locale'));
 
-        Gate::define('switch-user', fn($user) => (bool) $user->is_admin);
+        // Nur lokal: in Produktion soll Nutzerwechsel (inkl. Sichtbarkeit anderer User)
+        // nicht möglich sein, da der Rückweg zum Admin sonst eine echte Anmeldung
+        // braucht statt wie lokal automatisch per SetDefaultUser zu passieren.
+        Gate::define('switch-user', fn($user) => app()->environment('local') && (bool) $user->is_admin);
 
         $this->registerDemoModeGuard();
     }
@@ -76,6 +82,42 @@ class AppServiceProvider extends ServiceProvider
                 throw new DemoModeWriteBlockedException();
             }
         });
+    }
+
+    /**
+     * Sicherheitsnetz gegen einen Vorfall vom 2026-09-18: ein veralteter
+     * bootstrap/cache/config.php fror app.env UND die "mysql"-Connection auf die
+     * damals aktive .env (nicht .env.testing) ein. RefreshDatabase migrierte dadurch
+     * unbemerkt gegen die ECHTE lokale ibkr_laravel-Datenbank statt gegen
+     * ibkr_laravel_test und leerte die users-Tabelle.
+     *
+     * Bewusst NICHT auf app()->environment()/runningUnitTests() gestuetzt — das sind
+     * genau die Werte, die ein solcher Cache einfriert, der Guard wuerde im exakten
+     * Gefahrenfall also selbst nie auslösen. PHPUNIT_COMPOSER_INSTALL wird von PHPUnit
+     * selbst gesetzt, bevor irgendein Laravel-Code (und damit auch ein evtl. Cache)
+     * ueberhaupt geladen wird -- unabhaengig von jeder Konfiguration.
+     *
+     * Muss waehrend boot() laufen (Teil von refreshApplication() in
+     * Tests\TestCase::setUp()), NICHT erst in einem test-eigenen setUp() -- Traits wie
+     * RefreshDatabase feuern noch innerhalb desselben parent::setUp()-Aufrufs, ein
+     * Check danach kaeme zu spaet (so beim ersten Versuch dieses Guards passiert).
+     */
+    private function guardAgainstTestingOnRealDatabase(): void
+    {
+        if (!defined('PHPUNIT_COMPOSER_INSTALL')) {
+            return;
+        }
+
+        $database = config('database.connections.mysql.database');
+
+        if (!str_ends_with((string) $database, '_test')) {
+            throw new \RuntimeException(
+                "SICHERHEITSABBRUCH: PHPUnit laeuft, aber 'mysql'-Connection zeigt auf ".
+                "'{$database}', nicht auf eine *_test-Datenbank. RefreshDatabase wuerde ".
+                "diese DB leeren/neu migrieren. Meist verursacht durch einen veralteten ".
+                "bootstrap/cache/config.php -- 'php artisan config:clear' ausfuehren."
+            );
+        }
     }
 
     private function demoModeActive(): bool
