@@ -1,0 +1,183 @@
+# Distributed Fetch (Advanced) — Minimaler Client für den Datenabruf
+
+**Nur relevant, wenn du bereits [`server-deployment.md`](server-deployment.md) umgesetzt
+hast** und zusätzlich von einem zweiten, leichtgewichtigen Gerät (Reise-Notebook, Tablet
+mit Windows, etc.) aus IBKR-Daten abrufen und zum Server übertragen willst — **ohne** auf
+diesem zweiten Gerät die komplette App (MySQL/PHP/Apache/Node.js) zu installieren.
+
+**Typisches Szenario:** Dein Hauptrechner (der sonst Mail-Abruf + Import erledigt) ist
+unterwegs nicht verfügbar oder ausgeschaltet. Der Server läuft aber weiter und soll
+trotzdem täglich neue Daten bekommen.
+
+## Warum das minimal bleiben kann
+
+`get_flexquery_emails.py`/`get_flexquery_api.py` laden nur Rohdaten (XML/CSV) in einen
+lokalen Ordner herunter — sie brauchen **keine** Datenbankverbindung und kein
+`accounts.toml`/`pipeline.toml`. Das komplette User/Environment-Routing passiert erst beim
+`import`-Step, der auf dem Server läuft. Der Client braucht deshalb nur:
+
+- Python 3.14
+- Zwei Pakete: `python-dotenv`, `requests` (**nicht** die volle `requirements.txt` — die
+  zieht zusätzlich `pandas`/`sqlalchemy`/`pymysql`, für reines Abrufen unnötig)
+- Eine `.env` mit den IMAP-/API-Zugangsdaten
+- Einen SSH-Client, um die Dateien zum Server zu übertragen
+
+Kein MySQL, kein PHP, kein Apache, kein Node.js.
+
+---
+
+## Server-Seite: SSH-Empfang einrichten (einmalig)
+
+Auf dem Server, der bereits nach `server-deployment.md` eingerichtet ist —
+**[PowerShell – Administrator]**:
+```powershell
+Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0
+Start-Service sshd
+Set-Service -Name sshd -StartupType Automatic
+
+New-NetFirewallRule -DisplayName "SSH (VPN only)" `
+  -Direction Inbound -LocalPort 22 -Protocol TCP `
+  -RemoteAddress 100.64.0.0/10 -Action Allow
+```
+(Adressbereich `100.64.0.0/10` ist Tailscales Standard — bei anderem VPN entsprechend anpassen.)
+
+---
+
+## Client-Seite: Minimal-Installation
+
+### 1. Python 3.14
+
+Download: https://www.python.org/downloads/ — **"Add python.exe to PATH"** +
+**"Install for all users"** aktivieren.
+
+### 2. Git for Windows
+
+Download: https://git-scm.com/download/win, Standardoptionen.
+
+### 3. Nur `xml_proj` klonen
+
+```powershell
+mkdir C:\trading
+cd C:\trading
+git clone https://github.com/mike-1140/xml_proj.git
+```
+
+### 4. Minimal-Dependencies
+
+```powershell
+cd C:\trading\xml_proj
+python -m venv .venv
+.venv\Scripts\activate
+pip install python-dotenv requests
+deactivate
+```
+
+### 5. `.env` anlegen
+
+```ini
+IMAP_USERNAME=deine@email.at
+IMAP_PASSWORD=DEIN_MAIL_PASSWORT
+IMAP_SERVER=imap.deinanbieter.de
+
+# Optional — zweiter, gleichwertiger Kanal falls der Mail-Abruf mal nicht geht:
+IBKR_FLEX_QUERIES=DEIN_TOKEN:QUERY_ID_1,DEIN_TOKEN:QUERY_ID_2,...
+```
+`C:\Trade_XML\incoming_mail\` und `C:\Trade_CSV\incoming\` werden von den Skripten
+automatisch angelegt, kein manueller Schritt nötig.
+
+**Vorsicht beim FlexQuery-API-Kanal:** Wiederholte fehlgeschlagene Abrufversuche können bei
+IBKR zu einer temporären Sperre führen ("Too many failed attempts"). Nicht wiederholt
+manuell testen, falls ein Abruf einmal fehlschlägt — meist löst sich das von selbst
+innerhalb von Stunden.
+
+### 6. SSH-Client + eigener Schlüssel
+
+Meist bereits vorinstalliert (Windows 10/11). Prüfen: `ssh -V`. Falls nicht vorhanden:
+Windows-Einstellungen → Apps → Optionale Features → "OpenSSH-Client".
+
+```powershell
+ssh-keygen -t ed25519 -f $env:USERPROFILE\.ssh\fetch_client
+```
+
+Public Key zum Server übertragen und dort hinterlegen. **Wichtig bei Administrator-Konten
+unter Windows:** Falls das Server-Konto Mitglied der Administrators-Gruppe ist (prüfen mit
+`whoami /groups | findstr "Administrators"` auf dem Server), greift **nicht**
+`~\.ssh\authorized_keys`, sondern eine zentrale Datei:
+`C:\ProgramData\ssh\administrators_authorized_keys`.
+
+**Bei Admin-Konto:**
+```powershell
+# Auf dem Server, nach Übertragung von fetch_client.pub:
+$key = Get-Content C:\temp\fetch_client.pub
+Add-Content -Path C:\ProgramData\ssh\administrators_authorized_keys -Value $key
+
+icacls C:\ProgramData\ssh\administrators_authorized_keys /inheritance:r
+icacls C:\ProgramData\ssh\administrators_authorized_keys /grant "SYSTEM:F"
+icacls C:\ProgramData\ssh\administrators_authorized_keys /grant "Administrators:F"
+```
+Die `icacls`-Befehle sind zwingend — sshd verweigert den Key sonst mit "Bad owner or
+permissions" bei zu offenen (geerbten) Dateirechten. Mehrere Clients können denselben
+Server nutzen: einfach jeden weiteren Public Key zusätzlich anhängen (`Add-Content`),
+nicht überschreiben.
+
+**Bei normalem (Nicht-Admin-)Konto:**
+```powershell
+Get-Content $env:USERPROFILE\.ssh\fetch_client.pub | ssh <konto>@<server-vpn-ip> "cat >> ~/.ssh/authorized_keys"
+```
+Fragt beim ersten Mal noch nach dem Windows-Passwort (Key-Login ist ja noch nicht
+eingerichtet) — danach klappt's per Key.
+
+**Kontrolle:** `ssh-keygen -lf <pfad-zur-datei>` auf beiden Seiten, Fingerprints müssen
+übereinstimmen.
+
+### 7. Push-Skript
+
+```powershell
+$ErrorActionPreference = "Stop"
+
+$ServerIp     = "<server-vpn-ip>"
+$ServerUser   = "<konto>"
+$KeyPath      = "$env:USERPROFILE\.ssh\fetch_client"
+$LocalXmlDir  = "C:\Trade_XML\incoming_mail"
+$RemoteXmlDir = "C:/Trade_XML/incoming_mail/"
+$RemoteTarget = "$ServerUser@$ServerIp"
+
+function Assert-LastExit($step) {
+    # PowerShell faengt Exit-Codes externer Tools (scp/ssh) mit
+    # $ErrorActionPreference="Stop" nicht automatisch ab -> manuell pruefen.
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "FEHLER bei '$step' (Exit-Code $LASTEXITCODE)" -ForegroundColor Red
+        exit 1
+    }
+}
+
+$xmlFiles = Get-ChildItem -Path $LocalXmlDir -Filter "*.xml" -ErrorAction SilentlyContinue
+if (-not $xmlFiles) {
+    Write-Host "Keine XML-Dateien gefunden — nichts zu tun."
+    exit 0
+}
+
+scp -i $KeyPath "$LocalXmlDir\*.xml" "${RemoteTarget}:${RemoteXmlDir}"
+Assert-LastExit "scp"
+
+ssh -i $KeyPath $RemoteTarget "cd C:\trading\xml_proj && .venv\Scripts\python run_pipeline.py"
+Assert-LastExit "run_pipeline.py (Server)"
+
+Write-Host "Fertig." -ForegroundColor Green
+```
+
+Bricht bei jedem Fehler mit klarer Meldung ab (Exit-Code-Check), statt stillschweigend
+weiterzulaufen.
+
+---
+
+## Täglicher Ablauf
+
+```powershell
+cd C:\trading\xml_proj
+.venv\Scripts\activate
+python -m src.get_flexquery_emails
+deactivate
+
+.\push-to-server.ps1   # oder wie das Skript aus Schritt 7 benannt wurde
+```

@@ -36,6 +36,9 @@ Web-Oberfläche über die Daten, die [xml_proj](https://github.com/mike-1140/xml
 
 ## Installation
 
+> Diese Anleitung beschreibt die lokale Installation. Für einen eigenen Server (Remote-
+> Zugriff von mehreren Geräten via VPN) siehe stattdessen [`docs/setup/server-deployment.md`](docs/setup/server-deployment.md).
+
 ```bash
 git clone https://github.com/mike-1140/TradingJournal.git
 cd TradingJournal
@@ -135,11 +138,9 @@ eigene `.env.testing` kopieren.
 
 Nach dem Clone ist kein weiterer Setup-Schritt nötig. Claude Code liest `CLAUDE.md` automatisch für Projektkontext.
 
-```bash
-git pull
-composer install
-npm install
-```
+Für spätere Updates (`git pull` + Abhängigkeiten + Migrationen + Cache-Rebuild in einem
+Schritt) siehe [`docs/updating.md`](docs/updating.md) — gilt auch für eine bestehende
+Server-Installation.
 
 ## Dokumentation
 
@@ -148,6 +149,10 @@ npm install
 | `CLAUDE.md` | Entwickler-Notizen (Traits, Event-System, Environment-Handling, bekannte Bugs) |
 | `docs/setup/tradingjournal-setup(-einsteiger).md` | Setup-Anleitung für dieses Repo, technisch bzw. für Einsteiger |
 | `docs/setup/ui-first-run.md` | UI-Erstkonfiguration nach dem Setup (Environment-Switcher, Nutzer wechseln, ...) |
+| `docs/feature-workflows.md` | Betrieblicher Alltag: Kampagnen-Lebenszyklus, Trade Log, Psychology-Modul |
+| `docs/setup/server-deployment.md` | Alternative Installation: eigener Server statt lokalem PC, Remote-Zugriff via VPN |
+| `docs/setup/distributed-fetch.md` | Advanced: minimaler Client nur für den Datenabruf, zentrale Verarbeitung auf dem Server |
+| `docs/updating.md` | Updates einspielen (lokaler PC oder Server) — `update.ps1` |
 | `tests/README.md` | Test-Setup gegen echtes MySQL, Environment-Isolation |
 | `CONTRIBUTING.md` | Wie beitragen — Konventionen, Test-Erwartung, PR-Ablauf |
 | `SECURITY.md` | Meldeweg für Sicherheitslücken |
