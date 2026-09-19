@@ -156,9 +156,14 @@ $ErrorActionPreference = "Stop"
 $ServerIp     = "<server-vpn-ip>"
 $ServerUser   = "<konto>"
 $KeyPath      = "$env:USERPROFILE\.ssh\fetch_client"
-$LocalXmlDir  = "C:\Trade_XML\incoming_mail"
-$RemoteXmlDir = "C:/Trade_XML/incoming_mail/"
 $RemoteTarget = "$ServerUser@$ServerIp"
+
+# Lokaler Ordner -> Ordner auf dem Server (ohne abschliessenden Slash).
+# incoming_mail = get_flexquery_emails, incoming_api = get_flexquery_api; die Pipeline liest beide.
+$Folders = @(
+    @{ Local = "C:\Trade_XML\incoming_mail"; Remote = "C:/Trade_XML/incoming_mail" },
+    @{ Local = "C:\Trade_XML\incoming_api";  Remote = "C:/Trade_XML/incoming_api" }
+)
 
 function Assert-LastExit($step) {
     # PowerShell faengt Exit-Codes externer Tools (scp/ssh) mit
@@ -169,14 +174,29 @@ function Assert-LastExit($step) {
     }
 }
 
-$xmlFiles = Get-ChildItem -Path $LocalXmlDir -Filter "*.xml" -ErrorAction SilentlyContinue
-if (-not $xmlFiles) {
+$total = 0
+foreach ($f in $Folders) {
+    $xmlFiles = @(Get-ChildItem -Path $f.Local -Filter "*.xml" -ErrorAction SilentlyContinue)
+    if ($xmlFiles.Count -eq 0) {
+        Write-Host "Keine XML-Dateien in $($f.Local)"
+        continue
+    }
+    $total += $xmlFiles.Count
+    Write-Host "Uebertrage $($xmlFiles.Count) Datei(en) aus $($f.Local) ..."
+
+    # Zielordner auf dem Server anlegen, falls er fehlt (incoming_api existiert dort evtl. noch nicht)
+    $remoteWin = $f.Remote.Replace("/", "\")
+    ssh -i $KeyPath $RemoteTarget "if not exist $remoteWin mkdir $remoteWin"
+    Assert-LastExit "Zielordner anlegen (Server)"
+
+    scp -i $KeyPath "$($f.Local)\*.xml" "${RemoteTarget}:$($f.Remote)/"
+    Assert-LastExit "scp"
+}
+
+if ($total -eq 0) {
     Write-Host "Keine XML-Dateien gefunden - nichts zu tun."
     exit 0
 }
-
-scp -i $KeyPath "$LocalXmlDir\*.xml" "${RemoteTarget}:${RemoteXmlDir}"
-Assert-LastExit "scp"
 
 ssh -i $KeyPath $RemoteTarget "cd C:\trading\xml_proj && .venv\Scripts\python run_pipeline.py"
 Assert-LastExit "run_pipeline.py (Server)"
