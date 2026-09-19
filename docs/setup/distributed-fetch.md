@@ -67,10 +67,10 @@ git clone https://github.com/mike-1140/xml_proj.git
 ```powershell
 cd C:\trading\xml_proj
 python -m venv .venv
-.venv\Scripts\activate
-pip install python-dotenv requests
-deactivate
+.\.venv\Scripts\python.exe -m pip install python-dotenv requests
 ```
+Der venv-Python wird bewusst direkt über seinen Pfad aufgerufen statt über `activate` — das
+funktioniert auch ohne Skript-Ausführungsrechte und ohne Aktivierung.
 
 ### 5. `.env` anlegen
 
@@ -84,6 +84,13 @@ IBKR_FLEX_QUERIES=DEIN_TOKEN:QUERY_ID_1,DEIN_TOKEN:QUERY_ID_2,...
 ```
 `C:\Trade_XML\incoming_mail\` und `C:\Trade_CSV\incoming\` werden von den Skripten
 automatisch angelegt, kein manueller Schritt nötig.
+
+Für die Fetch-Skripte reichen nur die IMAP-Zeilen und/oder `IBKR_FLEX_QUERIES` — keine
+Datenbank-Zugangsdaten.
+
+**Achtung:** Der Mail-Abruf löscht die IBKR-Mails nach dem Herunterladen im Postfach. Ein
+"Testlauf" ist deshalb ein echter Lauf — die XMLs liegen danach nur lokal in
+`C:\Trade_XML\incoming_mail` und müssen mit dem Push-Skript (Schritt 7) zum Server.
 
 **Vorsicht beim FlexQuery-API-Kanal:** Wiederholte fehlgeschlagene Abrufversuche können bei
 IBKR zu einer temporären Sperre führen ("Too many failed attempts"). Nicht wiederholt
@@ -132,6 +139,17 @@ eingerichtet) — danach klappt's per Key.
 
 ### 7. Push-Skript
 
+**Hinweise für Windows PowerShell 5.1:**
+- Das Skript darf in den Zeichenketten **nur ASCII** enthalten (kein Gedankenstrich `—`, keine
+  typografischen Anführungszeichen). Eine ohne BOM gespeicherte Datei liest PowerShell 5.1
+  als ANSI; ein `—` wird zu `”` und beendet den String vorzeitig. Die Fehlermeldungen
+  (`&&` "kein gültiges Anweisungstrennzeichen", "kein Abschlusszeichen", "`}` fehlt")
+  zeigen dann auf andere Stellen als die eigentliche Ursache.
+- Mit Notepad bearbeiten (nicht WordPad/Word) und alten Inhalt vollständig ersetzen.
+  Speicherort in diesem Beispiel: `C:\trading\push-to-server.ps1`.
+- Auf frischen Windows-Rechnern einmalig erlauben:
+  `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`.
+
 ```powershell
 $ErrorActionPreference = "Stop"
 
@@ -153,7 +171,7 @@ function Assert-LastExit($step) {
 
 $xmlFiles = Get-ChildItem -Path $LocalXmlDir -Filter "*.xml" -ErrorAction SilentlyContinue
 if (-not $xmlFiles) {
-    Write-Host "Keine XML-Dateien gefunden — nichts zu tun."
+    Write-Host "Keine XML-Dateien gefunden - nichts zu tun."
     exit 0
 }
 
@@ -175,9 +193,8 @@ weiterzulaufen.
 
 ```powershell
 cd C:\trading\xml_proj
-.venv\Scripts\activate
-python -m src.get_flexquery_emails
-deactivate
+.\.venv\Scripts\python.exe -m src.get_flexquery_emails
 
+cd C:\trading
 .\push-to-server.ps1   # oder wie das Skript aus Schritt 7 benannt wurde
 ```
