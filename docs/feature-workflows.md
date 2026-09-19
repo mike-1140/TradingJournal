@@ -100,7 +100,7 @@ ist die systematische Regel-Compliance über die Zeit.
 
 | Situation                                                                               | Vorgehen                                                                                                                                               |
 | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Neue/geänderte Import-Logik an einer echten XML testen, ohne Produktivdaten zu berühren | XML nach `C:\Trade_XML\test\<user>\incoming\` legen, `python run_pipeline.py` — landet automatisch in der TEST-DB (siehe `xml_proj/HELP.md` § TEST-Environment) |
+| Neue/geänderte Import-Logik an einer echten XML testen, ohne Produktivdaten zu berühren | XML nach `C:\Trade_XML\test\<user>\incoming\` legen, `python run_pipeline.py` — landet automatisch in der TEST-DB (siehe `xml_proj/docs/HELP.md` § TEST-Environment) |
 | Offene Position liegengeblieben (Open importiert, Close nie gekommen — z. B. Datenlücke) | `xml_proj/tools/maintenance/cleanup_stale_positions.py` (Dry-Run ist Standard, erst mit `--execute` löschen)                                            |
 | Kompletter Neuaufbau eines Environment/Prefix                                           | `reset_IBKR_DB.py` (⚠️ destruktiv) + Re-Import über `--from-summary`                                                                                   |
 
@@ -118,6 +118,6 @@ springen (siehe [`ui-first-run.md`](setup/ui-first-run.md) Abschnitt 3).
 | Datei                                | Inhalt                                           |
 | ------------------------------------- | ------------------------------------------------- |
 | `xml_proj/docs/pipeline-workflow.md` | Technischer Datenfluss, FIFO-Logik, DB-Schema, Config-Zusammenspiel |
-| `xml_proj/HELP.md`                   | Befehlsreferenz aller Scripts                    |
+| `xml_proj/docs/HELP.md`              | Befehlsreferenz aller Scripts                    |
 | `docs/setup/ui-first-run.md`         | Erstkonfiguration der UI                         |
 | `docs/setup/server-deployment.md`    | Alternative Installation: eigener Server statt lokaler PC |
