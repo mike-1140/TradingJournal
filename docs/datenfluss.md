@@ -82,8 +82,8 @@ drei Arten von Berichten:
 > deshalb mit denselben Sektionen einrichten wie die per E-Mail zugestellte — dann ist sie ein
 > vollwertiger zweiter Kanal.
 
-Die Schritt-für-Schritt-Einrichtung der Berichte im IBKR-Kundenportal wird in einem eigenen
-Kapitel beschrieben.
+Die Schritt-für-Schritt-Einrichtung der Berichte im IBKR-Kundenportal beschreibt das Kapitel
+[IBKR einrichten — Flex Queries und Kontoauszug](ibkr-einrichtung.md).
 
 ## 3. Einlesen: Abholen und Import
 

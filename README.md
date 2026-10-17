@@ -150,6 +150,7 @@ Server-Installation.
 | `docs/setup/tradingjournal-setup(-einsteiger).md` | Setup-Anleitung für dieses Repo, technisch bzw. für Einsteiger |
 | `docs/setup/ui-first-run.md` | UI-Erstkonfiguration nach dem Setup (Environment-Switcher, Nutzer wechseln, ...) |
 | `docs/datenfluss.md` | Datenfluss von IBKR bis zur Anzeige: Berichte, Import, FIFO/Kampagnen, Tabellen, App-Seiten |
+| `docs/ibkr-einrichtung.md` | IBKR-Kundenportal einrichten: Flex Queries, E-Mail-Zustellung, Prüfcode (Token) für die Web-API, Kontoauszug als CSV — mit Screenshots |
 | `docs/feature-workflows.md` | Betrieblicher Alltag: Kampagnen-Lebenszyklus, Trade Log, Psychology-Modul |
 | `docs/setup/server-deployment.md` | Alternative Installation: eigener Server statt lokalem PC, Remote-Zugriff via VPN |
 | `docs/setup/distributed-fetch.md` | Advanced: minimaler Client nur für den Datenabruf, zentrale Verarbeitung auf dem Server |
