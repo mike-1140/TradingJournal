@@ -149,6 +149,7 @@ Server-Installation.
 | `CLAUDE.md` | Entwickler-Notizen (Traits, Event-System, Environment-Handling, bekannte Bugs) |
 | `docs/setup/tradingjournal-setup(-einsteiger).md` | Setup-Anleitung für dieses Repo, technisch bzw. für Einsteiger |
 | `docs/setup/ui-first-run.md` | UI-Erstkonfiguration nach dem Setup (Environment-Switcher, Nutzer wechseln, ...) |
+| `docs/datenfluss.md` | Datenfluss von IBKR bis zur Anzeige: Berichte, Import, FIFO/Kampagnen, Tabellen, App-Seiten |
 | `docs/feature-workflows.md` | Betrieblicher Alltag: Kampagnen-Lebenszyklus, Trade Log, Psychology-Modul |
 | `docs/setup/server-deployment.md` | Alternative Installation: eigener Server statt lokalem PC, Remote-Zugriff via VPN |
 | `docs/setup/distributed-fetch.md` | Advanced: minimaler Client nur für den Datenabruf, zentrale Verarbeitung auf dem Server |
