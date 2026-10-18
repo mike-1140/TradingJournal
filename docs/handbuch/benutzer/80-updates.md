@@ -1,10 +1,10 @@
 # Updates einspielen
 
 Beschreibt, wie du eine bestehende Installation (lokaler PC oder eigener Server, siehe
-[`setup/server-deployment.md`](setup/server-deployment.md)) auf den neuesten Stand von
+[Technisches Handbuch: Server-Betrieb — TradingJournal auf einem eigenen Server](../technik/70-server-betrieb.md)) auf den neuesten Stand von
 xml_proj + TradingJournal bringst. Für die Erstinstallation siehe stattdessen
-[`setup/xml_proj-setup.md`](https://github.com/mike-1140/xml_proj/blob/master/docs/setup/xml_proj-setup.md)/
-[`setup/tradingjournal-setup.md`](setup/tradingjournal-setup.md).
+[Technisches Handbuch: Installation: xml_proj](../technik/50-installation-xml-proj.md)/
+[Technisches Handbuch: Installation: TradingJournal](../technik/60-installation-tradingjournal.md).
 
 ## Was "Update" hier bedeutet
 
@@ -51,7 +51,7 @@ Caches bei jedem Request neu).
 ## Update auf dem Server
 
 Gleicher Ablauf, nur zuerst per Remote-Zugriff (RDP, RustDesk o. ä. — siehe
-[`setup/server-deployment.md`](setup/server-deployment.md)) auf den Server verbinden. Dort:
+[Technisches Handbuch: Server-Betrieb — TradingJournal auf einem eigenen Server](../technik/70-server-betrieb.md)) auf den Server verbinden. Dort:
 
 ```powershell
 cd C:\trading\TradingJournal
@@ -67,7 +67,7 @@ automatisch neu ein.
 nicht in `requirements.txt` standen, oder falls `httpd.conf`/`php.ini` manuell angepasst
 werden müssen (z. B. eine neue PHP-Extension wird plötzlich vorausgesetzt) — das würde das
 Skript nicht automatisch erledigen, dann Schritt für Schritt wie in
-`setup/server-deployment.md` nachbessern.
+„Technisches Handbuch: Server-Betrieb — TradingJournal auf einem eigenen Server“ nachbessern.
 
 ## Welche Version läuft gerade?
 

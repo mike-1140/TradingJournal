@@ -29,7 +29,7 @@ Insgesamt werden bis zu drei Berichte eingerichtet:
 Im Kundenportal oben im Menü **Performance & Berichte** wählen und dort den Reiter **Flex
 Queries** öffnen.
 
-![Übersicht Flex Queries](img/ibkr/01-flex-queries-uebersicht.jpg)
+![Übersicht Flex Queries](img/20-ibkr-einrichten/01-flex-queries-uebersicht.jpg)
 
 | Nr. | Element | Wofür |
 |---|---|---|
@@ -51,11 +51,11 @@ Der Reiter **Kontoauszüge** links daneben wird in Abschnitt 6 gebraucht.
 - **Optionsausübungen, -zuteilungen und -fälligkeiten**
 - **Kapitalmaßnahmen**
 
-![Abschnitt Trades](img/ibkr/04-sektion-trades.jpg)
+![Abschnitt Trades](img/20-ibkr-einrichten/04-sektion-trades.jpg)
 
-![Abschnitt Optionsausübungen, -zuteilungen und -fälligkeiten](img/ibkr/03-sektion-optionsereignisse.jpg)
+![Abschnitt Optionsausübungen, -zuteilungen und -fälligkeiten](img/20-ibkr-einrichten/03-sektion-optionsereignisse.jpg)
 
-![Abschnitt Kapitalmaßnahmen](img/ibkr/05-sektion-kapitalmassnahmen.jpg)
+![Abschnitt Kapitalmaßnahmen](img/20-ibkr-einrichten/05-sektion-kapitalmassnahmen.jpg)
 
 > [!WARNING]
 > Ohne *Optionsausübungen, -zuteilungen und -fälligkeiten* bleiben verfallene oder zugeteilte
@@ -68,15 +68,15 @@ der Import braucht.
 
 **Trades:** unter *Optionen* nur **Ausführung** (1), dann **Alle auswählen** (2).
 
-![Feldauswahl Trades](img/ibkr/06-trades-felder.jpg)
+![Feldauswahl Trades](img/20-ibkr-einrichten/06-trades-felder.jpg)
 
 **Optionsausübungen, -zuteilungen und -fälligkeiten:** keine Optionen, nur **Alle auswählen**.
 
-![Feldauswahl Optionsereignisse](img/ibkr/07-optionsereignisse-felder.jpg)
+![Feldauswahl Optionsereignisse](img/20-ibkr-einrichten/07-optionsereignisse-felder.jpg)
 
 **Kapitalmaßnahmen:** unter *Optionen* nur **Detail** (1), dann **Alle auswählen** (2).
 
-![Feldauswahl Kapitalmaßnahmen](img/ibkr/08-kapitalmassnahmen-felder.jpg)
+![Feldauswahl Kapitalmaßnahmen](img/20-ibkr-einrichten/08-kapitalmassnahmen-felder.jpg)
 
 **Zustellungskonfiguration** — weiter unten im Formular:
 
@@ -86,7 +86,7 @@ der Import braucht.
 | Zeitraum | **Letzte n Kalendertage** |
 | Anzahl der Tage | **8** |
 
-![Zustellungskonfiguration](img/ibkr/09-zustellungskonfiguration.jpg)
+![Zustellungskonfiguration](img/20-ibkr-einrichten/09-zustellungskonfiguration.jpg)
 
 Der Zeitraum von acht Tagen ist bewusst überlappend: Fällt ein Bericht aus (Feiertag,
 Mail-Problem, Rechner aus), holt der nächste die fehlenden Tage nach. Doppelt gelieferte Trades
@@ -106,14 +106,14 @@ erkennt der Import und überspringt sie.
 | Konto-Pseudonym anstelle der Konto-ID anzeigen? | **Nein** |
 | Aufschlüsselung nach Tagen? | Ja |
 
-![Allgemeine Konfiguration: Datum und Uhrzeit](img/ibkr/10-allgemeine-konfiguration.jpg)
+![Allgemeine Konfiguration: Datum und Uhrzeit](img/20-ibkr-einrichten/10-allgemeine-konfiguration.jpg)
 
 > [!IMPORTANT]
 > Datumsformat, Zeitformat und Trennzeichen sind **Pflicht** in genau dieser Kombination
 > (`23/09/2025;102924`). Mit einem anderen Format kann der Import Datum und Uhrzeit der Trades
 > nicht lesen.
 
-![Konto-Pseudonym: Nein](img/ibkr/11-pseudonym.jpg)
+![Konto-Pseudonym: Nein](img/20-ibkr-einrichten/11-pseudonym.jpg)
 
 Das Konto-Pseudonym muss auf **Nein** stehen: Der Import ordnet jeden Bericht über die
 Kontonummer (die letzten vier Ziffern) einem Benutzer und Environment zu.
@@ -121,7 +121,7 @@ Kontonummer (die letzten vier Ziffern) einem Benutzer und Environment zu.
 Mit **Weiter** erscheint eine Prüfseite mit allen Einstellungen. Dort mit **Speichern** (bei
 einer bestehenden Query: **Änderungen speichern**) abschließen.
 
-![Prüfseite mit Speichern](img/ibkr/12-pruefseite-speichern.jpg)
+![Prüfseite mit Speichern](img/20-ibkr-einrichten/12-pruefseite-speichern.jpg)
 
 ## 3. Query-ID finden
 
@@ -129,7 +129,7 @@ Jede Flex Query hat eine Nummer, die **Query-ID**. Sie wird für den Abruf per W
 (Abschnitt 5). Zu finden ist sie über das **ⓘ** vor der Query in der Übersicht — die
 Detailansicht zeigt sie ganz oben unter *Details zu Kontoumsatz-Flex-Queries*.
 
-![Query-ID in der Detailansicht](img/ibkr/02-query-id.jpg)
+![Query-ID in der Detailansicht](img/20-ibkr-einrichten/02-query-id.jpg)
 
 ## 4. Tägliche Zustellung per E-Mail
 
@@ -141,7 +141,7 @@ auf das Zahnrad.
 - **Verschlüsselung:** Nein
 - **Berichte:** die Query aus Abschnitt 2 anhaken, Format **XML** (2)
 
-![Zustellung der Flex Query bearbeiten](img/ibkr/13-zustellung-bearbeiten.jpg)
+![Zustellung der Flex Query bearbeiten](img/20-ibkr-einrichten/13-zustellung-bearbeiten.jpg)
 
 Mit **Weiter** und **Speichern** abschließen. Danach schickt IBKR den Bericht täglich per
 E-Mail (Betreff beginnt mit *Activity Flex for …*).
@@ -166,7 +166,7 @@ angehakt — sie wird nur abgerufen. Ihre Query-ID wie in Abschnitt 3 ablesen.
 **Prüfcode:** In der Übersicht beim Kasten **Flex-Web-Service-Konfiguration** auf das Zahnrad
 klicken (Abschnitt 1, Nr. 4). IBKR nennt den Zugangsschlüssel **Prüfcode** (englisch *Token*).
 
-![Flex-Web-Service: Prüfcode](img/ibkr/14-pruefcode.jpg)
+![Flex-Web-Service: Prüfcode](img/20-ibkr-einrichten/14-pruefcode.jpg)
 
 | Nr. | Element | Bedeutung |
 |---|---|---|
@@ -216,9 +216,9 @@ Im Menü **Performance & Berichte** den Reiter **Kontoauszüge** öffnen. Unten 
 Weitere Abschnitte stören nicht. Die Bilder zeigen eine funktionierende Auswahl, die zusätzlich
 u. a. *Trades*, *Kapitalmaßnahmen*, *MTM-Performance-Übersicht* und *Transaktionsgebühren* enthält.
 
-![Kontoauszug: Abschnitte (1)](img/ibkr/16-kontoauszug-abschnitte-a.jpg)
+![Kontoauszug: Abschnitte (1)](img/20-ibkr-einrichten/16-kontoauszug-abschnitte-a.jpg)
 
-![Kontoauszug: Abschnitte (2)](img/ibkr/17-kontoauszug-abschnitte-b.jpg)
+![Kontoauszug: Abschnitte (2)](img/20-ibkr-einrichten/17-kontoauszug-abschnitte-b.jpg)
 
 **Einstellungen und Zustellungskonfiguration** am Ende des Formulars:
 
@@ -229,7 +229,7 @@ u. a. *Trades*, *Kapitalmaßnahmen*, *MTM-Performance-Übersicht* und *Transakti
 | Zeitraum | **Täglich** (2) |
 | Sprache | **English** (2) |
 
-![Kontoauszug: Format, Zeitraum, Sprache](img/ibkr/18-kontoauszug-zustellung.jpg)
+![Kontoauszug: Format, Zeitraum, Sprache](img/20-ibkr-einrichten/18-kontoauszug-zustellung.jpg)
 
 > [!IMPORTANT]
 > Die **Sprache muss English sein**: Der Import erkennt die Abschnitte und Zeilen an ihren
@@ -243,13 +243,13 @@ u. a. *Trades*, *Kapitalmaßnahmen*, *MTM-Performance-Übersicht* und *Transakti
 **Zustellung:** zurück im Reiter **Kontoauszüge** rechts beim Kasten **Zustellung der
 Kontoauszüge** auf das Zahnrad klicken.
 
-![Kontoauszüge: Zustellung](img/ibkr/15-kontoauszuege-uebersicht.jpg)
+![Kontoauszüge: Zustellung](img/20-ibkr-einrichten/15-kontoauszuege-uebersicht.jpg)
 
 Im Abschnitt **Zustellung von täglichen, benutzerdefinierten Auszügen** über das Zahnrad
 Zustellungsmethode **E-Mail** wählen und den neuen Kontoauszug mit Format **CSV** anhaken — wie
 bei der Flex Query in Abschnitt 4.
 
-![Zustellung der täglichen, benutzerdefinierten Auszüge](img/ibkr/19-kontoauszug-zustellung-taeglich.jpg)
+![Zustellung der täglichen, benutzerdefinierten Auszüge](img/20-ibkr-einrichten/19-kontoauszug-zustellung-taeglich.jpg)
 
 Die Mail kommt an dieselbe Konto-Adresse wie die Flex Query (Betreff *Activity Statement* bzw.
 *Kontoauszug*). Die Standard-Kontoauszüge oben auf der Seite (täglich, monatlich) sind für das

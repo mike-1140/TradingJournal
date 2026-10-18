@@ -1,6 +1,6 @@
-# Distributed Fetch (Advanced) — Minimaler Client für den Datenabruf
+# Verteilter Abruf — minimaler Client für den Datenabruf
 
-**Nur relevant, wenn du bereits [`server-deployment.md`](server-deployment.md) umgesetzt
+**Nur relevant, wenn du bereits [Server-Betrieb — TradingJournal auf einem eigenen Server](70-server-betrieb.md) umgesetzt
 hast** und zusätzlich von einem zweiten, leichtgewichtigen Gerät (Reise-Notebook, Tablet
 mit Windows, etc.) aus IBKR-Daten abrufen und zum Server übertragen willst — **ohne** auf
 diesem zweiten Gerät die komplette App (MySQL/PHP/Apache/Node.js) zu installieren.
@@ -28,7 +28,7 @@ Kein MySQL, kein PHP, kein Apache, kein Node.js.
 
 ## Server-Seite: SSH-Empfang einrichten (einmalig)
 
-Auf dem Server, der bereits nach `server-deployment.md` eingerichtet ist —
+Auf dem Server, der bereits nach „Server-Betrieb — TradingJournal auf einem eigenen Server“ eingerichtet ist —
 **[PowerShell – Administrator]**:
 ```powershell
 Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0

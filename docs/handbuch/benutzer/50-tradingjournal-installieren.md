@@ -1,12 +1,12 @@
-# TradingJournal — Setup für Einsteiger
+# TradingJournal installieren
 
 Diese Anleitung richtet die Weboberfläche (TradingJournal) auf einem Rechner ein — Schritt für Schritt, mit Erklärungen, auch wenn du bisher wenig Erfahrung mit Terminal-Befehlen hast. Es gibt dazu auch eine kürzere, technischere Version:
-[`tradingjournal-setup.md`](tradingjournal-setup.md). Beide führen zum selben Ergebnis.
+[Technisches Handbuch: Installation: TradingJournal](../technik/60-installation-tradingjournal.md). Beide führen zum selben Ergebnis.
 
 **Bevor du hier startest:** Die Grundausstattung (XAMPP, Composer, Node.js, ...) muss
-bereits installiert sein — siehe [Windows-Grundausstattung für Einsteiger](https://github.com/mike-1140/xml_proj/blob/master/docs/setup/windows-prerequisites-einsteiger.md). Und die
+bereits installiert sein — siehe [Windows-Grundausstattung für Einsteiger](30-windows-vorbereiten.md). Und die
 Datenimport-Pipeline sollte schon eingerichtet sein — siehe
-[xml_proj-Setup für Einsteiger](https://github.com/mike-1140/xml_proj/blob/master/docs/setup/xml_proj-setup-einsteiger.md).
+[xml_proj-Setup für Einsteiger](40-xml-proj-installieren.md).
 
 ---
 
@@ -44,7 +44,7 @@ composer install
 npm install
 ```
 
-**Falls bei `composer install` eine Fehlermeldung mit dem Wort "zip" erscheint:** Das bedeutet, eine PHP-Einstellung namens `zip` ist noch nicht aktiviert. Wie man das behebt, steht in [Windows-Grundausstattung für Einsteiger](https://github.com/mike-1140/xml_proj/blob/master/docs/setup/windows-prerequisites-einsteiger.md)
+**Falls bei `composer install` eine Fehlermeldung mit dem Wort "zip" erscheint:** Das bedeutet, eine PHP-Einstellung namens `zip` ist noch nicht aktiviert. Wie man das behebt, steht in [Windows-Grundausstattung für Einsteiger](30-windows-vorbereiten.md)
 im Abschnitt "Eine PHP-Einstellung anpassen". Danach diesen Schritt hier einfach nochmal ausführen.
 
 ---
@@ -145,7 +145,7 @@ Danach im Browser `http://localhost:8000` öffnen und mit den in Schritt 4 verge
 Fenster geschlossen → Seite nicht mehr erreichbar, dann `php artisan serve` erneut
 eintippen.
 
-Es gibt eine fortgeschrittenere Variante, bei der die Seite dauerhaft im Hintergrund läuft (über Apache aus dem XAMPP-Paket, mit einer eigenen Adresse wie `http://trading.local`) — das lohnt sich, wenn man die Seite oft nutzt und nicht jedes Mal ein Terminal offen haben will. Diese Einrichtung ist etwas technischer (Konfigurationsdatei bearbeiten) — Details dazu in der technischen Version [`tradingjournal-setup.md`](tradingjournal-setup.md), Abschnitt "7. Starten, Variante B". Am besten mit etwas Erfahrung oder Unterstützung einrichten, für den Anfang reicht `php artisan serve` völlig aus.
+Es gibt eine fortgeschrittenere Variante, bei der die Seite dauerhaft im Hintergrund läuft (über Apache aus dem XAMPP-Paket, mit einer eigenen Adresse wie `http://trading.local`) — das lohnt sich, wenn man die Seite oft nutzt und nicht jedes Mal ein Terminal offen haben will. Diese Einrichtung ist etwas technischer (Konfigurationsdatei bearbeiten) — Details dazu in der technischen Version [Technisches Handbuch: Installation: TradingJournal](../technik/60-installation-tradingjournal.md), Abschnitt "7. Starten, Variante B". Am besten mit etwas Erfahrung oder Unterstützung einrichten, für den Anfang reicht `php artisan serve` völlig aus.
 
 ---
 
@@ -186,6 +186,6 @@ Nach der Ersteinrichtung, für den täglichen Gebrauch:
 
 | Datei                                                | Inhalt                                                                                       |
 | ---------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| [`tradingjournal-setup.md`](tradingjournal-setup.md) | Dieselben Schritte, technischer/kompakter, plus fortgeschrittene Themen (Apache-VirtualHost) |
-| [`ui-first-run.md`](ui-first-run.md)                 | Was nach dem ersten Login einzustellen ist                                                   |
-| [xml_proj-Setup](https://github.com/mike-1140/xml_proj/blob/master/docs/setup/xml_proj-setup.md) | Setup der Datenimport-Pipeline |
+| [Technisches Handbuch: Installation: TradingJournal](../technik/60-installation-tradingjournal.md) | Dieselben Schritte, technischer/kompakter, plus fortgeschrittene Themen (Apache-VirtualHost) |
+| [Erster Start — UI-Erstkonfiguration](60-erster-start.md)                 | Was nach dem ersten Login einzustellen ist                                                   |
+| [xml_proj-Setup](../technik/50-installation-xml-proj.md) | Setup der Datenimport-Pipeline |

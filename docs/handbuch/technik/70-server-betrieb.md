@@ -1,13 +1,13 @@
-# Server-Deployment — TradingJournal auf einem eigenen Server betreiben
+# Server-Betrieb — TradingJournal auf einem eigenen Server
 
-Alternative zur lokalen Installation (siehe [`tradingjournal-setup.md`](tradingjournal-setup.md)):
+Alternative zur lokalen Installation (siehe [Installation: TradingJournal](60-installation-tradingjournal.md)):
 TradingJournal + xml_proj laufen auf einem eigenen Windows Server (physisch, VPS, oder ein
 Rechner, der dauerhaft eingeschaltet bleibt) statt auf dem lokalen Arbeitsplatz-PC. Sinnvoll,
 wenn du von mehreren Geräten (Laptop, Reise-Notebook, Tablet) auf dasselbe Journal zugreifen
 willst, ohne die Datenbank mehrfach zu pflegen.
 
-**Diese Anleitung ersetzt nicht** [`xml_proj-setup.md`](https://github.com/mike-1140/xml_proj/blob/master/docs/setup/xml_proj-setup.md)/
-[`tradingjournal-setup.md`](tradingjournal-setup.md) — sie überträgt dieselben Konzepte auf
+**Diese Anleitung ersetzt nicht** [Installation: xml_proj](50-installation-xml-proj.md)/
+[Installation: TradingJournal](60-installation-tradingjournal.md) — sie überträgt dieselben Konzepte auf
 einen Server-Kontext. Grundkenntnisse aus diesen beiden Dokumenten werden vorausgesetzt.
 
 ## Voraussetzungen
@@ -301,7 +301,7 @@ DB_NAME_AUTOM_PAPER=ibkr_autom_paper
 ```
 Falls der Datenabruf (`get_flexquery_emails.py`/`get_flexquery_api.py`) weiterhin auf einem
 anderen Gerät läuft und nur die fertigen Dateien auf diesen Server übertragen werden (siehe
-[`distributed-fetch.md`](distributed-fetch.md)), bleiben `IMAP_*`/`IBKR_FLEX_QUERIES` hier leer.
+[Verteilter Abruf — minimaler Client für den Datenabruf](80-verteilter-abruf.md)), bleiben `IMAP_*`/`IBKR_FLEX_QUERIES` hier leer.
 
 **`C:\trading\TradingJournal\.env`** — Vorlage `.env.example` kopieren und anpassen:
 ```ini
@@ -449,7 +449,7 @@ environments = ["money", "paper"]
 ```
 (`fetch_emails`/`fetch_api`/`snapshot_csv` nur ergänzen, falls der Datenabruf auch auf
 diesem Server laufen soll — sonst reichen `import`/`process`/`summary`, wenn die Rohdaten
-von woanders hierher übertragen werden, siehe [`distributed-fetch.md`](distributed-fetch.md).)
+von woanders hierher übertragen werden, siehe [Verteilter Abruf — minimaler Client für den Datenabruf](80-verteilter-abruf.md).)
 
 **Zusätzlich nötig: `accounts.toml`** — das accountId→User/Environment-Mapping
 (`src/config.py::load_account_map()`), eine eigene, gitignored Konfigurationsdatei neben

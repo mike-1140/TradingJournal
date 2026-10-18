@@ -1,17 +1,17 @@
-# TradingJournal — Setup (lokale Entwicklungsumgebung)
+# Installation: TradingJournal
 
 > Ausführlichere, für Einsteiger geschriebene Version mit mehr Erklärungen:
-> [`tradingjournal-setup-einsteiger.md`](tradingjournal-setup-einsteiger.md).
+> [Benutzerhandbuch: TradingJournal installieren](../benutzer/50-tradingjournal-installieren.md).
 
 Installations- und Erstinitialisierungs-Anleitung für `TradingJournal` auf einem neuen Rechner.
 
 **Voraussetzung:** [`xml_proj`](https://github.com/mike-1140/xml_proj) ist bereits eingerichtet
-(siehe [xml_proj-Setup](https://github.com/mike-1140/xml_proj/blob/master/docs/setup/xml_proj-setup.md))
+(siehe [xml_proj-Setup](50-installation-xml-proj.md))
 — TradingJournal zeigt nur Daten an, das Trading-Datenbankschema wird ausschließlich über
 `xml_proj` verwaltet.
 
 **Grundlegende Software** (XAMPP für PHP/Apache/MariaDB, Composer, Node.js) muss vorher
-installiert sein — siehe [Windows-Grundausstattung](https://github.com/mike-1140/xml_proj/blob/master/docs/setup/windows-prerequisites.md).
+installiert sein — siehe [Windows-Grundausstattung](40-installation-windows.md).
 Diese Seite setzt das voraus und beschreibt nur noch die projektspezifische Einrichtung.
 
 ---
@@ -111,7 +111,7 @@ existiert keine `users`-Tabelle und kein Login ist möglich.
 ## 4. Trading-Tabellen bereitstellen
 
 Kein Laravel-Migrationsschritt. Falls noch nicht geschehen, in `xml_proj` ausführen
-(siehe [xml_proj-Setup](https://github.com/mike-1140/xml_proj/blob/master/docs/setup/xml_proj-setup.md) Schritt 5):
+(siehe [xml_proj-Setup](50-installation-xml-proj.md) Schritt 5):
 
 ```bash
 cd ../xml_proj
@@ -175,7 +175,7 @@ erneut manuell ausführen.
 ### Variante B: Apache-VirtualHost (dauerhaft, kein manueller Start nötig)
 
 Voraussetzung: XAMPPs Apache läuft (idealerweise als Windows-Dienst, siehe
-[Windows-Grundausstattung](https://github.com/mike-1140/xml_proj/blob/master/docs/setup/windows-prerequisites.md)).
+[Windows-Grundausstattung](40-installation-windows.md)).
 Dann liefert Apache die Seite automatisch mit Windows — kein `php artisan serve` mehr nötig. 
 
 Zwei Teile:
@@ -224,4 +224,4 @@ Konfigurationsfehler prüfen, danach `C:\xampp\apache\bin\httpd.exe -t` (testet 
 | Datei                                                | Inhalt                                                                   |
 | ---------------------------------------------------- | ------------------------------------------------------------------------ |
 | `CLAUDE.md`                                          | Entwickler-Notizen, Architektur-Patterns (Environment/Zeitfilter-Traits) |
-| [xml_proj-Setup](https://github.com/mike-1140/xml_proj/blob/master/docs/setup/xml_proj-setup.md) | Setup der Datenimport-Pipeline (Python) |
+| [xml_proj-Setup](50-installation-xml-proj.md) | Setup der Datenimport-Pipeline (Python) |

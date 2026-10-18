@@ -1,13 +1,13 @@
-# TradingJournal — UI-Erstkonfiguration
+# Erster Start — UI-Erstkonfiguration
 
-Was nach der technischen Installation (siehe [`tradingjournal-setup.md`](tradingjournal-setup.md)
-bzw. [`tradingjournal-setup-einsteiger.md`](tradingjournal-setup-einsteiger.md)) einmalig einzustellen ist, bevor die App produktiv genutzt wird — und was die einzelnen Bedienelemente in der Oberfläche eigentlich bedeuten.
+Was nach der technischen Installation (siehe [Technisches Handbuch: Installation: TradingJournal](../technik/60-installation-tradingjournal.md)
+bzw. [TradingJournal installieren](50-tradingjournal-installieren.md)) einmalig einzustellen ist, bevor die App produktiv genutzt wird — und was die einzelnen Bedienelemente in der Oberfläche eigentlich bedeuten.
 
 ---
 
 ## 1. Einloggen
 
-Mit den Zugangsdaten einloggen, die beim Setup per `php artisan auth:create-user` angelegt wurden (`tradingjournal-setup.md` Schritt 5 bzw. `tradingjournal-setup-einsteiger.md`  Schritt 4). Es gibt bewusst **keine Registrierungsseite** — ein neuer Zugang entsteht immer nur über diesen einen Befehl auf der Kommandozeile, nie über die Weboberfläche selbst. Das ist Absicht: Es soll niemand "einfach so" ein Konto anlegen können.
+Mit den Zugangsdaten einloggen, die beim Setup per `php artisan auth:create-user` angelegt wurden („Technisches Handbuch: Installation: TradingJournal“ Schritt 5 bzw. „TradingJournal installieren“  Schritt 4). Es gibt bewusst **keine Registrierungsseite** — ein neuer Zugang entsteht immer nur über diesen einen Befehl auf der Kommandozeile, nie über die Weboberfläche selbst. Das ist Absicht: Es soll niemand "einfach so" ein Konto anlegen können.
 
 ## 2. Der Environment-Switcher (oben in der Navigation)
 

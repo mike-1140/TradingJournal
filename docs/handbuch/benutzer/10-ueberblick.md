@@ -1,4 +1,4 @@
-# Datenfluss — vom Trade bis zur Auswertung
+# Überblick — vom Trade bis zur Auswertung
 
 Dieses Kapitel beschreibt den Weg eines Trades: von der Order bei Interactive Brokers (IBKR) bis zur Zahl im
 TradingJournal. Wer den Ablauf einmal verstanden hat, kann später auch einschätzen, *warum* ein Trade
@@ -66,24 +66,11 @@ drei Arten von Berichten:
 > [!WARNING]
 > Der Kontoauszug wird nur per E-Mail zugestellt. Es gibt keine Möglichkeit, ihn per Abruf (Web-API) anzufordern.
 
-**Was die FlexQuery enthalten muss** (für E-Mail und Web-API gleichermaßen):
-
-- Sektion **Trades** — jede Ausführung mit u. a. `tradeID`, `ibOrderID`, `symbol`, `conid`,
-  `assetCategory`, `buySell`, `quantity`, `tradePrice`, `proceeds`, `netCash`, `ibCommission`,
-  `currency`, `fxRateToBase`, `dateTime`, `openCloseIndicator` sowie für Optionen `putCall`,
-  `strike`, `expiry`, `multiplier`, `underlyingSymbol`
-- Sektion **Option Exercises, Assignments and Expirations** (im XML: `OptionEAE`) —
-  sonst fehlen verfallene, ausgeübte und zugeteilte Optionen
-- Sektion **Corporate Actions** — sonst werden Aktiensplits nicht berücksichtigt
-
-> [!WARNING]
-> Fehlt die Sektion *Option Exercises, Assignments and Expirations*, bleiben verfallene oder
-> zugeteilte Optionen im Journal dauerhaft als **offen** stehen. Die Query für die Web-API
-> deshalb mit denselben Sektionen einrichten wie die per E-Mail zugestellte — dann ist sie ein
-> vollwertiger zweiter Kanal.
-
-Die Schritt-für-Schritt-Einrichtung der Berichte im IBKR-Kundenportal beschreibt das Kapitel
-[IBKR einrichten — Flex Queries und Kontoauszug](ibkr-einrichtung.md).
+Für **jedes IBKR-Konto**, dessen Daten verarbeitet werden sollen, wird eine eigene Flex Query
+(und ein eigener Kontoauszug) eingerichtet. Welche Einstellungen dafür nötig sind, zeigt Schritt
+für Schritt das Kapitel [IBKR einrichten](20-ibkr-einrichten.md). Wie eine Flex Query technisch
+aufgebaut ist und welche Felder der Import daraus liest, beschreibt das technische Handbuch
+([Aufbau einer Flex Query](../technik/20-aufbau-flexquery.md)).
 
 ## 3. Einlesen: Abholen und Import
 

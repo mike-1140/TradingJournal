@@ -6,7 +6,7 @@
 #   . .\open.ps1
 #
 # Funktioniert unabhaengig davon, wo der Monorepo-Root-Ordner liegt (siehe
-# windows-prerequisites.md - Pfad ist frei waehlbar).
+# docs/handbuch/technik/40-installation-windows.md - Pfad ist frei waehlbar).
 
 Set-Location $PSScriptRoot
 Write-Host "TradingJournal bereit: $PSScriptRoot" -ForegroundColor Green

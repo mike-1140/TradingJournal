@@ -37,7 +37,7 @@ Web-Oberfläche über die Daten, die [xml_proj](https://github.com/mike-1140/xml
 ## Installation
 
 > Diese Anleitung beschreibt die lokale Installation. Für einen eigenen Server (Remote-
-> Zugriff von mehreren Geräten via VPN) siehe stattdessen [`docs/setup/server-deployment.md`](docs/setup/server-deployment.md).
+> Zugriff von mehreren Geräten via VPN) siehe stattdessen [`docs/handbuch/technik/70-server-betrieb.md`](docs/handbuch/technik/70-server-betrieb.md).
 
 ```bash
 git clone https://github.com/mike-1140/TradingJournal.git
@@ -139,22 +139,24 @@ eigene `.env.testing` kopieren.
 Nach dem Clone ist kein weiterer Setup-Schritt nötig. Claude Code liest `CLAUDE.md` automatisch für Projektkontext.
 
 Für spätere Updates (`git pull` + Abhängigkeiten + Migrationen + Cache-Rebuild in einem
-Schritt) siehe [`docs/updating.md`](docs/updating.md) — gilt auch für eine bestehende
+Schritt) siehe [`docs/handbuch/benutzer/80-updates.md`](docs/handbuch/benutzer/80-updates.md) — gilt auch für eine bestehende
 Server-Installation.
 
 ## Dokumentation
 
+Die ausführliche Doku ist in zwei Handbücher gegliedert — Übersicht aller Kapitel:
+[`docs/handbuch/`](docs/handbuch/README.md). Beide gibt es auch als PDF (siehe Releases).
+
+| Handbuch | Für wen | Wichtigste Kapitel |
+|---|---|---|
+| [Benutzerhandbuch](docs/handbuch/README.md#benutzerhandbuch) | Anwender, auch ohne Programmierkenntnisse | [Überblick: vom Trade zur Auswertung](docs/handbuch/benutzer/10-ueberblick.md), [IBKR einrichten](docs/handbuch/benutzer/20-ibkr-einrichten.md), [TradingJournal installieren](docs/handbuch/benutzer/50-tradingjournal-installieren.md), [Erster Start](docs/handbuch/benutzer/60-erster-start.md), [Updates](docs/handbuch/benutzer/80-updates.md) |
+| [Technisches Handbuch](docs/handbuch/README.md#technisches-handbuch) | Technisch Interessierte, Betrieb, Mitwirkende | [Architektur und Pipeline](docs/handbuch/technik/10-architektur-und-pipeline.md), [Installation (technisch)](docs/handbuch/technik/60-installation-tradingjournal.md), [Server-Betrieb](docs/handbuch/technik/70-server-betrieb.md), [Verteilter Abruf](docs/handbuch/technik/80-verteilter-abruf.md) |
+
+Weitere Dateien in diesem Repo:
+
 | Datei | Inhalt |
 |---|---|
 | `CLAUDE.md` | Entwickler-Notizen (Traits, Event-System, Environment-Handling, bekannte Bugs) |
-| `docs/setup/tradingjournal-setup(-einsteiger).md` | Setup-Anleitung für dieses Repo, technisch bzw. für Einsteiger |
-| `docs/setup/ui-first-run.md` | UI-Erstkonfiguration nach dem Setup (Environment-Switcher, Nutzer wechseln, ...) |
-| `docs/datenfluss.md` | Datenfluss von IBKR bis zur Anzeige: Berichte, Import, FIFO/Kampagnen, Tabellen, App-Seiten |
-| `docs/ibkr-einrichtung.md` | IBKR-Kundenportal einrichten: Flex Queries, E-Mail-Zustellung, Prüfcode (Token) für die Web-API, Kontoauszug als CSV — mit Screenshots |
-| `docs/feature-workflows.md` | Betrieblicher Alltag: Kampagnen-Lebenszyklus, Trade Log, Psychology-Modul |
-| `docs/setup/server-deployment.md` | Alternative Installation: eigener Server statt lokalem PC, Remote-Zugriff via VPN |
-| `docs/setup/distributed-fetch.md` | Advanced: minimaler Client nur für den Datenabruf, zentrale Verarbeitung auf dem Server |
-| `docs/updating.md` | Updates einspielen (lokaler PC oder Server) — `update.ps1` |
 | `tests/README.md` | Test-Setup gegen echtes MySQL, Environment-Isolation |
 | `CONTRIBUTING.md` | Wie beitragen — Konventionen, Test-Erwartung, PR-Ablauf |
 | `SECURITY.md` | Meldeweg für Sicherheitslücken |

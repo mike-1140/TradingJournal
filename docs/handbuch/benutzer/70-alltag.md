@@ -1,9 +1,9 @@
-# Feature-Workflows — TradingJournal im Alltag
+# Alltag mit dem TradingJournal
 
 Beschreibt den betrieblichen Ablauf aus Nutzersicht: was täglich automatisch passiert, wie
 Kampagnen im UI "leben", und welche manuellen Workflows (Trade Log, Psychology) es
 zusätzlich zur reinen Datenanzeige gibt. Für die technische Pipeline-Architektur siehe
-[`xml_proj/docs/pipeline-workflow.md`](https://github.com/mike-1140/xml_proj/blob/master/docs/pipeline-workflow.md).
+[`docs/handbuch/technik/10-architektur-und-pipeline.md`](../technik/10-architektur-und-pipeline.md).
 
 ---
 
@@ -41,7 +41,7 @@ jede Maschine trägt nur die User/Environments ein, die dort tatsächlich per
 | tom  | money                                   |
 
 Für den automatisierten Lauf (z. B. täglich per Windows Task Scheduler oder Cronjob) siehe
-[`server-deployment.md`](setup/server-deployment.md).
+[Technisches Handbuch: Server-Betrieb — TradingJournal auf einem eigenen Server](../technik/70-server-betrieb.md).
 
 ## 2. Kampagnen-Lebenszyklus aus Nutzersicht
 
@@ -100,7 +100,7 @@ ist die systematische Regel-Compliance über die Zeit.
 
 | Situation                                                                               | Vorgehen                                                                                                                                               |
 | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Neue/geänderte Import-Logik an einer echten XML testen, ohne Produktivdaten zu berühren | XML nach `C:\Trade_XML\test\<user>\incoming\` legen, `python run_pipeline.py` — landet automatisch in der TEST-DB (siehe `xml_proj/docs/HELP.md` § TEST-Environment) |
+| Neue/geänderte Import-Logik an einer echten XML testen, ohne Produktivdaten zu berühren | XML nach `C:\Trade_XML\test\<user>\incoming\` legen, `python run_pipeline.py` — landet automatisch in der TEST-DB (siehe `docs/handbuch/technik/30-befehlsreferenz.md` § TEST-Environment) |
 | Offene Position liegengeblieben (Open importiert, Close nie gekommen — z. B. Datenlücke) | `xml_proj/tools/maintenance/cleanup_stale_positions.py` (Dry-Run ist Standard, erst mit `--execute` löschen)                                            |
 | Kompletter Neuaufbau eines Environment/Prefix                                           | `reset_IBKR_DB.py` (⚠️ destruktiv) + Re-Import über `--from-summary`                                                                                   |
 
@@ -109,7 +109,7 @@ ist die systematische Regel-Compliance über die Zeit.
 Jeder Nutzer hat einen eigenen Tabellen-Prefix und eigene IBKR-Konten (Zuordnung per
 `accountId` in `accounts.toml`). In der UI loggt sich jeder mit eigenem Account ein; ein
 Admin-Account kann zusätzlich über "Nutzer wechseln" in die Sicht eines anderen Users
-springen (siehe [`ui-first-run.md`](setup/ui-first-run.md) Abschnitt 3).
+springen (siehe [Erster Start — UI-Erstkonfiguration](60-erster-start.md) Abschnitt 3).
 
 ---
 
@@ -117,7 +117,7 @@ springen (siehe [`ui-first-run.md`](setup/ui-first-run.md) Abschnitt 3).
 
 | Datei                                | Inhalt                                           |
 | ------------------------------------- | ------------------------------------------------- |
-| `xml_proj/docs/pipeline-workflow.md` | Technischer Datenfluss, FIFO-Logik, DB-Schema, Config-Zusammenspiel |
-| `xml_proj/docs/HELP.md`              | Befehlsreferenz aller Scripts                    |
-| `docs/setup/ui-first-run.md`         | Erstkonfiguration der UI                         |
-| `docs/setup/server-deployment.md`    | Alternative Installation: eigener Server statt lokaler PC |
+| `docs/handbuch/technik/10-architektur-und-pipeline.md` | Technischer Datenfluss, FIFO-Logik, DB-Schema, Config-Zusammenspiel |
+| `docs/handbuch/technik/30-befehlsreferenz.md`              | Befehlsreferenz aller Scripts                    |
+| `docs/handbuch/benutzer/60-erster-start.md`         | Erstkonfiguration der UI                         |
+| `docs/handbuch/technik/70-server-betrieb.md`    | Alternative Installation: eigener Server statt lokaler PC |
