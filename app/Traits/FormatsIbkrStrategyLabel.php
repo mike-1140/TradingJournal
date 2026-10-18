@@ -6,7 +6,7 @@ namespace App\Traits;
  * IBKR generiert bei Orders ohne eigenen "Order Ref"-Text intern eine ID im Format
  * xxxxxxxx.xxxxxxxx.xxxxxxxx.xxxx (Session-Praefix + Zeitstempel + laufende Nummer)
  * und schreibt sie ins orderReference-Feld der FlexQuery-XML — das landet 1:1 im
- * strategy-Feld (siehe xml_proj: day_trade_processor.py, "strategy": t.get("orderReference")).
+ * strategy-Feld (siehe TradingJournal-Weaver: day_trade_processor.py, "strategy": t.get("orderReference")).
  * Keine echte Strategie-Bezeichnung, nur IBKR-internes Datenrauschen.
  */
 trait FormatsIbkrStrategyLabel

@@ -174,7 +174,7 @@ class SpreadsList extends Component
     /**
      * Bei Assignment/Exercise entsteht neben den Options-Legs ein Stock-Trade
      * (Zwangskauf/-verkauf zum Strike, meist sofort glattgestellt), der über die
-     * gemeinsame linkID mit dem auslösenden Options-Leg verknüpft ist (siehe xml_proj:
+     * gemeinsame linkID mit dem auslösenden Options-Leg verknüpft ist (siehe TradingJournal-Weaver:
      * book_trades.py + migrate_backfill_assignment_linkid.py). Der reine Options-P&L
      * einer Spread-Gruppe ignoriert diesen Stock-Trade komplett — hier wird er
      * nachträglich eingerechnet, damit ein per Assignment glattgestellter Spread nicht

@@ -37,7 +37,7 @@ class CreateUser extends Command
         $this->line("  Admin:   " . ($user->is_admin ? 'ja' : 'nein'));
         $this->newLine();
         $this->line("Nächster Schritt — Trading-Tabellen anlegen:");
-        $this->line("  cd xml_proj");
+        $this->line("  cd TradingJournal-Weaver");
         $this->line("  .venv\\Scripts\\python reset_IBKR_DB.py money {$user->table_prefix}");
         $this->line("  .venv\\Scripts\\python tools/maintenance/setup_psychology_tables.py money {$user->table_prefix}");
 

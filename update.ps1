@@ -1,18 +1,18 @@
 <#
-TradingJournal + xml_proj — Update-Automatismus
+TradingJournal + TradingJournal-Weaver — Update-Automatismus
 =================================================
-Aktualisiert beide Repos (xml_proj, TradingJournal) auf den neuesten Stand,
+Aktualisiert beide Repos (TradingJournal-Weaver, TradingJournal) auf den neuesten Stand,
 installiert Abhaengigkeiten, fuehrt DB-Migrationen aus und schreibt die
 Build-Version fuer die Sidebar-Anzeige.
 
-Voraussetzung: xml_proj liegt als Geschwister-Verzeichnis neben diesem Repo
-(../xml_proj relativ zu diesem Skript) — siehe README.md "Installation".
+Voraussetzung: TradingJournal-Weaver liegt als Geschwister-Verzeichnis neben diesem Repo
+(../TradingJournal-Weaver relativ zu diesem Skript) — siehe README.md "Installation".
 
 Aufruf (aus dem TradingJournal-Ordner):
   .\update.ps1
 
 Sicher wiederholbar: Composer/NPM installieren nur bei Bedarf neu, die
-xml_proj-Migrationsskripte in dev/migrate_*.py sind idempotent (ueberspringen
+TradingJournal-Weaver-Migrationsskripte in dev/migrate_*.py sind idempotent (ueberspringen
 bereits vorhandene Spalten/Tabellen).
 
 WICHTIG: Bricht sofort ab, sobald ein Schritt fehlschlaegt (z.B. git pull wegen
@@ -23,7 +23,7 @@ $ErrorActionPreference="Stop" allein faengt das in Windows PowerShell 5.1 NICHT 
 
 $ErrorActionPreference = "Stop"
 $TradingJournalRoot = $PSScriptRoot
-$XmlProjRoot = Join-Path (Split-Path $TradingJournalRoot -Parent) "xml_proj"
+$WeaverRoot = Join-Path (Split-Path $TradingJournalRoot -Parent) "TradingJournal-Weaver"
 
 function Step($msg) {
     Write-Host ""
@@ -58,25 +58,25 @@ function Invoke-GitPull([string]$RepoName, [string]$Path) {
 }
 
 # --- 1) Code aktualisieren -------------------------------------------------
-Invoke-GitPull "xml_proj" $XmlProjRoot
+Invoke-GitPull "TradingJournal-Weaver" $WeaverRoot
 Invoke-GitPull "TradingJournal" $TradingJournalRoot
 
-# --- 2) Python-Umgebung (xml_proj) -----------------------------------------
-Step "Python-Abhaengigkeiten (xml_proj)"
-Set-Location $XmlProjRoot
+# --- 2) Python-Umgebung (TradingJournal-Weaver) -----------------------------------------
+Step "Python-Abhaengigkeiten (TradingJournal-Weaver)"
+Set-Location $WeaverRoot
 if (-not (Test-Path ".\.venv\Scripts\Activate.ps1")) {
-    Write-Error "Keine .venv unter xml_proj gefunden - siehe xml_proj README.md 'Installation'"
+    Write-Error "Keine .venv unter TradingJournal-Weaver gefunden - siehe TradingJournal-Weaver README.md 'Installation'"
 }
 . .\.venv\Scripts\Activate.ps1
 pip install -q -r requirements.txt
 Assert-LastExit "pip install -r requirements.txt"
 
 # --- 3) DB-Schema-Migrationen (idempotent) ---------------------------------
-# Muessen als Modul (-m dev.<name>) vom xml_proj-Root aus laufen, nicht per
+# Muessen als Modul (-m dev.<name>) vom TradingJournal-Weaver-Root aus laufen, nicht per
 # Dateipfad - die Skripte machen "from src.config import ..." und finden das
 # src-Package sonst nicht (sys.path enthaelt dann nur den Skript-Ordner).
-Step "DB-Migrationen (xml_proj/dev/migrate_*.py)"
-$MigrateScripts = Get-ChildItem "$XmlProjRoot\dev\migrate_*.py" -ErrorAction SilentlyContinue
+Step "DB-Migrationen (TradingJournal-Weaver/dev/migrate_*.py)"
+$MigrateScripts = Get-ChildItem "$WeaverRoot\dev\migrate_*.py" -ErrorAction SilentlyContinue
 if ($MigrateScripts) {
     foreach ($Script in $MigrateScripts) {
         $ModuleName = "dev." + $Script.BaseName

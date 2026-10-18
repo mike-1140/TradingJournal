@@ -1,12 +1,12 @@
 # TradingJournal
 
 Persönliches Trading-Journal zur Auswertung von IBKR-Trades (Interactive Brokers) —
-Web-Oberfläche über die Daten, die [xml_proj](https://github.com/mike-1140/xml_proj) importiert.
+Web-Oberfläche über die Daten, die [TradingJournal-Weaver](https://github.com/mike-1140/TradingJournal-Weaver) importiert.
 
 > **Teil eines Zwei-Repo-Setups:** TradingJournal zeigt nur an, was
-> [xml_proj](https://github.com/mike-1140/xml_proj) bereits in die Datenbank importiert
-> hat — **xml_proj zuerst einrichten** (siehe dessen README), danach hier weitermachen.
-> Beide Repos werden als Geschwister-Verzeichnisse erwartet (`../xml_proj` relativ zu
+> [TradingJournal-Weaver](https://github.com/mike-1140/TradingJournal-Weaver) bereits in die Datenbank importiert
+> hat — **TradingJournal-Weaver zuerst einrichten** (siehe dessen README), danach hier weitermachen.
+> Beide Repos werden als Geschwister-Verzeichnisse erwartet (`../TradingJournal-Weaver` relativ zu
 > diesem Repo).
 
 ## Stack
@@ -14,7 +14,7 @@ Web-Oberfläche über die Daten, die [xml_proj](https://github.com/mike-1140/xml
 - **Backend:** Laravel 12 + Livewire 3
 - **Frontend:** Bootstrap 5 + Bootstrap Icons
 - **Datenbank:** MySQL (mehrere Verbindungen, Schema via Python verwaltet)
-- **Datenimport:** Python-Skript (`reset_IBKR_DB.py`, aus xml_proj)
+- **Datenimport:** Python-Skript (`reset_IBKR_DB.py`, aus TradingJournal-Weaver)
 
 ## Features
 
@@ -32,7 +32,7 @@ Web-Oberfläche über die Daten, die [xml_proj](https://github.com/mike-1140/xml
 - Composer
 - Node.js + npm
 - MySQL
-- [xml_proj](https://github.com/mike-1140/xml_proj) bereits eingerichtet (liefert Schema + Datenimport)
+- [TradingJournal-Weaver](https://github.com/mike-1140/TradingJournal-Weaver) bereits eingerichtet (liefert Schema + Datenimport)
 
 ## Installation
 
@@ -72,15 +72,15 @@ TRADING_DB_PASSWORD=...
 `DB_*` ist die Laravel-eigene Datenbank (users, sessions, cache). `TRADING_DB_*` sind die
 Zugangsdaten für die fünf Trading-Datenbanken — deren Namen (`ibkr_money`, `ibkr_paper`,
 `ibkr_test`, `ibkr_autom_money`, `ibkr_autom_paper`) sind in `config/database.php` fest
-hinterlegt, nicht über `.env` konfigurierbar, und müssen mit `xml_proj/.env` (`DB_NAME_*`)
+hinterlegt, nicht über `.env` konfigurierbar, und müssen mit `TradingJournal-Weaver/.env` (`DB_NAME_*`)
 übereinstimmen.
 
 ### Datenbank einrichten
 
-Das Schema wird durch `xml_proj` verwaltet — **keine Laravel-Migrations** für die Trading-Tabellen:
+Das Schema wird durch `TradingJournal-Weaver` verwaltet — **keine Laravel-Migrations** für die Trading-Tabellen:
 
 ```bash
-cd ../xml_proj
+cd ../TradingJournal-Weaver
 python -m tools.maintenance.reset_IBKR_DB money dein_user_
 ```
 

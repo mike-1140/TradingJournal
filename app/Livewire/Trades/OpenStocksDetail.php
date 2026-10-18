@@ -68,7 +68,7 @@ class OpenStocksDetail extends Component
             : null;
 
         // Herkunft bei Zuteilung/Ausübung: die auslösende Option teilt sich die linkID
-        // mit diesem Stock-Trade (siehe xml_proj: book_trades.py + migrate_backfill_assignment_linkid.py)
+        // mit diesem Stock-Trade (siehe TradingJournal-Weaver: book_trades.py + migrate_backfill_assignment_linkid.py)
         $assignmentOption = null;
         if ($this->trade->linkID) {
             $assignmentOption = TradeClose::on($connection)

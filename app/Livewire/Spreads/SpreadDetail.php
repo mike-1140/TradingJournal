@@ -96,7 +96,7 @@ class SpreadDetail extends Component
 
     /**
      * Stock-Trades aus Assignment/Exercise eines Legs (Zwangskauf/-verkauf zum Strike,
-     * meist sofort glattgestellt), verknüpft über linkID (siehe xml_proj: book_trades.py
+     * meist sofort glattgestellt), verknüpft über linkID (siehe TradingJournal-Weaver: book_trades.py
      * + migrate_backfill_assignment_linkid.py). Eigene Query, da anderer assetCategory
      * (STK) als die Options-Legs und daher nicht über opt_strategyID auffindbar.
      */

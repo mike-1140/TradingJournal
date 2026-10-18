@@ -27,17 +27,17 @@ jobs:
       - name: TradingJournal auschecken
         uses: actions/checkout@v4
 
-      # xml_proj ist (noch) privat -- solange Phase 5 des Open-Source-Fahrplans
+      # TradingJournal-Weaver ist (noch) privat -- solange Phase 5 des Open-Source-Fahrplans
       # nicht erledigt ist, braucht dieser Schritt ein Fine-grained PAT mit
-      # Read-Zugriff auf xml_proj, hinterlegt als Repo-Secret
+      # Read-Zugriff auf TradingJournal-Weaver, hinterlegt als Repo-Secret
       # XMLPROJ_CHECKOUT_TOKEN (Settings > Secrets and variables > Actions).
-      # Sobald xml_proj public ist, kann "token:" entfallen.
-      - name: xml_proj auschecken (liefert das Trading-DB-Schema)
+      # Sobald TradingJournal-Weaver public ist, kann "token:" entfallen.
+      - name: TradingJournal-Weaver auschecken (liefert das Trading-DB-Schema)
         uses: actions/checkout@v4
         with:
-          repository: mike-1140/xml_proj
+          repository: mike-1140/TradingJournal-Weaver
           token: ${{ secrets.XMLPROJ_CHECKOUT_TOKEN }}
-          path: xml_proj
+          path: TradingJournal-Weaver
 
       - name: PHP einrichten
         uses: shivammathur/setup-php@v2
@@ -57,12 +57,12 @@ jobs:
           node-version: "20"
           cache: npm
 
-      - name: xml_proj-Abhaengigkeiten installieren
-        working-directory: xml_proj
+      - name: TradingJournal-Weaver-Abhaengigkeiten installieren
+        working-directory: TradingJournal-Weaver
         run: pip install -r requirements.txt
 
       - name: Trading-Test-Schema anlegen (phpunit_-Praefix in ibkr_test)
-        working-directory: xml_proj
+        working-directory: TradingJournal-Weaver
         env:
           DB_HOST: 127.0.0.1
           DB_PORT: 3306

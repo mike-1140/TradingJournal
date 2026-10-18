@@ -31,7 +31,7 @@ Neue Bugfixes bitte mit Regressionstest einreichen (Fix + Test, der ohne den Fix
 
 - Code-Kommentare und Log-Meldungen: Deutsch
 - Variablen- und Funktionsnamen: Englisch
-- Keine Laravel-Migrations für die Trading-Tabellen — das Schema wird von `xml_proj`
+- Keine Laravel-Migrations für die Trading-Tabellen — das Schema wird von `TradingJournal-Weaver`
   (`reset_IBKR_DB.py`) verwaltet. Migrations sind nur für laravel-eigene Tabellen
   (`users`, `cache`, `sessions`, …) zulässig.
 - Finanzwerte: `Decimal`/`decimal`-Spalten, kein `float`

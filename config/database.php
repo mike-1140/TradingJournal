@@ -49,7 +49,7 @@ return [
             'port' => env('TRADING_DB_PORT', '3306'),
             // DEMO_MODE zeigt hier auf dieselbe ibkr_demo-DB wie die Haupt-Connection —
             // die Demo-Trading-Daten liegen unter Environment TEST mit Prefix "demo_"
-            // (siehe xml_proj/tools/demo/README.md). Prefix bleibt dynamisch (ManagesEnvironment
+            // (siehe TradingJournal-Weaver/tools/demo/README.md). Prefix bleibt dynamisch (ManagesEnvironment
             // liest table_prefix des eingeloggten Users, für den Demo-User bereits "demo_").
             'database' => env('DEMO_MODE', false) ? 'ibkr_demo' : 'ibkr_test',
             'username' => env('TRADING_DB_USERNAME', 'root'),
