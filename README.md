@@ -52,8 +52,9 @@ php artisan key:generate
 
 ### .env konfigurieren
 
-Die App nutzt mehrere Datenbankverbindungen. `.env.example` liefert als Laravel-Standard
-`DB_CONNECTION=sqlite` — für dieses Projekt auf MySQL umstellen:
+Die App nutzt mehrere Datenbankverbindungen. `.env.example` ist bereits auf MySQL mit
+XAMPP-Standardwerten eingestellt (`root`, kein Passwort) — bei frischer XAMPP-Installation ist
+nichts zu ändern. Bei abweichenden Zugangsdaten diese Werte anpassen:
 
 ```env
 DB_CONNECTION=mysql
