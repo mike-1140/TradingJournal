@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\DB;
  * MySQL-Connections (trading_money/paper/test/...) -- SQLite kann das nicht
  * abbilden (siehe tests/README.md). Nutzt die 'trading_test'-Connection
  * (ibkr_test) mit einem eigenen, nur fuer automatisierte Tests reservierten
- * Praefix ('phpunit_'), NIE die echten karola_/mike_-Tabellen darin.
+ * Praefix ('phpunit_'), NIE die echten Benutzer-Tabellen (z.B. anna_/tom_) darin.
  *
  * WICHTIG: ManagesEnvironment::applyUserPrefix() ruft bei JEDEM Component-
  * mount() DB::purge($connection) auf (auch wenn sich der Praefix nicht

@@ -11,7 +11,7 @@ use Tests\TestCase;
  * eine Zeile an und sieht sie innerhalb der eigenen Transaktion. Test 2
  * startet frisch und findet die Tabelle leer vor -- der Rollback aus Test 1
  * hat nichts hinterlassen. Nutzt die 'symbols'-Tabelle unter dem
- * phpunit_-Praefix in ibkr_test, nie karola_/mike_.
+ * phpunit_-Praefix in ibkr_test, nie die echten Benutzer-Prefixe (z.B. anna_/tom_).
  */
 class TradingConnectionSmokeTest extends TestCase
 {

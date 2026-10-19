@@ -17,7 +17,7 @@ class PsychologyEntry extends BaseTradingModel
 
     /**
      * Nicht jeder User/jede Environment hat das Psychology-Modul eingerichtet
-     * (z.B. karola_/MONEY) — Trade-/Spread-Detailseiten fragen psychology_entries
+     * (z.B. tom_/MONEY) — Trade-/Spread-Detailseiten fragen psychology_entries
      * aber unabhängig davon ab. Ohne diesen Check wirft eine fehlende Tabelle
      * MySQL-Fehler 1146, den der globale Handler als harten "Datenbanktabelle
      * nicht gefunden"-Fehler anzeigt statt einfach "kein Eintrag vorhanden".

@@ -34,7 +34,7 @@ class TradingHelper
      * TEST ist immer dabei, da es nie fehlen soll (Default-Fallback).
      * Es gibt keine explizite User-Environment-Zuordnung — "genutzt" wird daran
      * erkannt, ob in der jeweiligen Environment-DB eine Tabelle mit dem
-     * table_prefix des Users existiert (z.B. karola_trades_close in ibkr_money).
+     * table_prefix des Users existiert (z.B. tom_trades_close in ibkr_money).
      * Ergebnis wird pro Prefix gecacht, da der Schema-Check einen echten
      * DB-Roundtrip pro Environment auslöst.
      */
@@ -63,7 +63,7 @@ class TradingHelper
 
                 // Der Tabellenname wird unten manuell mit $tablePrefix zusammengesetzt —
                 // die Connection selbst darf hier keinen eigenen Prefix mitbringen, sonst
-                // wird doppelt prefixt (z.B. "karola_mike_trades_close", falls die
+                // wird doppelt prefixt (z.B. "tom_anna_trades_close", falls die
                 // Connection von einem vorherigen Aufruf noch einen anderen User-Prefix
                 // gesetzt hat) und die Prüfung schlägt faelschlich fehl.
                 $originalPrefix = config("database.connections.{$connection}.prefix");

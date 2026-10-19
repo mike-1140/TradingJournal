@@ -11,7 +11,7 @@
    ```bash
    python -m tools.maintenance.reset_IBKR_DB test phpunit_
    ```
-   Legt Tabellen wie `phpunit_symbols`, `phpunit_trades_close` in der bereits vorhandenen `ibkr_test`-DB an — betrifft **nur** den `phpunit_`-Präfix, rührt `karola_*`/`mike_*` oder andere Präfixe nicht an (siehe `apply_table_prefix()` in `reset_IBKR_DB.py`).
+   Legt Tabellen wie `phpunit_symbols`, `phpunit_trades_close` in der bereits vorhandenen `ibkr_test`-DB an — betrifft **nur** den `phpunit_`-Präfix, rührt die echten Benutzer-Präfixe (z.B. `anna_*`/`tom_*`) oder andere Präfixe nicht an (siehe `apply_table_prefix()` in `reset_IBKR_DB.py`).
 
 ## Ausführen
 
@@ -47,7 +47,7 @@ Test verhält sich dadurch falsch, ohne dass der Grund offensichtlich ist. Fix:
 | `mysql` (Haupt-DB, `ibkr_laravel_test`) | `users`, `cache`, Sessions — echte Laravel-Migrationen | `RefreshDatabase`-Trait (migriert frisch pro Testklasse) |
 | `trading_test` (`ibkr_test`, Präfix `phpunit_`) | `TradeClose`, `Campaign`, `CampaignLedger`, … | `Tests\Concerns\UsesTradingTestConnection` (Transaktion pro Test, Rollback in `tearDown()`) |
 
-Nie direkt gegen `karola_*`/`mike_*` schreiben — die gehören zum manuellen TEST-Environment des Nutzers, nicht zu automatisierten Tests.
+Nie direkt gegen die echten Benutzer-Tabellen (z.B. `anna_*`/`tom_*`) schreiben — die gehören zum manuellen TEST-Environment des Nutzers, nicht zu automatisierten Tests.
 
 ### Falle: `ManagesEnvironment::applyUserPrefix()` killt eine schon offene Transaktion
 

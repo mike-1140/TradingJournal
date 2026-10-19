@@ -6,7 +6,7 @@ use App\Models\PsychologyEntry;
 
 /**
  * Nicht jeder User/jede Environment hat das Psychology-Modul eingerichtet
- * (z.B. karola_/MONEY) — die psychology_*-Tabellen existieren dann schlicht
+ * (z.B. tom_/MONEY) — die psychology_*-Tabellen existieren dann schlicht
  * nicht. Ohne diesen Check würde jede Psychology-Seite mit MySQL-Fehler 1146
  * abstürzen; stattdessen zeigen wir eine freundliche Hinweisseite.
  */
