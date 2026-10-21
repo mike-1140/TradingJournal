@@ -82,6 +82,7 @@ Das Schema wird durch `TradingJournal-Weaver` verwaltet — **keine Laravel-Migr
 
 ```bash
 cd ../TradingJournal-Weaver
+python -m tools.maintenance.reset_IBKR_DB test dein_user_
 python -m tools.maintenance.reset_IBKR_DB money dein_user_
 ```
 

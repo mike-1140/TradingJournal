@@ -146,7 +146,7 @@
                     </div>
                 </div>
                 <p class="text-muted" style="max-width: 68ch;">
-                    Die erste Seite nach dem Login — die Kommandobrücke, von der aus du mit einem Blick erfassen
+                    Die erste Seite nach dem Start — die Kommandobrücke, von der aus du mit einem Blick erfassen
                     kannst, wie es um dein Portfolio steht und wo gerade Risiko lauert, bevor du dich in ein Detail
                     vertiefst.
                 </p>
