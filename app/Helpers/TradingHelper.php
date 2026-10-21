@@ -30,32 +30,75 @@ class TradingHelper
     }
 
     /**
-     * Gibt nur die Environments zurück, die der übergebene User tatsächlich nutzt.
-     * TEST ist immer dabei, da es nie fehlen soll (Default-Fallback).
+     * Environments für den Environment-Dropdown: alle, in denen der User Tabellen hat,
+     * plus TEST — TEST steht immer im Dropdown, auch ohne Tabellen (sicherer
+     * Ausgangspunkt; fehlen die Tabellen, zeigt die App beim Auswählen eine Fehlermeldung).
+     */
+    public static function getInstalledEnvironments(?string $tablePrefix = null): array
+    {
+        return self::withTestEntry(self::getUsableEnvironments($tablePrefix));
+    }
+
+    /**
+     * Start-Environment einer neuen Session: das konfigurierte Default-Environment
+     * (TRADING_DEFAULT_ENV, sonst TEST), falls der User dort Tabellen hat — sonst das
+     * erste Environment mit Tabellen (Reihenfolge wie in config/trading.php). Verhindert,
+     * dass eine Installation ohne TEST-Tabellen direkt beim ersten Aufruf auf einen
+     * Datenbankfehler läuft.
+     */
+    public static function getStartEnvironment(?string $tablePrefix = null): string
+    {
+        return self::pickStartEnvironment(
+            config('trading.default_environment', 'TEST'),
+            self::getUsableEnvironments($tablePrefix)
+        );
+    }
+
+    /**
+     * Auswahl-Logik für getStartEnvironment(), ohne DB-Zugriff (testbar).
+     */
+    public static function pickStartEnvironment(string $default, array $usable): string
+    {
+        if (in_array($default, $usable, true) || $usable === []) {
+            return $default;
+        }
+
+        return $usable[0];
+    }
+
+    /**
+     * Ergänzt TEST in einer Environment-Liste, Reihenfolge wie in config/trading.php.
+     */
+    public static function withTestEntry(array $environments): array
+    {
+        return array_values(array_filter(
+            array_keys(config('trading.environments', [])),
+            fn ($key) => $key === 'TEST' || in_array($key, $environments, true)
+        ));
+    }
+
+    /**
+     * Gibt nur die Environments zurück, in denen der übergebene User tatsächlich Tabellen hat
+     * (TEST eingeschlossen, aber nur mit Tabellen).
      * Es gibt keine explizite User-Environment-Zuordnung — "genutzt" wird daran
      * erkannt, ob in der jeweiligen Environment-DB eine Tabelle mit dem
      * table_prefix des Users existiert (z.B. tom_trades_close in ibkr_money).
      * Ergebnis wird pro Prefix gecacht, da der Schema-Check einen echten
      * DB-Roundtrip pro Environment auslöst.
      */
-    public static function getInstalledEnvironments(?string $tablePrefix = null): array
+    public static function getUsableEnvironments(?string $tablePrefix = null): array
     {
         if ($tablePrefix === null) {
             $tablePrefix = auth()->user()?->table_prefix ?? '';
         }
 
-        $cacheKey = 'trading.installed_environments.' . ($tablePrefix !== '' ? $tablePrefix : '_none');
+        $cacheKey = 'trading.usable_environments.' . ($tablePrefix !== '' ? $tablePrefix : '_none');
 
         return Cache::remember($cacheKey, now()->addMinutes(10), function () use ($tablePrefix) {
             $environments = config('trading.environments', []);
             $installed = [];
 
             foreach ($environments as $key => $cfg) {
-                if ($key === 'TEST') {
-                    $installed[] = $key;
-                    continue;
-                }
-
                 $connection = $cfg['connection'] ?? null;
                 if (!$connection || $tablePrefix === '') {
                     continue;

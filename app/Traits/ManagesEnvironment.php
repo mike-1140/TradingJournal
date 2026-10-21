@@ -31,9 +31,10 @@ trait ManagesEnvironment
     {
         $sessionEnv = session('trading_environment');
 
-        // Wenn nicht gesetzt oder ungültig
+        // Wenn nicht gesetzt oder ungültig: Default-Environment, falls der User dort Tabellen
+        // hat, sonst das erste Environment mit Tabellen (siehe TradingHelper::getStartEnvironment)
         if (!TradingHelper::isValidEnvironment($sessionEnv)) {
-            $default = config('trading.default_environment', 'TEST');
+            $default = TradingHelper::getStartEnvironment();
             session(['trading_environment' => $default]);
 
             flow_log('Livewire: Trading environment initialized', [

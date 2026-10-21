@@ -77,7 +77,7 @@ public function test_...(): void
 
 | Datei | Prüft |
 |---|---|
-| `Unit/TradingHelperTest.php` | `TradingHelper` — reine Environment-/Connection-Logik, kein DB-Zugriff |
+| `Unit/TradingHelperTest.php` | `TradingHelper` — reine Environment-/Connection-Logik, kein DB-Zugriff; inkl. Start-Environment ohne TEST-Tabellen (Rückfall auf erstes Environment mit Tabellen) und TEST immer im Dropdown |
 | `Unit/DashboardListenerConfigTest.php` | Bug: Livewire-Self-Refresh-Antipattern — Dashboard darf auf kein Event hören, das es selbst dispatched |
 | `Feature/UserAccountSmokeTest.php` | Haupt-DB-Verbindung zeigt korrekt auf `ibkr_laravel_test`, `User::factory()` funktioniert |
 | `Feature/TradingConnectionSmokeTest.php` | `UsesTradingTestConnection` isoliert wirklich — Test 2 beweist, dass Test 1s Rollback nichts hinterlassen hat |

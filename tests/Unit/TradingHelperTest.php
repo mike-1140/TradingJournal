@@ -40,6 +40,29 @@ class TradingHelperTest extends TestCase
         $this->assertSame('trading_test', TradingHelper::getConnection('TEST'));
     }
 
+    public function test_start_environment_ist_default_wenn_dort_tabellen_existieren(): void
+    {
+        $this->assertSame('TEST', TradingHelper::pickStartEnvironment('TEST', ['MONEY', 'TEST']));
+    }
+
+    public function test_start_environment_faellt_ohne_test_tabellen_auf_erstes_environment_zurueck(): void
+    {
+        // Installation nur mit money: Default TEST hat keine Tabellen -> MONEY statt DB-Fehler
+        $this->assertSame('MONEY', TradingHelper::pickStartEnvironment('TEST', ['MONEY', 'PAPER']));
+    }
+
+    public function test_start_environment_bleibt_default_wenn_gar_keine_tabellen_existieren(): void
+    {
+        $this->assertSame('TEST', TradingHelper::pickStartEnvironment('TEST', []));
+    }
+
+    public function test_dropdown_enthaelt_test_immer_in_config_reihenfolge(): void
+    {
+        $this->assertSame(['MONEY', 'PAPER', 'TEST'], TradingHelper::withTestEntry(['PAPER', 'MONEY']));
+        $this->assertSame(['TEST'], TradingHelper::withTestEntry([]));
+        $this->assertSame(['MONEY', 'TEST'], TradingHelper::withTestEntry(['MONEY', 'TEST']));
+    }
+
     public function test_getConnection_faellt_bei_leerem_environment_auf_default_zurueck(): void
     {
         $this->assertSame(
