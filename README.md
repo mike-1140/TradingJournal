@@ -3,6 +3,9 @@
 Persönliches Trading-Journal zur Auswertung von IBKR-Trades (Interactive Brokers) —
 Weboberfläche über die Daten, die [TradingJournal-Weaver](https://github.com/mike-1140/TradingJournal-Weaver) importiert.
 
+**Offizielle Quelle:** [github.com/mike-1140/TradingJournal](https://github.com/mike-1140/TradingJournal) —
+entwickelt und gepflegt von mike-1140. Forks sind eigenständige Kopien und werden nicht vom Autor betreut.
+
 > **Teil eines Zwei-Repo-Setups:** TradingJournal zeigt nur an, was
 > [TradingJournal-Weaver](https://github.com/mike-1140/TradingJournal-Weaver) bereits in die Datenbank importiert
 > hat — **TradingJournal-Weaver zuerst einrichten** (siehe dessen README), danach hier weitermachen.
