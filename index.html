@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TradingJournal Handbücher</title>
+<meta name="description" content="Vorstellung, Benutzerhandbuch und technisches Handbuch des TradingJournal als PDF.">
+<style>
+  :root { --bg: #f7f8fa; --card: #ffffff; --text: #1c2430; --muted: #5b6573; --line: #dde2e8; --accent: #0d6efd; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #14181e; --card: #1c222a; --text: #e6e9ee; --muted: #9aa4b1; --line: #2c343e; --accent: #6ea8fe; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font: 16px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 720px; margin: 0 auto; padding: 40px 16px 56px; }
+  h1 { font-size: 1.6rem; margin: 0 0 6px; }
+  p.lead { color: var(--muted); margin: 0 0 28px; }
+  ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+  li { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; }
+  li a.title { color: var(--accent); font-weight: 600; font-size: 1.08rem; text-decoration: none; }
+  li a.title:hover { text-decoration: underline; }
+  li span { display: block; color: var(--muted); font-size: 0.93rem; margin-top: 4px; }
+  footer { margin-top: 32px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+</style>
+</head>
+<body>
+<main>
+  <h1>TradingJournal – Handbücher</h1>
+  <p class="lead">Ein Klick öffnet das PDF im Browser (neuer Tab). Speichern geht dort über das Download-Symbol des PDF-Betrachters.</p>
+  <ul>
+    <li>
+      <a class="title" href="TradingJournal-Vorstellung.pdf" target="_blank" rel="noopener">Vorstellung</a>
+      <span>Was das TradingJournal ist, Eckpunkte, Pro &amp; Contra, kleines Begriffs-Lexikon – 8 Seiten</span>
+    </li>
+    <li>
+      <a class="title" href="TradingJournal-Benutzerhandbuch.pdf" target="_blank" rel="noopener">Benutzerhandbuch</a>
+      <span>Einrichtung bei IBKR, Installation, Alltag, Updates, Fehlerbehebung</span>
+    </li>
+    <li>
+      <a class="title" href="TradingJournal-Technisches-Handbuch.pdf" target="_blank" rel="noopener">Technisches Handbuch</a>
+      <span>Architektur, Befehlsreferenz, Server-Betrieb, bekannte Grenzen</span>
+    </li>
+  </ul>
+  <footer>
+    Quellcode: <a href="https://github.com/mike-1140/TradingJournal">TradingJournal</a> ·
+    <a href="https://github.com/mike-1140/TradingJournal-Weaver">TradingJournal-Weaver</a> ·
+    ältere Versionen unter <a href="https://github.com/mike-1140/TradingJournal/releases">Releases</a>
+  </footer>
+</main>
+</body>
+</html>
