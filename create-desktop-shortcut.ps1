@@ -16,7 +16,8 @@ $ProjectDir = $PSScriptRoot
 $Desktop = [Environment]::GetFolderPath("Desktop")
 $ShortcutPath = Join-Path $Desktop "TradingJournal.lnk"
 
-$InnerCommand = "Set-Location '$ProjectDir'"
+# Apostroph im Pfad (z.B. Benutzerordner "O'Brien") verdoppeln, sonst endet der String zu frueh
+$InnerCommand = "Set-Location '$($ProjectDir.Replace("'", "''"))'"
 
 $WshShell = New-Object -ComObject WScript.Shell
 $Shortcut = $WshShell.CreateShortcut($ShortcutPath)

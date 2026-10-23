@@ -1,7 +1,7 @@
 # TradingJournal
 
 Persönliches Trading-Journal zur Auswertung von IBKR-Trades (Interactive Brokers) —
-Web-Oberfläche über die Daten, die [TradingJournal-Weaver](https://github.com/mike-1140/TradingJournal-Weaver) importiert.
+Weboberfläche über die Daten, die [TradingJournal-Weaver](https://github.com/mike-1140/TradingJournal-Weaver) importiert.
 
 > **Teil eines Zwei-Repo-Setups:** TradingJournal zeigt nur an, was
 > [TradingJournal-Weaver](https://github.com/mike-1140/TradingJournal-Weaver) bereits in die Datenbank importiert
@@ -28,6 +28,8 @@ Web-Oberfläche über die Daten, die [TradingJournal-Weaver](https://github.com/
 
 ## Voraussetzungen
 
+- **Windows** — andere Betriebssysteme werden derzeit nicht unterstützt (Anleitungen, Hilfsskripte
+  und die Ablageordner `C:\Trade_XML\`/`C:\Trade_CSV\` sind auf Windows zugeschnitten)
 - PHP 8.2+
 - Composer
 - Node.js + npm
@@ -151,8 +153,8 @@ Die ausführliche Doku ist in zwei Handbücher gegliedert — Übersicht aller K
 
 | Handbuch | Für wen | Wichtigste Kapitel |
 |---|---|---|
-| [Benutzerhandbuch](docs/handbuch/README.md#benutzerhandbuch) | Anwender, auch ohne Programmierkenntnisse | [Überblick: vom Trade zur Auswertung](docs/handbuch/benutzer/10-ueberblick.md), [IBKR einrichten](docs/handbuch/benutzer/20-ibkr-einrichten.md), [TradingJournal installieren](docs/handbuch/benutzer/50-tradingjournal-installieren.md), [Erster Start](docs/handbuch/benutzer/60-erster-start.md), [Updates](docs/handbuch/benutzer/80-updates.md) |
-| [Technisches Handbuch](docs/handbuch/README.md#technisches-handbuch) | Technisch Interessierte, Betrieb, Mitwirkende | [Architektur und Pipeline](docs/handbuch/technik/10-architektur-und-pipeline.md), [Installation (technisch)](docs/handbuch/technik/60-installation-tradingjournal.md), [Server-Betrieb](docs/handbuch/technik/70-server-betrieb.md), [Verteilter Abruf](docs/handbuch/technik/80-verteilter-abruf.md) |
+| [Benutzerhandbuch](docs/handbuch/README.md#benutzerhandbuch) | Anwender, auch ohne Programmierkenntnisse | [Überblick](docs/handbuch/benutzer/10-ueberblick.md), [IBKR einrichten](docs/handbuch/benutzer/20-ibkr-einrichten.md), [TradingJournal installieren](docs/handbuch/benutzer/50-tradingjournal-installieren.md), [Erster Start](docs/handbuch/benutzer/60-erster-start.md), [Updates einspielen](docs/handbuch/benutzer/80-updates.md) |
+| [Technisches Handbuch](docs/handbuch/README.md#technisches-handbuch) | Technisch Interessierte, Betrieb, Mitwirkende | [Architektur und Import-Pipeline](docs/handbuch/technik/10-architektur-und-pipeline.md), [Installation: TradingJournal](docs/handbuch/technik/60-installation-tradingjournal.md), [Server-Betrieb](docs/handbuch/technik/70-server-betrieb.md), [Verteilter Abruf](docs/handbuch/technik/80-verteilter-abruf.md) |
 
 Weitere Dateien in diesem Repo:
 
@@ -203,4 +205,4 @@ ausgeschlossen.
 - **Kein Support-Anspruch:** Hobbyprojekt, best effort — keine SLA, keine Garantie auf Reaktionszeit bei Issues oder PRs.
 - **Keine Finanzberatung:** Dieses Tool dient ausschließlich der Auswertung und Dokumentation eigener Trades. Es stellt keine Anlage- oder Steuerberatung dar und ersetzt keine professionelle Beratung.
 - **Keine Gewährleistung:** Für die Korrektheit der berechneten P&L-, ROI- oder sonstigen Kennzahlen wird keine Haftung übernommen. Vor jeder Nutzung für reale Entscheidungen die Zahlen gegen die eigenen Broker-Unterlagen prüfen.
-- **Kein IBKR-Bezug:** Dieses Projekt steht in keiner Verbindung zu und ist nicht autorisiert durch Interactive Brokers LLC. Es verarbeitet lediglich von IBKR bereitgestellte Exportformate (FlexQuery/Activity-Statements) über die dafür vorgesehenen Schnittstellen.
+- **Kein IBKR-Bezug:** Dieses Projekt steht in keiner Verbindung zu und ist nicht autorisiert durch Interactive Brokers LLC. Es verarbeitet lediglich von IBKR bereitgestellte Exportformate (Flex Query/Activity-Statements) über die dafür vorgesehenen Schnittstellen.

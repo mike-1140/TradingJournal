@@ -1,12 +1,12 @@
 <#
-TradingJournal + TradingJournal-Weaver — Update-Automatismus
+TradingJournal + TradingJournal-Weaver - Update-Automatismus
 =================================================
 Aktualisiert beide Repos (TradingJournal-Weaver, TradingJournal) auf den neuesten Stand,
 installiert Abhaengigkeiten, fuehrt DB-Migrationen aus und schreibt die
 Build-Version fuer die Sidebar-Anzeige.
 
 Voraussetzung: TradingJournal-Weaver liegt als Geschwister-Verzeichnis neben diesem Repo
-(../TradingJournal-Weaver relativ zu diesem Skript) — siehe README.md "Installation".
+(../TradingJournal-Weaver relativ zu diesem Skript) - siehe README.md "Installation".
 
 Aufruf (aus dem TradingJournal-Ordner):
   .\update.ps1

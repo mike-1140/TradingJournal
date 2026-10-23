@@ -101,10 +101,10 @@
                     <h2 class="text-uppercase text-muted" style="font-size: 0.72rem; letter-spacing: 0.1em;">Gilt seitenübergreifend</h2>
                     <div class="row g-4 mt-1">
                         <div class="col-md-4">
-                            <h3 class="h6"><i class="bi bi-database text-success"></i> Umgebung</h3>
+                            <h3 class="h6"><i class="bi bi-database text-success"></i> Environment</h3>
                             <p class="small text-muted mb-2">
                                 Fünf Welten, eine App: Das farbige Badge oben rechts verrät auf einen Blick, in
-                                welcher Datenbank-Umgebung du gerade unterwegs bist — vom scharfen Echtgeldkonto
+                                welchem Environment (welcher Datenbank) du gerade unterwegs bist — vom scharfen Echtgeldkonto
                                 bis zur risikofreien Testspielwiese.
                             </p>
                             <div class="d-flex gap-1 flex-wrap">
@@ -129,7 +129,7 @@
                             <p class="small text-muted mb-0">
                                 Wenn eine Idee gerade frisch im Kopf ist, soll sie nicht im Menü verloren gehen:
                                 Der gelbe Button oben rechts katapultiert dich ohne Umwege direkt ins
-                                Entscheidungsjournal, um einen neuen Trade-Plan festzuhalten.
+                                Trade Log, um einen neuen Trade-Plan festzuhalten.
                             </p>
                         </div>
                     </div>
