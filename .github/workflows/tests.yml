@@ -27,16 +27,12 @@ jobs:
       - name: TradingJournal auschecken
         uses: actions/checkout@v4
 
-      # TradingJournal-Weaver ist (noch) privat -- solange Phase 5 des Open-Source-Fahrplans
-      # nicht erledigt ist, braucht dieser Schritt ein Fine-grained PAT mit
-      # Read-Zugriff auf TradingJournal-Weaver, hinterlegt als Repo-Secret
-      # XMLPROJ_CHECKOUT_TOKEN (Settings > Secrets and variables > Actions).
-      # Sobald TradingJournal-Weaver public ist, kann "token:" entfallen.
+      # TradingJournal-Weaver ist oeffentlich - kein Token noetig (funktioniert so auch
+      # bei Pull Requests aus Forks, denen GitHub keine Secrets weitergibt).
       - name: TradingJournal-Weaver auschecken (liefert das Trading-DB-Schema)
         uses: actions/checkout@v4
         with:
           repository: mike-1140/TradingJournal-Weaver
-          token: ${{ secrets.XMLPROJ_CHECKOUT_TOKEN }}
           path: TradingJournal-Weaver
 
       - name: PHP einrichten
