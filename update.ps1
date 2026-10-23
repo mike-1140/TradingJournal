@@ -76,6 +76,10 @@ Assert-LastExit "pip install -r requirements.txt"
 # Dateipfad - die Skripte machen "from src.config import ..." und finden das
 # src-Package sonst nicht (sys.path enthaelt dann nur den Skript-Ordner).
 Step "DB-Migrationen (TradingJournal-Weaver/dev/migrate_*.py)"
+if (-not (Test-Path "$WeaverRoot\dev")) {
+    # Haeufigster Grund: Sparse-Klon ohne dev/ - dann fehlen Schema-Aenderungen unbemerkt
+    Write-Warning "Ordner TradingJournal-Weaver\dev fehlt - DB-Migrationen koennen nicht laufen. Beheben im Weaver-Ordner mit: git sparse-checkout add dev"
+}
 $MigrateScripts = Get-ChildItem "$WeaverRoot\dev\migrate_*.py" -ErrorAction SilentlyContinue
 if ($MigrateScripts) {
     foreach ($Script in $MigrateScripts) {
