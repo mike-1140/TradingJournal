@@ -16,16 +16,24 @@ class Campaigns extends Component
 
     public $search = '';
     public $filterStatus = 'OPEN';
+    public $filterType = 'ALL';   // ALL oder Schluessel aus Campaign::TYPES
     public $perPage = 20;
 
     protected $queryString = [
         'search'       => ['except' => ''],
         'filterStatus' => ['except' => 'OPEN'],
+        'filterType'   => ['except' => 'ALL'],
     ];
 
     public function setStatus($status)
     {
         $this->filterStatus = $status;
+        $this->resetPage();
+    }
+
+    public function setType($type)
+    {
+        $this->filterType = array_key_exists($type, Campaign::TYPES) ? $type : 'ALL';
         $this->resetPage();
     }
 
@@ -73,6 +81,11 @@ class Campaigns extends Component
 
         $env = $this->selectedEnvironment;
 
+        // Art-Filter (Aktien / Wheel / Optionen / Spreads) -- vor der Summe, damit sie mitfiltert
+        if (array_key_exists($this->filterType, Campaign::TYPES)) {
+            $query->ofType($this->filterType, $env);
+        }
+
         // Aggregat-PnL über alle gefilterten Kampagnen (alle Seiten)
         $allIds  = (clone $query)->pluck('id');
         $summary = \App\Models\CampaignLedger::whereIn('campaign_id', $allIds)
@@ -84,7 +97,8 @@ class Campaigns extends Component
             ->withSum(['ledgerEntries as total_pnl' => fn($q) => $q->where('environment', $env)], 'realized_pnl')
             ->withSum(['ledgerEntries as shares_balance' => fn($q) => $q->where('environment', $env)->where('assetCategory', 'STK')], 'inventory_delta')
             ->withSum(['ledgerEntries as total_proceeds' => fn($q) => $q->where('environment', $env)], 'proceeds')
-            ->withSum(['ledgerEntries as total_commission' => fn($q) => $q->where('environment', $env)], 'commission');
+            ->withSum(['ledgerEntries as total_commission' => fn($q) => $q->where('environment', $env)], 'commission')
+            ->withTypeFlags($env);
 
         $globalView = !empty($this->search) && strlen($this->search) >= 2;
 

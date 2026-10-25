@@ -37,9 +37,11 @@ class CreateUser extends Command
         $this->line("  Admin:   " . ($user->is_admin ? 'ja' : 'nein'));
         $this->newLine();
         $this->line("Nächster Schritt — Trading-Tabellen anlegen:");
+        // Pfad zum venv-Python je Betriebssystem (Windows: Scripts\python, sonst bin/python)
+        $python = PHP_OS_FAMILY === 'Windows' ? '.venv\\Scripts\\python' : '.venv/bin/python';
         $this->line("  cd TradingJournal-Weaver");
-        $this->line("  .venv\\Scripts\\python -m tools.maintenance.reset_IBKR_DB money {$user->table_prefix}");
-        $this->line("  .venv\\Scripts\\python -m tools.maintenance.setup_psychology_tables money {$user->table_prefix}");
+        $this->line("  {$python} -m tools.maintenance.reset_IBKR_DB money {$user->table_prefix}");
+        $this->line("  {$python} -m tools.maintenance.setup_psychology_tables money {$user->table_prefix}");
 
         return 0;
     }

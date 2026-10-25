@@ -56,4 +56,13 @@ class CampaignLedger extends BaseTradingModel
     {
         return $this->belongsTo(Campaign::class, 'campaign_id');
     }
+
+    /**
+     * Tranche in trades_open, aus der die Buchung stammt (source_table = 'TRADES_OPEN').
+     * Liefert u. a. die Spread-Kennung (opt_strategyID) fuer die Kampagnen-Art.
+     */
+    public function openTrade()
+    {
+        return $this->belongsTo(TradeOpen::class, 'source_id');
+    }
 }

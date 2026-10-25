@@ -155,6 +155,7 @@
                     <li class="mb-2"><strong class="text-body">Charts</strong> — die Performance in Bildern: der kumulierte P&amp;L-Verlauf, eine Aufschlüsselung nach Strategie, die monatliche Entwicklung, die Verteilung nach Instrument und der Kontostand-Verlauf über die Zeit</li>
                     <li class="mb-2"><strong class="text-body">Tabelle offener Positionen</strong> — alles, was gerade noch am Laufen ist, mit Symbol, Typ, Einstieg, Stückzahl, Preis, Cashflow, Strategie und Status</li>
                     <li>Eine Kachel mit den aktiven Kampagnen sowie eine Tabelle „Optionen, die diese Woche verfallen“ mit farblich markierter Resttage-Anzeige, damit kein Verfallstermin überrascht</li>
+                    <li>Die Tabelle „Aktuelle offene Positionen“ mit allen offenen Positionen — die Anzahl steht im Kopf, bei vielen Einträgen scrollt die Tabelle; Links führen zu „Offene Aktien“ und „Offene Optionen“</li>
                 </ul>
             </section>
 
@@ -228,6 +229,7 @@
                 </p>
                 <ul class="text-muted">
                     <li class="mb-2"><strong class="text-body">Liste</strong> Eine Karte pro Kampagne mit Symbol, Status (ACTIVE / PENDING / CLOSED), Brutto- und Netto-P&amp;L, aktuellem Bestand, Proceeds, Kommission und einem Badge, das verrät, ob die Kampagne bereits im Log dokumentiert ist; dazu ein Statusfilter und eine Symbolsuche über alle Kampagnen hinweg</li>
+                    <li class="mb-2"><strong class="text-body">Art</strong> Jede Karte trägt ein Etikett, und eine zweite Schaltergruppe filtert danach: <em>Aktien</em> (nur Aktien), <em>Wheel</em> (Aktien und Optionen in derselben Kampagne — ob mit Zuteilung oder Covered Calls auf gekaufte Aktien), <em>Spreads</em> (nur Optionen, mindestens ein erkannter Spread) und <em>Optionen</em> (nur Einzeloptionen). Die Art ergibt sich aus allen Buchungen der Kampagne; Summe und Seitenaufteilung folgen dem Filter</li>
                     <li><span class="docs-detail-tag">Detailseite</span> Hier wird aus Zahlen eine Geschichte: 6 Kennzahlen-Kacheln zu Aktien-/Optionsbestand, Cashflow, Kommission sowie Brutto- und Netto-P&amp;L, ein gestufter P&amp;L-Verlaufschart, eine Tagesübersicht und die vollständige Buchungshistorie (Ledger) mit Klartext-Beschreibung jeder einzelnen Buchung, laufendem Bestand und Farbcodierung für zusammengehörige Buchungen — etwa eine Rollposition, deren Legs sonst leicht auseinanderfallen würden</li>
                 </ul>
             </section>

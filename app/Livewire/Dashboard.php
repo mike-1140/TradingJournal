@@ -314,12 +314,11 @@ class Dashboard extends Component
         // ✅ Hole Connection explizit
         $connection = TradeClose::getConnectionForEnvironment($this->selectedEnvironment);
 
-        // Aktuelle offene Positionen
+        // Aktuelle offene Positionen (alle — die Tabelle im Widget scrollt)
         $currentOpenTrades = TradeOpen::on($connection)
             ->where('processed', 0)
             ->where('environment', $this->selectedEnvironment)
             ->orderBy('dateTime', 'desc')
-            ->limit(10)
             ->get();
 
         // Optionen, die in den nächsten 7 Tagen verfallen

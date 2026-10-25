@@ -50,6 +50,18 @@
                         Alle
                     </button>
                 </div>
+                <div class="btn-group shadow-sm" role="group" aria-label="Kampagnen-Art">
+                    <button wire:click="setType('ALL')"
+                            class="btn btn-{{ $filterType == 'ALL' ? 'secondary' : 'outline-secondary' }}">
+                        Alle Arten
+                    </button>
+                    @foreach(\App\Models\Campaign::TYPES as $typeKey => $type)
+                        <button wire:click="setType('{{ $typeKey }}')"
+                                class="btn btn-{{ $filterType == $typeKey ? 'secondary' : 'outline-secondary' }}">
+                            <i class="bi bi-{{ $type['icon'] }}"></i> {{ $type['label'] }}
+                        </button>
+                    @endforeach
+                </div>
                 @if($summary && $summary->campaign_count > 0)
                     <div class="d-flex align-items-center gap-3 bg-light rounded px-3 py-2">
                         <span class="text-muted small">
@@ -85,6 +97,13 @@
                                         <i class="bi bi-box-arrow-up-right" style="font-size: 0.65em;"></i>
                                     </a>
                                     <small class="text-muted">{{ $campaign->start_date->format('d.M.Y') }}</small>
+                                    @if($campaign->campaign_type)
+                                        @php $type = \App\Models\Campaign::TYPES[$campaign->campaign_type]; @endphp
+                                        <span class="badge rounded-pill bg-{{ $type['color'] }} bg-opacity-25 text-{{ $type['color'] }}-emphasis border border-{{ $type['color'] }}"
+                                              style="font-size: 0.7rem;" title="Kampagnen-Art">
+                                            <i class="bi bi-{{ $type['icon'] }}"></i> {{ $type['label'] }}
+                                        </span>
+                                    @endif
                                     @if($loggedCampaignIds->contains($campaign->id))
                                         <span class="badge rounded-pill bg-success bg-opacity-25 text-success border border-success" style="font-size: 0.7rem;" title="Dokumentiert">Log</span>
                                     @else
