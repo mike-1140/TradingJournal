@@ -65,7 +65,7 @@
                 <table class="table table-sm mb-0">
                     <tbody>
                         <tr><th style="width:40%">Put/Call</th><td>
-                            <span class="badge bg-{{ $trade->putCall === 'P' ? 'success' : 'danger' }}">
+                            <span class="badge bg-{{ $trade->putCall === 'C' ? 'success' : 'danger' }}">
                                 {{ $trade->putCall === 'P' ? 'PUT' : 'CALL' }}
                             </span>
                         </td></tr>

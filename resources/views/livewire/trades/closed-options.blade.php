@@ -46,8 +46,8 @@
                     <label class="form-label form-label-sm mb-1">Put/Call</label>
                     <select class="form-select form-select-sm" wire:model.live="filterPutCall">
                         <option value="">Alle</option>
-                        <option value="CALL">CALL</option>
-                        <option value="PUT">PUT</option>
+                        <option value="C">CALL</option>
+                        <option value="P">PUT</option>
                     </select>
                 </div>
                 <div>

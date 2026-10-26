@@ -164,7 +164,7 @@
                             <td>
                                 <strong>{{ $trade->symbol }}</strong>
                                 @if($trade->putCall)
-                                    <br><small class="badge bg-{{ $trade->putCall === 'CALL' ? 'success' : 'danger' }}">
+                                    <br><small class="badge bg-{{ $trade->putCall === 'C' ? 'success' : 'danger' }}">
                                         {{ $trade->putCall }}
                                     </small>
                                 @endif

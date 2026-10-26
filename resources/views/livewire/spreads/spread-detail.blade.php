@@ -120,8 +120,8 @@
             </div>
             <div class="card-body">
                 @php
-                    $puts = $this->legs->where('putCall', 'PUT')->sortBy(fn($leg) => $leg->strike ?? 0);
-                    $calls = $this->legs->where('putCall', 'CALL')->sortBy(fn($leg) => $leg->strike ?? 0);
+                    $puts = $this->legs->where('putCall', 'P')->sortBy(fn($leg) => $leg->strike ?? 0);
+                    $calls = $this->legs->where('putCall', 'C')->sortBy(fn($leg) => $leg->strike ?? 0);
 
                     $buySellField = $status === 'closed' ? 'buySellOpen' : 'buySell';
                     $priceField   = $status === 'closed' ? 'tradePriceOpen' : 'tradePrice';
@@ -247,7 +247,7 @@
                             <br><small class="text-muted">{{ $leg->underlyingSymbol }}</small>
                         </td>
                         <td>
-                            <span class="badge bg-{{ ($leg->putCall ?? '') === 'CALL' ? 'success' : 'danger' }}">
+                            <span class="badge bg-{{ ($leg->putCall ?? '') === 'C' ? 'success' : 'danger' }}">
                                 {{ $leg->putCall }}
                             </span>
                         </td>
@@ -340,8 +340,8 @@
                                 @php
                                     $maxRisk = 0;
                                     if($this->spread['leg_count'] == 4) {
-                                        $putsWithStrike  = $this->legs->where('putCall', 'PUT')->filter(fn($l) => $l->hasStrike());
-                                        $callsWithStrike = $this->legs->where('putCall', 'CALL')->filter(fn($l) => $l->hasStrike());
+                                        $putsWithStrike  = $this->legs->where('putCall', 'P')->filter(fn($l) => $l->hasStrike());
+                                        $callsWithStrike = $this->legs->where('putCall', 'C')->filter(fn($l) => $l->hasStrike());
                                         if($putsWithStrike->count() >= 2 && $callsWithStrike->count() >= 2) {
                                             $putWidth  = abs($putsWithStrike->max('strike')  - $putsWithStrike->min('strike'));
                                             $callWidth = abs($callsWithStrike->max('strike') - $callsWithStrike->min('strike'));

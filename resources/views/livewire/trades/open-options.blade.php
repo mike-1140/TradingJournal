@@ -44,8 +44,8 @@
                     <label class="form-label form-label-sm mb-1">Put/Call</label>
                     <select class="form-select form-select-sm" wire:model.live="filterPutCall">
                         <option value="">Alle</option>
-                        <option value="CALL">CALL</option>
-                        <option value="PUT">PUT</option>
+                        <option value="C">CALL</option>
+                        <option value="P">PUT</option>
                     </select>
                 </div>
                 <div>
@@ -131,7 +131,7 @@
                         </td>
                         <td class="text-center">{{ number_format(abs($trade->quantity), 0) }}</td>
                         <td class="text-center">
-                            <span class="badge bg-{{ $trade->putCall === 'CALL' ? 'success' : 'danger' }}">
+                            <span class="badge bg-{{ $trade->putCall === 'C' ? 'success' : 'danger' }}">
                                 {{ $trade->putCall }}
                             </span>
                         </td>

@@ -25,12 +25,12 @@ jobs:
 
     steps:
       - name: TradingJournal auschecken
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       # TradingJournal-Weaver ist oeffentlich - kein Token noetig (funktioniert so auch
       # bei Pull Requests aus Forks, denen GitHub keine Secrets weitergibt).
       - name: TradingJournal-Weaver auschecken (liefert das Trading-DB-Schema)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: mike-1140/TradingJournal-Weaver
           path: TradingJournal-Weaver
@@ -43,12 +43,12 @@ jobs:
           coverage: none
 
       - name: Python einrichten (fuer reset_IBKR_DB.py)
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.14"
 
       - name: Node einrichten
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: "20"
           cache: npm

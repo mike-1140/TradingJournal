@@ -128,7 +128,7 @@
 
                                     <dt class="col-sm-6 text-muted">Put/Call</dt>
                                     <dd class="col-sm-6">
-                                        <span class="badge bg-{{ $trade->putCall === 'CALL' ? 'success' : 'danger' }}">
+                                        <span class="badge bg-{{ $trade->putCall === 'C' ? 'success' : 'danger' }}">
                                             {{ $trade->putCall }}
                                         </span>
                                     </dd>
