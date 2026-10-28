@@ -38,6 +38,19 @@ Neue Bugfixes bitte mit Regressionstest einreichen (Fix + Test, der ohne den Fix
 - Weitere projektspezifische Muster (Traits, Event-System, Environment-Handling) stehen in
   [`CLAUDE.md`](CLAUDE.md)
 
+## Beispieldaten beisteuern
+
+Auch ohne Code hilfst du viel, wenn in deinem Konto ein Fall aus
+[Beispiele gesucht](BEISPIELE-GESUCHT.md) vorgekommen ist — ein Pull Request ist dafür nicht nötig:
+
+1. Den Fall in [Beispiele gesucht](BEISPIELE-GESUCHT.md) suchen (Nummer merken).
+2. Die Flex-Query-XML des Tages holen und **anonymisieren** — Kontonummer überall ersetzen,
+   Trade-IDs, Kurse und Mengen lassen. Anleitung: `docs/handbuch/technik/90-bekannte-grenzen.md`,
+   Abschnitt „Mithelfen“.
+3. Melden: am besten im Forum, in dem das TradingJournal vorgestellt wurde, oder mit GitHub-Konto
+   als Issue im Repository `TradingJournal-Weaver` mit der Vorlage
+   [„Beispiel für ungetesteten Fall“](https://github.com/mike-1140/TradingJournal-Weaver/issues/new?template=beispiel.yml).
+
 ## Secrets
 
 `.env`/`.env.testing` niemals committen. Falls versehentlich doch: sofort im Issue oder per

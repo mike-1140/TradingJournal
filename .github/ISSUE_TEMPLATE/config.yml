@@ -3,3 +3,6 @@ contact_links:
   - name: Handbuch und Fehlerbehebung
     url: https://github.com/mike-1140/TradingJournal/tree/master/docs/handbuch
     about: Viele Fragen zur Installation sind dort schon beantwortet.
+  - name: Beispiel für ungetesteten Fall
+    url: https://github.com/mike-1140/TradingJournal-Weaver/issues/new?template=beispiel.yml
+    about: Sonderfälle aus „Beispiele gesucht“ (anonymisierte Flex-Query-Daten) gehören ins Weaver-Repo.
