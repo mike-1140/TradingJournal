@@ -58,10 +58,7 @@
         </div>
     </div>
 
-    @include('livewire.log.partials.campaign-log-card', [
-        'linkedPlan'   => $linkedPlan,
-        'logCreateUrl' => route('log.create', ['campaign_id' => $campaign->id]),
-    ])
+    @include('livewire.log.partials.campaign-openings', ['view' => $openingsView, 'campaign' => $campaign])
 
     {{-- P&L-Verlauf --}}
     @if(count($chartData) > 2)

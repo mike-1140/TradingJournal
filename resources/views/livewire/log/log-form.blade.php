@@ -9,12 +9,12 @@
         </x-slot:actions>
     </x-page-header>
 
-    @if($campaignId)
-        <div class="alert alert-success py-2 d-flex align-items-center gap-2 mb-3">
-            <i class="bi bi-link-45deg"></i>
-            Verknüpft mit importierter Kampagne — Kopfdaten und Legs wurden vorausgefüllt.
+    @if($campaignId && !$opening)
+        <div class="alert alert-warning py-2 d-flex align-items-center gap-2 mb-3">
+            <i class="bi bi-exclamation-triangle"></i>
+            Die Eröffnung dieses Eintrags ist in den Buchungen der Kampagne nicht mehr zu finden — die Werte unten sind gespeicherte Eingaben.
         </div>
-    @elseif(count($campaignCandidates) > 0)
+    @elseif(!$campaignId && count($campaignCandidates) > 0)
         <div class="alert alert-info py-2 mb-3">
             <div class="d-flex align-items-center gap-2 mb-2">
                 <i class="bi bi-search"></i>
@@ -33,6 +33,9 @@
         </div>
     @endif
 
+    @if($opening)
+        @include('livewire.log.partials.opening-comment-form')
+    @else
     <form wire:submit="savePlan">
 
         {{-- ── Sektion 1: Kopfdaten ──────────────────────────────────────────── --}}
@@ -65,7 +68,7 @@
                     <div class="col-md-2">
                         <label class="form-label">Gebühren Open</label>
                         <input type="number" step="0.01" class="form-control @error('fees_open') is-invalid @enderror"
-                               wire:model="fees_open">
+                               wire:model.blur="fees_open">
                         @error('fees_open') <div class="invalid-feedback">{{ $message }}</div> @enderror
                     </div>
                     <div class="col-md-2">
@@ -179,7 +182,7 @@
                                 <td>
                                     <input type="number" step="0.01"
                                            class="form-control form-control-sm"
-                                           wire:model="legs.{{ $index }}.premium"
+                                           wire:model.blur="legs.{{ $index }}.premium"
                                            placeholder="1.20">
                                 </td>
                                 <td>
@@ -187,6 +190,7 @@
                                            class="form-control form-control-sm"
                                            wire:model="legs.{{ $index }}.fees"
                                            placeholder="1.30">
+                                    @error('legs.' . $index . '.fees') <div class="text-danger small">{{ $message }}</div> @enderror
                                 </td>
                                 <td>
                                     <input type="number" step="0.01"
@@ -272,19 +276,20 @@
                     <div class="col-md-3">
                         <label class="form-label">Prämie Close</label>
                         <input type="number" step="0.01" class="form-control"
-                               wire:model="premium_close">
+                               wire:model.blur="premium_close">
                     </div>
                     <div class="col-md-3">
                         <label class="form-label">Gebühren Close</label>
-                        <input type="number" step="0.01" class="form-control"
-                               wire:model="fees_close">
+                        <input type="number" step="0.01" class="form-control @error('fees_close') is-invalid @enderror"
+                               wire:model.blur="fees_close">
+                        @error('fees_close') <div class="invalid-feedback">{{ $message }}</div> @enderror
                     </div>
                     <div class="col-md-3">
-                        <label class="form-label">Realisierter G/V</label>
+                        <label class="form-label">Realisierter P&amp;L (brutto)</label>
                         <div class="input-group">
                             <input type="number" step="0.01"
                                    class="form-control @error('realized_pnl') is-invalid @enderror"
-                                   wire:model="realized_pnl">
+                                   wire:model.blur="realized_pnl">
                             <span class="input-group-text">$</span>
                             @error('realized_pnl') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>
@@ -312,4 +317,5 @@
         </div>
 
     </form>
+    @endif
 </div>

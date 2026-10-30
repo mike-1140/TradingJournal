@@ -71,7 +71,7 @@
         </div>
         <div class="col-md-4">
             <x-stat-card
-                title="Realisierter G/V"
+                title="Realisierter P&L"
                 :value="number_format($statistics['realized_pnl'], 2, ',', '') . ' $'"
                 :color="$statistics['realized_pnl'] >= 0 ? 'success' : 'danger'"
                 icon="graph-up" />
@@ -124,7 +124,7 @@
                     <th>Exit-Plan</th>
                     <th class="text-center">Legs</th>
                     <th class="text-center">Status</th>
-                    <th class="text-end">G/V</th>
+                    <th class="text-end">P&amp;L</th>
                     <th></th>
                 </tr>
                 </thead>
@@ -138,19 +138,19 @@
                             {{ $log->exit_plan ?? '—' }}
                         </td>
                         <td class="text-center">
-                            <span class="badge bg-secondary">{{ $log->legs_count }}</span>
+                            <span class="badge bg-secondary">{{ $log->display_legs }}</span>
                         </td>
                         <td class="text-center">
-                            @if($log->status === 'open')
+                            @if($log->display_status === 'open')
                                 <span class="badge bg-warning text-dark">Offen</span>
                             @else
                                 <span class="badge bg-success">Geschlossen</span>
                             @endif
                         </td>
                         <td class="text-end">
-                            @if($log->status === 'closed' && $log->realized_pnl !== null)
-                                <span class="{{ $log->realized_pnl >= 0 ? 'text-success' : 'text-danger' }} fw-bold">
-                                    {{ number_format($log->realized_pnl, 2, ',', '') }} $
+                            @if($log->display_status === 'closed' && $log->display_pnl !== null)
+                                <span class="{{ $log->display_pnl >= 0 ? 'text-success' : 'text-danger' }} fw-bold">
+                                    {{ number_format($log->display_pnl, 2, ',', '') }} $
                                 </span>
                             @else
                                 <small class="text-muted">—</small>

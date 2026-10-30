@@ -8,6 +8,8 @@ use Livewire\Component;
 use Livewire\WithPagination;
 use App\Models\CampaignLedger;
 use App\Models\TradePlan;
+use App\Support\CampaignOpenings;
+use App\Support\GreeksLookup;
 use App\Traits\ManagesEnvironment;
 use App\Traits\HasSmartBackUrl;
 
@@ -139,10 +141,6 @@ class CampaignDetail extends Component
 
     public function render()
     {
-        $linkedPlan = TradePlan::where('campaign_id', $this->campaignId)
-            ->where('environment', $this->selectedEnvironment)
-            ->first();
-
         $query = CampaignLedger::where('campaign_id', $this->campaignId)
             ->where('environment', $this->selectedEnvironment);
         $query = $this->applyTimeFilter($query, 'dateTime');
@@ -232,8 +230,52 @@ class CampaignDetail extends Component
             'dayStartBalances' => $dayStartBalances,
             'dailySummaries'   => $dailySummaries,
             'chartData'        => $chartData,
-            'linkedPlan'       => $linkedPlan,
+            'openingsView'     => $this->openingsView(),
         ]);
+    }
+
+    /**
+     * Eröffnungen der ganzen Kampagne (ohne Zeitfilter — die Zuordnung braucht alle Buchungen)
+     * mit ihren Kommentaren. Einträge, deren Eröffnung nicht im Ledger steht, bleiben als
+     * „orphans“ sichtbar, damit kein Kommentar verschwindet.
+     */
+    private function openingsView(): array
+    {
+        $ledger = CampaignLedger::where('campaign_id', $this->campaignId)
+            ->where('environment', $this->selectedEnvironment)
+            ->orderBy('dateTime')->orderBy('id')->get();
+        $result = CampaignOpenings::fromLedger($ledger);
+
+        $plans = TradePlan::with('legs')->where('campaign_id', $this->campaignId)
+            ->where('environment', $this->selectedEnvironment)->orderBy('id')->get();
+
+        $connection = TradePlan::getConnectionForEnvironment($this->selectedEnvironment);
+        $greeks     = new GreeksLookup($connection);
+        $first      = $result['openings'][0]['opened_at'] ?? null;
+        $unassigned = $plans;
+
+        $rows = [];
+        foreach ($result['openings'] as $opening) {
+            $plan = $unassigned->first(fn($p) => ($p->opened_at?->format('Y-m-d H:i:s') ?? $first) === $opening['opened_at']);
+            if ($plan) {
+                $unassigned = $unassigned->reject(fn($p) => $p->id === $plan->id);
+            }
+            $rows[] = [
+                'opening' => $opening,
+                'plan'    => $plan,
+                'details' => $greeks->detailsFor($opening, $plan?->legs ?? [], $plan),
+            ];
+        }
+
+        return [
+            'rows'        => $rows,
+            'orphans'     => $unassigned->values(),
+            'commented'   => collect($rows)->whereNotNull('plan')->count(),
+            'option_pnl'  => $result['option_pnl'],
+            'stock_pnl'   => $result['stock_pnl'],
+            'total_pnl'   => $result['total_pnl'],
+            'shares_open' => $result['shares_open'],
+        ];
     }
 
     // Strike als Dezimalzahl nur mit nötigen Stellen (2.5 → "2,5", 5.0 → "5")

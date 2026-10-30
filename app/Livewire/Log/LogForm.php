@@ -7,6 +7,8 @@ use App\Models\CampaignLedger;
 use App\Models\TradePlan;
 use App\Models\TradePlanLeg;
 use App\Models\User;
+use App\Support\CampaignOpenings;
+use App\Support\GreeksLookup;
 use App\Traits\ManagesEnvironment;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Config;
@@ -19,6 +21,8 @@ class LogForm extends Component
 
     public ?int $planId = null;
     public ?int $campaignId = null;
+    /** Eröffnung innerhalb der Kampagne, die dieser Eintrag kommentiert — die Zahlen kommen aus dem Ledger */
+    public ?string $openedAt = null;
     public array $campaignCandidates = [];
 
     // Quick-Entry-Modus
@@ -65,7 +69,7 @@ class LogForm extends Component
         'exit_plan'        => 'nullable',
         'rationale'        => 'nullable',
         'price_open'       => 'nullable|numeric',
-        'fees_open'        => 'nullable|numeric',
+        'fees_open'        => 'nullable|numeric|min:0',
         'ivp_open'         => 'nullable|integer|min:0|max:100',
         'ivr_open'         => 'nullable|integer|min:0|max:100',
         'legs.*.leg_type'  => 'required|max:10',
@@ -73,7 +77,7 @@ class LogForm extends Component
         'legs.*.strike'    => 'nullable|numeric',
         'legs.*.delta'     => 'nullable|numeric',
         'legs.*.premium'   => 'nullable|numeric',
-        'legs.*.fees'      => 'nullable|numeric',
+        'legs.*.fees'      => 'nullable|numeric|min:0',
         'legs.*.max_risk'  => 'nullable|numeric',
         'realized_pnl'     => 'nullable|numeric',
         'date_close'       => 'nullable|date',
@@ -81,8 +85,14 @@ class LogForm extends Component
         'ivp_close'        => 'nullable|integer|min:0|max:100',
         'ivr_close'        => 'nullable|integer|min:0|max:100',
         'premium_close'    => 'nullable|numeric',
-        'fees_close'       => 'nullable|numeric',
+        'fees_close'       => 'nullable|numeric|min:0',
         'actual_dte'       => 'nullable|integer',
+    ];
+
+    protected $messages = [
+        'fees_open.min'   => 'Gebühren bitte als positive Zahl eintragen.',
+        'fees_close.min'  => 'Gebühren bitte als positive Zahl eintragen.',
+        'legs.*.fees.min' => 'Gebühren bitte als positive Zahl eintragen.',
     ];
 
     public function mount(?int $id = null): void
@@ -113,7 +123,7 @@ class LogForm extends Component
 
             if ($campaignId = request()->query('campaign_id')) {
                 $this->campaignId = (int) $campaignId;
-                $this->prefillFromCampaign($this->campaignId);
+                $this->prefillFromOpening($this->campaignId, request()->query('opened_at'));
             }
         }
 
@@ -150,6 +160,7 @@ class LogForm extends Component
         $plan = TradePlan::on($connection)->with('legs')->findOrFail($id);
 
         $this->campaignId  = $plan->campaign_id;
+        $this->openedAt    = $plan->opened_at?->format('Y-m-d H:i:s');
         $this->underlying  = $plan->underlying;
         $this->date_open   = $plan->date_open->format('Y-m-d');
         $this->price_open  = $plan->price_open;
@@ -181,14 +192,18 @@ class LogForm extends Component
             'fees'     => $leg->fees,
             'max_risk' => $leg->max_risk,
         ])->toArray();
+
+        // Eintrag von vor der Migration bzw. ohne Wert: gehört zur ersten Eröffnung
+        if ($this->campaignId && !$this->openedAt) {
+            $this->openedAt = $this->campaignOpenings()['openings'][0]['opened_at'] ?? null;
+        }
     }
 
     /**
-     * Füllt Kopfdaten + Legs aus einer echten importierten Kampagne vor, damit der User
-     * nur noch die qualitativen Felder (Rationale, Exit-Plan, ...) ergänzen muss statt
-     * bereits bekannte Zahlen abzutippen.
+     * Neuer Kommentar zu einer Eröffnung der Kampagne: ohne Angabe die erste noch nicht
+     * kommentierte. Gibt es dazu schon einen Eintrag, wird dieser bearbeitet.
      */
-    private function prefillFromCampaign(int $campaignId): void
+    private function prefillFromOpening(int $campaignId, ?string $openedAt): void
     {
         $env        = $this->quickEnvironment ?: $this->selectedEnvironment;
         $connection = TradePlan::getConnectionForEnvironment($env);
@@ -199,87 +214,56 @@ class LogForm extends Component
             return;
         }
 
-        $ledger = CampaignLedger::on($connection)
-            ->where('campaign_id', $campaignId)
-            ->orderBy('dateTime')
-            ->get();
+        $openings = $this->campaignOpenings()['openings'];
+        $taken    = $this->takenOpenings($connection, $campaignId);
+        $opening  = CampaignOpenings::find($openings, $openedAt)
+            ?? collect($openings)->first(fn($o) => !in_array($o['opened_at'], $taken, true))
+            ?? ($openings[0] ?? null);
 
         $this->underlying = $campaign->symbol;
-        $this->date_open  = $campaign->start_date
-            ? Carbon::parse($campaign->start_date)->format('Y-m-d')
-            : now()->format('Y-m-d');
-        $this->strategy = $campaign->strategy;
+        $this->strategy   = $campaign->strategy;
+        $this->date_open  = $opening
+            ? Carbon::parse($opening['opened_at'])->format('Y-m-d')
+            : ($campaign->start_date ? Carbon::parse($campaign->start_date)->format('Y-m-d') : now()->format('Y-m-d'));
+        $this->openedAt   = $opening['opened_at'] ?? null;
 
-        $legTypeMap = [
-            'OPT_PUT_SELL'  => 'SP',
-            'OPT_CALL_SELL' => 'SC',
-            'OPT_PUT_BUY'   => 'LP',
-            'OPT_CALL_BUY'  => 'LC',
-        ];
-        $openingActions = [...array_keys($legTypeMap), 'STK_BUY', 'STK_SELL'];
-
-        $this->legs = [];
-        $stockOpenEntry = null;
-        $openingEntries = $ledger->whereIn('action', $openingActions);
-        $optionEntries  = $openingEntries->where('assetCategory', 'OPT')->values();
-        $verticalMaxRisk = $this->calculateVerticalSpreadMaxRisk($optionEntries);
-
-        foreach ($openingEntries as $entry) {
-            if ($entry->assetCategory === 'STK') {
-                $stockOpenEntry ??= $entry;
-                continue;
-            }
-
-            $dte = ($entry->expiry && $campaign->start_date)
-                ? Carbon::parse($campaign->start_date)->diffInDays(Carbon::parse($entry->expiry), false)
-                : null;
-
-            $this->legs[] = [
-                'leg_type' => $legTypeMap[$entry->action] ?? '',
-                'dte'      => $dte,
-                'strike'   => $entry->strike !== null ? round((float) $entry->strike, 2) : null,
-                'delta'    => null,
-                'premium'  => $entry->tradePrice !== null ? round((float) $entry->tradePrice, 2) : null,
-                'fees'     => $entry->commission !== null ? round(abs((float) $entry->commission), 2) : null,
-                'max_risk' => $verticalMaxRisk,
-            ];
-        }
-
-        if ($stockOpenEntry) {
-            $this->price_open = round((float) $stockOpenEntry->tradePrice, 2);
-        }
-
-        $openingFees      = $openingEntries->sum('commission');
-        $this->fees_open  = $openingFees != 0 ? round(abs((float) $openingFees), 2) : null;
-
-        if ($campaign->status === 'CLOSED') {
-            $this->status      = 'closed';
-            $this->showClosing = true;
-            $this->date_close  = $campaign->end_date
-                ? Carbon::parse($campaign->end_date)->format('Y-m-d')
-                : null;
-
-            $closingEntries = $ledger->filter(fn($e) =>
-                str_ends_with($e->action ?? '', '_CLOSE')
-                || str_ends_with($e->action ?? '', '_PARTIAL')
-                || in_array($e->action, ['OPTION_EXPIRATION', 'OPTION_EXERCISE', 'CASH_SETTLEMENT'], true)
-            );
-
-            $realizedPnl         = $ledger->sum('realized_pnl');
-            $this->realized_pnl  = $realizedPnl != 0 ? round((float) $realizedPnl, 2) : null;
-            $closingFees         = $closingEntries->sum('commission');
-            $this->fees_close    = $closingFees != 0 ? round(abs((float) $closingFees), 2) : null;
-
-            $stockCloseEntry = $closingEntries->firstWhere('assetCategory', 'STK');
-            if ($stockCloseEntry) {
-                $this->price_close = round((float) $stockCloseEntry->tradePrice, 2);
-            }
-
-            if ($campaign->start_date && $campaign->end_date) {
-                $this->actual_dte = Carbon::parse($campaign->start_date)
-                    ->diffInDays(Carbon::parse($campaign->end_date));
+        if ($this->openedAt && in_array($this->openedAt, $taken, true)) {
+            $existing = TradePlan::on($connection)->where('campaign_id', $campaignId)
+                ->where('opened_at', $this->openedAt)->first();
+            if ($existing) {
+                $this->planId = $existing->id;
+                $this->loadPlan($existing->id);
             }
         }
+    }
+
+    /** Eröffnungszeitpunkte der Kampagne, zu denen es schon einen Eintrag gibt. */
+    private function takenOpenings(string $connection, int $campaignId): array
+    {
+        return TradePlan::on($connection)->where('campaign_id', $campaignId)
+            ->whereNotNull('opened_at')->get()
+            ->map(fn($p) => $p->opened_at->format('Y-m-d H:i:s'))->all();
+    }
+
+    /** Ergebnis von CampaignOpenings::fromLedger() für die verknüpfte Kampagne. */
+    private function campaignOpenings(): array
+    {
+        $env        = $this->quickEnvironment ?: $this->selectedEnvironment;
+        $connection = TradePlan::getConnectionForEnvironment($env);
+
+        return CampaignOpenings::fromLedger(
+            CampaignLedger::on($connection)->where('campaign_id', $this->campaignId)
+                ->orderBy('dateTime')->orderBy('id')->get()
+        );
+    }
+
+    /** Die kommentierte Eröffnung, oder null (keine Verknüpfung bzw. Zeitpunkt nicht im Ledger). */
+    private function linkedOpening(): ?array
+    {
+        if (!$this->campaignId || !$this->openedAt) {
+            return null;
+        }
+        return CampaignOpenings::find($this->campaignOpenings()['openings'], $this->openedAt);
     }
 
     public function updatedUnderlying(): void
@@ -318,57 +302,22 @@ class LogForm extends Component
     }
 
     /**
-     * Verknüpft nachträglich mit einer bestehenden Kampagne — überschreibt keine bereits
-     * eingegebenen Felder (im Unterschied zu prefillFromCampaign bei Neuanlage).
+     * Verknüpft nachträglich mit einer bestehenden Kampagne: gehört zur noch nicht
+     * kommentierten Eröffnung, die dem Eintragsdatum am nächsten liegt.
      */
     public function linkCampaign(int $campaignId): void
     {
+        $env        = $this->quickEnvironment ?: $this->selectedEnvironment;
+        $connection = TradePlan::getConnectionForEnvironment($env);
+
         $this->campaignId = $campaignId;
         $this->campaignCandidates = [];
-    }
-
-    /**
-     * Max Risiko ist bei einem reinen 2-Leg-Vertical-Spread eindeutig berechenbar
-     * (Strike-Breite × Multiplier × Menge, abzüglich/zzgl. Netto-Cashflow inkl. Gebühren).
-     * Bei allem anderen (Naked, Iron Condor, ungleiche Mengen, ...) bleibt es manuell,
-     * da das Risiko dort nicht aus den reinen Eröffnungsdaten eindeutig hervorgeht.
-     */
-    private function calculateVerticalSpreadMaxRisk($optionEntries): ?float
-    {
-        if ($optionEntries->count() !== 2) {
-            return null;
-        }
-
-        [$a, $b] = $optionEntries->all();
-
-        if ($a->putCall !== $b->putCall || $a->putCall === null) {
-            return null; // keine reine Vertical (z.B. Straddle/Strangle)
-        }
-        if ($a->buySell === $b->buySell) {
-            return null; // gleiche Richtung, kein Spread
-        }
-        if (!$a->strike || !$b->strike || (float) $a->strike === (float) $b->strike) {
-            return null;
-        }
-        if (abs((float) $a->inventory_delta) !== abs((float) $b->inventory_delta)) {
-            return null; // ungleiche Mengen — Ratio-Spread, Risiko nicht eindeutig
-        }
-
-        $width      = abs((float) $a->strike - (float) $b->strike) * (float) ($a->multiplier ?: 100);
-        $qty        = abs((float) $a->inventory_delta) ?: 1;
-        $widthTotal = $width * $qty;
-        $netCash    = (float) $a->netcash + (float) $b->netcash;
-
-        if ($netCash > 0) {
-            // Credit Spread: Max Risiko = Breite − erhaltener Credit
-            return round($widthTotal - $netCash, 2);
-        }
-        if ($netCash < 0) {
-            // Debit Spread: Max Risiko = gezahltes Debit
-            return round(abs($netCash), 2);
-        }
-
-        return null;
+        $opening = CampaignOpenings::nearest(
+            $this->campaignOpenings()['openings'],
+            $this->date_open ?: now(),
+            $this->takenOpenings($connection, $campaignId)
+        );
+        $this->openedAt = $opening['opened_at'] ?? null;
     }
 
     public function addLeg(): void
@@ -412,9 +361,16 @@ class LogForm extends Component
         $env        = $this->quickEnvironment ?: $this->selectedEnvironment;
         $connection = TradePlan::getConnectionForEnvironment($env);
 
+        if ($opening = $this->linkedOpening()) {
+            $this->saveComment($connection, $env, $opening);
+            $this->redirect(route('log.list'), navigate: true);
+            return;
+        }
+
         $headerData = [
             'environment'    => $env,
             'campaign_id'    => $this->campaignId,
+            'opened_at'      => $this->openedAt,
             'underlying'     => $this->underlying,
             'date_open'      => $this->date_open,
             'price_open'     => $this->price_open ?: null,
@@ -463,15 +419,54 @@ class LogForm extends Component
         $this->redirect(route('log.list'), navigate: true);
     }
 
+    /**
+     * Eintrag zu einer Eröffnung: nur der Kommentar und von Hand eingetragene Kurs-/IV-Werte; alle
+     * übrigen Zahlen kommen aus dem Ledger, bestehende Spalten und Legs bleiben unberührt.
+     */
+    private function saveComment(string $connection, string $env, array $opening): void
+    {
+        $data = [
+            'environment' => $env,
+            'campaign_id' => $this->campaignId,
+            'opened_at'   => $this->openedAt,
+            'underlying'  => $this->underlying,
+            'date_open'   => Carbon::parse($opening['opened_at'])->format('Y-m-d'),
+            'price_open'  => $this->price_open ?: null,
+            'ivp_open'    => $this->ivp_open ?: null,
+            'ivr_open'    => $this->ivr_open ?: null,
+            'price_close' => $this->price_close ?: null,
+            'ivp_close'   => $this->ivp_close ?: null,
+            'ivr_close'   => $this->ivr_close ?: null,
+            'strategy'    => $this->strategy ?: null,
+            'exit_plan'   => $this->exit_plan ?: null,
+            'rationale'   => $this->rationale ?: null,
+            'notes'       => $this->notes ?: null,
+            'status'      => $opening['state'] === 'closed' ? 'closed' : 'open',
+        ];
+
+        if ($this->planId) {
+            TradePlan::on($connection)->findOrFail($this->planId)->update($data);
+        } else {
+            TradePlan::on($connection)->create($data);
+        }
+    }
+
     public function render()
     {
+        $env     = $this->quickEnvironment ?: $this->selectedEnvironment;
+        $opening = $this->linkedOpening();
+        $details = $opening
+            ? (new GreeksLookup(TradePlan::getConnectionForEnvironment($env)))->detailsFor($opening, $this->legs)
+            : null;
+        $data = ['opening' => $opening, 'details' => $details];
+
         if ($this->isQuick) {
-            return view('livewire.log.log-form')->layout('layouts.minimal', [
+            return view('livewire.log.log-form', $data)->layout('layouts.minimal', [
                 'quickEnv'    => $this->quickEnvironment ?: $this->selectedEnvironment,
                 'quickPrefix' => $this->quickPrefix ?: (auth()->user()?->table_prefix ?? ''),
             ]);
         }
 
-        return view('livewire.log.log-form');
+        return view('livewire.log.log-form', $data);
     }
 }

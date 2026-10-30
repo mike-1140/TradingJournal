@@ -14,6 +14,7 @@ class TradePlan extends BaseTradingModel
     protected $fillable = [
         'environment',
         'campaign_id',
+        'opened_at',
         'underlying',
         'date_open',
         'price_open',
@@ -45,6 +46,7 @@ class TradePlan extends BaseTradingModel
     ];
 
     protected $casts = [
+        'opened_at'     => 'datetime',
         'date_open'     => 'date',
         'date_close'    => 'date',
         'price_open'    => 'decimal:2',

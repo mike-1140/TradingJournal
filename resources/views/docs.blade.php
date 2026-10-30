@@ -288,11 +288,12 @@
                 </div>
                 <div class="card docs-subcard">
                     <div class="card-body">
-                        <h3 class="h6 d-flex align-items-baseline gap-2 flex-wrap">Neuer Eintrag · Bearbeiten <span class="docs-route">log.create / log.quick / log.edit</span></h3>
+                        <h3 class="h6 d-flex align-items-baseline gap-2 flex-wrap">Eintrag · Bearbeiten <span class="docs-route">log.create / log.quick / log.edit</span></h3>
                         <ul class="text-muted mb-0">
-                            <li class="mb-2">Kopfdaten erfassen den Kontext der Entscheidung: Datum, Underlying, Kurs, Gebühren, IVP/IVR, Strategie, Exit-Plan und die Begründung dahinter in eigenen Worten</li>
-                            <li class="mb-2">Eine dynamische Legs-Tabelle bildet die Struktur des Trades ab: Typ, Restlaufzeit, Strike, Delta, Prämie und Max-Risiko</li>
-                            <li>Beim Schließen ergänzt du Kurs, Prämie, realisiertes Ergebnis und Notizen — der Kreis von Plan zu Ausgang schließt sich</li>
+                            <li class="mb-2">Ein Eintrag kommentiert eine Eröffnung einer Kampagne: oben die Zahlen aus den Buchungen (Legs, Prämie in Dollar, Prämie beim Schließen, Gebühren, Ausgang, P&amp;L brutto) nur zur Anzeige, darunter Strategie, Exit-Plan, Begründung und Notizen</li>
+                            <li class="mb-2">Jede Eröffnung hat ihren eigenen Eintrag: weitere Eröffnungen derselben Kampagne kommentierst du auf deren Seite über „Kommentar“; Einträge lassen sich dort auch öffnen</li>
+                            <li class="mb-2">Läuft im Weaver der optionale Schritt „enrich“, stehen Delta je Leg sowie Kurs und IVR/IVP bei Eröffnung und Schließung bereit — markiert mit „aus IBKR berechnet“; eigene Eingaben haben Vorrang</li>
+                            <li>Einträge ohne Kampagne behalten das volle Formular mit Kopfdaten, Legs und „Trade schließen“ (Gebühren positiv, Ergebnis brutto); nach dem Verknüpfen gehören sie zur nächstgelegenen freien Eröffnung</li>
                         </ul>
                     </div>
                 </div>
