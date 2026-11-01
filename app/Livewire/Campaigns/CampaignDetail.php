@@ -9,7 +9,7 @@ use Livewire\WithPagination;
 use App\Models\CampaignLedger;
 use App\Models\TradePlan;
 use App\Support\CampaignOpenings;
-use App\Support\GreeksLookup;
+use App\Support\OpeningMarkers;
 use App\Traits\ManagesEnvironment;
 use App\Traits\HasSmartBackUrl;
 
@@ -24,6 +24,7 @@ class CampaignDetail extends Component
     protected $listeners = [
         'environment-changed' => '$refresh',
         'time-range-changed'  => '$refresh',
+        'opening-log-saved'   => '$refresh',
     ];
 
     public function mount($campaignId)
@@ -231,13 +232,14 @@ class CampaignDetail extends Component
             'dailySummaries'   => $dailySummaries,
             'chartData'        => $chartData,
             'openingsView'     => $this->openingsView(),
+            'coverage'         => OpeningMarkers::coverage([(int) $this->campaignId], TradePlan::getConnectionForEnvironment($this->selectedEnvironment), $this->selectedEnvironment)[(int) $this->campaignId],
+            'openingMarkers'   => OpeningMarkers::forEntries($ledgerEntries, TradePlan::getConnectionForEnvironment($this->selectedEnvironment), $this->selectedEnvironment),
         ]);
     }
 
     /**
-     * Eröffnungen der ganzen Kampagne (ohne Zeitfilter — die Zuordnung braucht alle Buchungen)
-     * mit ihren Kommentaren. Einträge, deren Eröffnung nicht im Ledger steht, bleiben als
-     * „orphans“ sichtbar, damit kein Kommentar verschwindet.
+     * Summen der ganzen Kampagne (ohne Zeitfilter) und Einträge, deren Eröffnung nicht im Ledger
+     * steht — sie bleiben als „orphans“ sichtbar, damit kein Kommentar verschwindet.
      */
     private function openingsView(): array
     {
@@ -245,32 +247,17 @@ class CampaignDetail extends Component
             ->where('environment', $this->selectedEnvironment)
             ->orderBy('dateTime')->orderBy('id')->get();
         $result = CampaignOpenings::fromLedger($ledger);
+        $times  = array_column($result['openings'], 'opened_at');
 
-        $plans = TradePlan::with('legs')->where('campaign_id', $this->campaignId)
-            ->where('environment', $this->selectedEnvironment)->orderBy('id')->get();
-
-        $connection = TradePlan::getConnectionForEnvironment($this->selectedEnvironment);
-        $greeks     = new GreeksLookup($connection);
-        $first      = $result['openings'][0]['opened_at'] ?? null;
-        $unassigned = $plans;
-
-        $rows = [];
-        foreach ($result['openings'] as $opening) {
-            $plan = $unassigned->first(fn($p) => ($p->opened_at?->format('Y-m-d H:i:s') ?? $first) === $opening['opened_at']);
-            if ($plan) {
-                $unassigned = $unassigned->reject(fn($p) => $p->id === $plan->id);
-            }
-            $rows[] = [
-                'opening' => $opening,
-                'plan'    => $plan,
-                'details' => $greeks->detailsFor($opening, $plan?->legs ?? [], $plan),
-            ];
-        }
+        $orphans = TradePlan::where('campaign_id', $this->campaignId)
+            ->where('environment', $this->selectedEnvironment)->orderBy('id')->get()
+            ->filter(fn($p) => $p->opened_at
+                ? !in_array($p->opened_at->format('Y-m-d H:i:s'), $times, true)
+                : $times === [])
+            ->values();
 
         return [
-            'rows'        => $rows,
-            'orphans'     => $unassigned->values(),
-            'commented'   => collect($rows)->whereNotNull('plan')->count(),
+            'orphans'     => $orphans,
             'option_pnl'  => $result['option_pnl'],
             'stock_pnl'   => $result['stock_pnl'],
             'total_pnl'   => $result['total_pnl'],

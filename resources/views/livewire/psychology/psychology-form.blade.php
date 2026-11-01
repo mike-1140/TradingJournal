@@ -1,9 +1,9 @@
 <div>
     <x-page-header
-        :title="$entryId ? 'Psychologie bearbeiten' : 'Trade-Psychologie erfassen'"
+        title="Psychologie bearbeiten"
         icon="journal-check">
         <x-slot:actions>
-            <a href="{{ route('psychology.list') }}" class="btn btn-sm btn-outline-secondary">
+            <a href="{{ route('log.list') }}" class="btn btn-sm btn-outline-secondary">
                 <i class="bi bi-arrow-left"></i> Zurück
             </a>
         </x-slot:actions>
@@ -239,7 +239,7 @@
             <button type="submit" class="btn btn-primary">
                 <i class="bi bi-floppy"></i> Speichern
             </button>
-            <a href="{{ route('psychology.list') }}" class="btn btn-outline-secondary">
+            <a href="{{ route('log.list') }}" class="btn btn-outline-secondary">
                 Abbrechen
             </a>
         </div>

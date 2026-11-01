@@ -28,12 +28,6 @@
         </div>
     </div>
 
-    @if($globalView)
-        <livewire:campaigns.global-symbol-detail
-            :symbol="$searchTerm"
-            :key="'global-'.$searchTerm"
-        />
-    @else
         <div class="container-fluid py-4">
             <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
                 <div class="btn-group shadow-sm">
@@ -50,6 +44,13 @@
                         Alle
                     </button>
                 </div>
+                @if($searching)
+                    <span class="badge bg-info text-dark"><i class="bi bi-search"></i> Suche über alle Status und Zeiträume</span>
+                @endif
+                <button wire:click="toggleUndocumented"
+                        class="btn shadow-sm btn-{{ $onlyUndocumented ? 'warning' : 'outline-warning' }}">
+                    <i class="bi bi-journal-plus"></i> Nicht dokumentiert
+                </button>
                 <div class="btn-group shadow-sm" role="group" aria-label="Kampagnen-Art">
                     <button wire:click="setType('ALL')"
                             class="btn btn-{{ $filterType == 'ALL' ? 'secondary' : 'outline-secondary' }}">
@@ -88,7 +89,7 @@
                             <div class="card h-100 shadow-sm border-0 campaign-card border-start border-4 border-{{ $borderColor }}"
                                  onclick="window.location='{{ route('campaigns.campaign.detail', $campaign->id) }}'"
                                  style="cursor: pointer;">
-                                <div class="card-header d-flex justify-content-between align-items-center">
+                                <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-1">
                                     <a href="{{ route('symbols.detail', $campaign->symbol) }}"
                                        class="badge bg-dark fs-6 text-decoration-none campaign-symbol-link"
                                        onclick="event.stopPropagation()"
@@ -104,10 +105,12 @@
                                             <i class="bi bi-{{ $type['icon'] }}"></i> {{ $type['label'] }}
                                         </span>
                                     @endif
-                                    @if($loggedCampaignIds->contains($campaign->id))
-                                        <span class="badge rounded-pill bg-success bg-opacity-25 text-success border border-success" style="font-size: 0.7rem;" title="Dokumentiert">Log</span>
-                                    @else
-                                        <span class="badge rounded-pill bg-light text-muted border" style="font-size: 0.7rem;" title="Nicht dokumentiert">Log</span>
+                                    @php $logCoverage = $coverage[$campaign->id] ?? ['documented' => 0, 'total' => 0]; @endphp
+                                    @if($logCoverage['total'] > 0)
+                                        <span class="badge rounded-pill {{ $logCoverage['documented'] >= $logCoverage['total'] ? 'bg-success bg-opacity-25 text-success border border-success' : ($logCoverage['documented'] > 0 ? 'bg-warning bg-opacity-25 text-warning-emphasis border border-warning' : 'bg-light text-muted border') }}"
+                                              style="font-size: 0.7rem;" title="{{ $logCoverage['documented'] }} von {{ $logCoverage['total'] }} Eröffnungen dokumentiert">
+                                            <i class="bi bi-journal-text"></i> {{ $logCoverage['documented'] }}/{{ $logCoverage['total'] }}
+                                        </span>
                                     @endif
                                     @if($campaign->status === 'PENDING')
                                         <span class="badge rounded-pill bg-warning text-dark" style="font-size: 0.7rem;">
@@ -167,7 +170,6 @@
                 {{ $campaigns->links('components.pagination') }}
             </div>
         </div>
-    @endif
 
     <style>
         .campaign-card {

@@ -1,57 +1,5 @@
 <div>
-    <x-page-header title="Trade Log" icon="journal-plus">
-        <x-slot:actions>
-            <a href="{{ route('log.create') }}" class="btn btn-sm btn-primary">
-                <i class="bi bi-plus-lg"></i> Neuer Eintrag
-            </a>
-        </x-slot:actions>
-    </x-page-header>
-
-    {{-- Nicht dokumentiert: Kampagnen ohne Log-Eintrag --}}
-    @if($unloggedCampaigns->isNotEmpty())
-        <div class="card mb-4 border-warning">
-            <div class="card-header bg-warning bg-opacity-25">
-                <i class="bi bi-exclamation-circle"></i>
-                {{ $unloggedCampaigns->count() }} Kampagne(n) ohne Log-Eintrag
-                <span class="text-muted small">(letzte {{ $unloggedWindowDays }} Tage, inkl. offene)</span>
-            </div>
-            <div class="list-group list-group-flush">
-                @foreach($unloggedCampaigns as $c)
-                    @php $candidates = $candidatesByCampaign[$c->id] ?? collect(); @endphp
-                    <div class="list-group-item d-flex justify-content-between align-items-center flex-wrap gap-2">
-                        <div>
-                            <strong class="fs-6">{{ $c->symbol }}</strong>
-                            <span class="text-muted small">{{ $c->strategy }}</span>
-                            <span class="badge bg-{{ $c->status === 'ACTIVE' ? 'primary' : ($c->status === 'PENDING' ? 'secondary' : 'success') }} ms-1">
-                                {{ $c->status }}
-                            </span>
-                            <div class="text-muted small">
-                                {{ $c->start_date?->format('d.m.Y') }}
-                                @if($c->end_date) &rarr; {{ $c->end_date->format('d.m.Y') }} @endif
-                            </div>
-                        </div>
-
-                        @if($candidates->isNotEmpty())
-                            <div class="d-flex flex-wrap gap-1">
-                                @foreach($candidates as $plan)
-                                    <button wire:click="linkPlanToCampaign({{ $plan->id }}, {{ $c->id }})"
-                                            wire:confirm="Vorab-Plan vom {{ $plan->date_open->format('d.m.Y') }} mit dieser Kampagne verknüpfen?"
-                                            class="btn btn-sm btn-outline-success">
-                                        <i class="bi bi-link-45deg"></i> Plan vom {{ $plan->date_open->format('d.m.Y') }} verknüpfen
-                                    </button>
-                                @endforeach
-                            </div>
-                        @else
-                            <a href="{{ route('log.create', ['campaign_id' => $c->id]) }}"
-                               class="btn btn-sm btn-outline-primary">
-                                <i class="bi bi-journal-plus"></i> Dokumentieren
-                            </a>
-                        @endif
-                    </div>
-                @endforeach
-            </div>
-        </div>
-    @endif
+    <x-page-header title="Trade-Kommentare" icon="journal-text" />
 
     {{-- Statistiken --}}
     <div class="row g-3 mb-4">
@@ -109,7 +57,7 @@
     </div>
 
     {{-- Tabelle --}}
-    <x-trade-card title="Log-Einträge" icon="list-ul">
+    <x-trade-card title="Kommentare" icon="list-ul">
         <x-slot:actions>
             <span class="badge bg-primary">{{ $logs->total() }}</span>
         </x-slot:actions>
@@ -121,7 +69,7 @@
                     <th>Datum</th>
                     <th>Underlying</th>
                     <th>Strategie</th>
-                    <th>Exit-Plan</th>
+                    <th>Kommentar</th>
                     <th class="text-center">Legs</th>
                     <th class="text-center">Status</th>
                     <th class="text-end">P&amp;L</th>
@@ -134,8 +82,26 @@
                         <td class="text-nowrap">{{ $log->date_open->format('d.m.Y') }}</td>
                         <td><strong class="fs-5">{{ $log->underlying }}</strong></td>
                         <td>{{ $log->strategy ?? '—' }}</td>
-                        <td class="text-muted small" style="max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                            {{ $log->exit_plan ?? '—' }}
+                        <td class="small" style="min-width: 300px;">
+                            @if($log->rationale)<div><span class="text-muted">Rationale:</span> {{ $log->rationale }}</div>@endif
+                            @if($log->exit_plan)<div><span class="text-muted">Exit-Plan:</span> {{ $log->exit_plan }}</div>@endif
+                            @if($log->notes)<div><span class="text-muted">Notizen:</span> {{ $log->notes }}</div>@endif
+                            @if($log->lessons_learned)<div><span class="text-muted">Abschluss:</span> {{ $log->lessons_learned }}</div>@endif
+                            @php $psych = $log->opening_at ? ($psychologyByKey[$log->campaign_id . '|' . $log->opening_at] ?? null) : null; @endphp
+                            @if($psych)
+                                <div class="mt-1 d-flex flex-wrap gap-1">
+                                    @if($psych->motivation)<span class="badge bg-info bg-opacity-25 text-body fw-normal">{{ $psych->motivation }}</span>@endif
+                                    @if($psych->emotion_pre || $psych->emotion_post)
+                                        <span class="badge bg-secondary bg-opacity-25 text-body fw-normal">Emotion {{ $psych->emotion_pre ?? '–' }} → {{ $psych->emotion_post ?? '–' }}</span>
+                                    @endif
+                                    @if($psych->complianceResults->count() > 0)
+                                        <span class="badge bg-secondary bg-opacity-25 text-body fw-normal">Regeln {{ $psych->complianceResults->where('complied', true)->count() }}/{{ $psych->complianceResults->count() }}</span>
+                                    @endif
+                                    @if($psych->complianceResults->where('tempted', true)->count() > 0)
+                                        <span class="badge bg-warning bg-opacity-25 text-body fw-normal"><i class="bi bi-lightning-charge-fill"></i> {{ $psych->complianceResults->where('tempted', true)->count() }}</span>
+                                    @endif
+                                </div>
+                            @endif
                         </td>
                         <td class="text-center">
                             <span class="badge bg-secondary">{{ $log->display_legs }}</span>
@@ -147,7 +113,7 @@
                                 <span class="badge bg-success">Geschlossen</span>
                             @endif
                         </td>
-                        <td class="text-end">
+                        <td class="text-end text-nowrap">
                             @if($log->display_status === 'closed' && $log->display_pnl !== null)
                                 <span class="{{ $log->display_pnl >= 0 ? 'text-success' : 'text-danger' }} fw-bold">
                                     {{ number_format($log->display_pnl, 2, ',', '') }} $
@@ -157,12 +123,18 @@
                             @endif
                         </td>
                         <td class="text-end text-nowrap">
-                            <a href="{{ route('log.edit', $log->id) }}"
-                               class="btn btn-sm btn-outline-primary">
-                                <i class="bi bi-pencil"></i>
-                            </a>
+                            @if($log->opening_at)
+                                <button type="button" class="btn btn-sm btn-outline-primary"
+                                        wire:click="$dispatch('open-opening-log', { campaignId: {{ $log->campaign_id }}, openedAt: '{{ $log->opening_at }}' })">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                            @else
+                                <a href="{{ route('log.edit', $log->id) }}" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                            @endif
                             <button wire:click="deleteEntry({{ $log->id }})"
-                                    wire:confirm="Eintrag wirklich löschen?"
+                                    wire:confirm="Eintrag und seine Psychologie wirklich löschen?"
                                     class="btn btn-sm btn-outline-danger">
                                 <i class="bi bi-trash"></i>
                             </button>
@@ -172,9 +144,9 @@
                     <tr>
                         <td colspan="8">
                             <x-empty-state
-                                icon="journal-plus"
-                                title="Keine Einträge vorhanden"
-                                message="Erstelle deinen ersten Log-Eintrag." />
+                                icon="journal-text"
+                                title="Keine Kommentare vorhanden"
+                                message="Kommentare entstehen über den Knopf in den Buchungszeilen einer Kampagne." />
                         </td>
                     </tr>
                 @endforelse
@@ -186,4 +158,22 @@
             {{ $logs->links('components.pagination') }}
         </x-slot:footer>
     </x-trade-card>
+
+    @if($unassignedPsychology->isNotEmpty())
+        <div class="card mt-4 border-warning">
+            <div class="card-header bg-warning bg-opacity-25 small">
+                <i class="bi bi-exclamation-triangle"></i> Psychologie-Einträge ohne passenden Kommentar
+            </div>
+            <div class="list-group list-group-flush">
+                @foreach($unassignedPsychology as $entry)
+                    <a href="{{ route('psychology.edit', $entry->id) }}" class="list-group-item list-group-item-action small">
+                        {{ $entry->trade_date->format('d.m.Y') }} · {{ $entry->symbol }}
+                        @if($entry->motivation)· {{ $entry->motivation }}@endif
+                    </a>
+                @endforeach
+            </div>
+        </div>
+    @endif
+
+    <livewire:log.opening-log-modal />
 </div>

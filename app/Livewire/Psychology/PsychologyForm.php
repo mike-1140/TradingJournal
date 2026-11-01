@@ -67,7 +67,7 @@ class PsychologyForm extends Component
         ];
     }
 
-    public function mount(?int $id = null): void
+    public function mount(int $id): void
     {
         $this->mountManagesEnvironment();
 
@@ -81,21 +81,15 @@ class PsychologyForm extends Component
 
         $this->loadRulesets();
 
-        // Auto-fill aus URL-Parametern
-        if ($tradeId = request()->query('trade_id')) {
-            $this->prefillTradeId   = $tradeId;
-            $this->prefillTradeType = request()->query('trade_type', 'closed');
-            $this->autofillFromTrade();
-        } elseif ($strategyId = request()->query('opt_strategyID')) {
-            $this->prefillStrategyId = $strategyId;
-            $this->prefillTradeType  = request()->query('trade_type', 'spread');
-            $this->autofillFromSpread();
+        // Zugeordnete Einträge laufen über das Log-Fenster, dieses Formular nur noch ohne Zuordnung
+        $connection = PsychologyEntry::getConnectionForEnvironment($this->selectedEnvironment);
+        $campaignId = PsychologyEntry::on($connection)->whereKey($id)->whereNotNull('opened_at')->value('campaign_id');
+        if ($campaignId) {
+            $this->redirect(route('campaigns.campaign.detail', $campaignId), navigate: true);
+            return;
         }
 
-        if ($id) {
-            $this->loadEntry($id);
-        }
-
+        $this->loadEntry($id);
         $this->refreshLinkCandidates();
     }
 
@@ -488,7 +482,7 @@ class PsychologyForm extends Component
             ]);
         }
 
-        $this->redirect(route('psychology.list'), navigate: true);
+        $this->redirect(route('log.list'), navigate: true);
     }
 
     public function render()

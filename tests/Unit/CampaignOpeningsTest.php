@@ -73,6 +73,25 @@ class CampaignOpeningsTest extends TestCase
         $this->assertSame(0.0, $r['shares_open']);
     }
 
+    /** Spread beidseitig ausgeübt, Aktien im selben Moment glatt: deren P&L gehört zur Eröffnung. */
+    public function test_sofort_glattgestellte_zuteilung_zaehlt_zur_eroeffnung(): void
+    {
+        $t = '2026-07-17 16:20:00';
+        $r = CampaignOpenings::fromLedger(collect([
+            $this->entry('2026-06-22 12:00:00', 'OPT_PUT_BUY', 95, 1, 5.28),
+            $this->entry('2026-06-22 12:00:00', 'OPT_PUT_SELL', 100, -1, 6.46),
+            $this->stock($t, 'STK_SELL', -100, 295),
+            $this->stock($t, 'STK_BUY_CLOSE', 100, 300, -500),
+            $this->entry($t, 'OPTION_EXERCISE', 95, -1, 0, -528),
+            $this->entry($t, 'OPTION_EXERCISE', 100, 1, 0, 646),
+        ]));
+
+        $this->assertCount(1, $r['openings'], 'die Aktien-Eröffnung der Zuteilung ist keine eigene');
+        $this->assertSame(-382.0, $r['openings'][0]['pnl']);
+        $this->assertSame(-382.0, $r['total_pnl']);
+        $this->assertSame(118.0, $r['option_pnl']);
+    }
+
     /** Derselbe Kontrakt wird zweimal eröffnet: Schließung trifft die älteste offene Eröffnung. */
     public function test_wiederholter_strike_wird_der_aeltesten_eroeffnung_zugeordnet(): void
     {

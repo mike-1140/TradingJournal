@@ -6,29 +6,23 @@ use App\Models\Campaign;
 use App\Models\CampaignLedger;
 use App\Models\TradePlan;
 use App\Models\TradePlanLeg;
-use App\Models\User;
 use App\Support\CampaignOpenings;
-use App\Support\GreeksLookup;
 use App\Traits\ManagesEnvironment;
-use Carbon\Carbon;
-use Illuminate\Support\Facades\Config;
-use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 
+/**
+ * Bearbeiten eines Eintrags, der zu keiner Eröffnung gehört: ohne Kampagne oder mit einem Zeitpunkt,
+ * der nicht mehr im Ledger steht. Alle anderen Einträge laufen über OpeningLogModal; alte Links
+ * darauf führen zur Kampagne.
+ */
 class LogForm extends Component
 {
     use ManagesEnvironment;
 
     public ?int $planId = null;
     public ?int $campaignId = null;
-    /** Eröffnung innerhalb der Kampagne, die dieser Eintrag kommentiert — die Zahlen kommen aus dem Ledger */
     public ?string $openedAt = null;
     public array $campaignCandidates = [];
-
-    // Quick-Entry-Modus
-    public bool   $isQuick          = false;
-    public string $quickPrefix      = '';
-    public string $quickEnvironment = ''; // separater Env-Override — wird nicht von mountManagesEnvironment() zurückgesetzt
 
     // Kopfdaten
     public string $underlying  = '';
@@ -95,69 +89,28 @@ class LogForm extends Component
         'legs.*.fees.min' => 'Gebühren bitte als positive Zahl eintragen.',
     ];
 
-    public function mount(?int $id = null): void
+    public function mount(int $id): void
     {
         $this->mountManagesEnvironment();
-        $this->date_open = now()->format('Y-m-d');
+        $this->planId = $id;
+        $this->loadPlan($id);
 
-        if (request()->routeIs('log.quick')) {
-            $this->isQuick = true;
-
-            if ($env = request()->query('env')) {
-                // Livewire ruft mountManagesEnvironment() nochmals nach mount() auf und
-                // würde selectedEnvironment zurücksetzen → quickEnvironment als separaten Speicher nutzen
-                $this->quickEnvironment = strtoupper($env);
-            }
-            if ($prefix = request()->query('prefix')) {
-                $this->quickPrefix = $prefix;
-            }
-
-            $this->applyQuickContext();
-        }
-
-        if ($id) {
-            $this->planId = $id;
-            $this->loadPlan($id);
-        } else {
-            $this->exit_plan = 'TP bei 50%, SL bei 2x Prämie';
-
-            if ($campaignId = request()->query('campaign_id')) {
-                $this->campaignId = (int) $campaignId;
-                $this->prefillFromOpening($this->campaignId, request()->query('opened_at'));
-            }
+        if ($this->campaignId && $this->belongsToOpening()) {
+            $this->redirect(route('campaigns.campaign.detail', $this->campaignId), navigate: true);
+            return;
         }
 
         $this->refreshCampaignCandidates();
     }
 
-    public function hydrate(): void
+    private function connection(): string
     {
-        // Middleware setzt Prefix für Session-Environment — wir überschreiben für Quick-Mode
-        if ($this->isQuick) {
-            $this->applyQuickContext();
-        }
-    }
-
-    private function applyQuickContext(): void
-    {
-        // quickPrefix kommt aus der URL bzw. vom Client — nur Prefixe zulassen,
-        // die einem User in der users-Tabelle gehören, sonst auf eigenen Prefix zurückfallen
-        if ($this->quickPrefix !== '' && !User::where('table_prefix', $this->quickPrefix)->exists()) {
-            $this->quickPrefix = '';
-        }
-
-        $env        = $this->quickEnvironment ?: $this->selectedEnvironment;
-        $prefix     = $this->quickPrefix ?: (auth()->user()?->table_prefix ?? '');
-        $connection = TradePlan::getConnectionForEnvironment($env);
-        Config::set("database.connections.{$connection}.prefix", $prefix);
-        DB::purge($connection);
+        return TradePlan::getConnectionForEnvironment($this->selectedEnvironment);
     }
 
     private function loadPlan(int $id): void
     {
-        $env        = $this->quickEnvironment ?: $this->selectedEnvironment;
-        $connection = TradePlan::getConnectionForEnvironment($env);
-        $plan = TradePlan::on($connection)->with('legs')->findOrFail($id);
+        $plan = TradePlan::on($this->connection())->with('legs')->findOrFail($id);
 
         $this->campaignId  = $plan->campaign_id;
         $this->openedAt    = $plan->opened_at?->format('Y-m-d H:i:s');
@@ -192,78 +145,24 @@ class LogForm extends Component
             'fees'     => $leg->fees,
             'max_risk' => $leg->max_risk,
         ])->toArray();
-
-        // Eintrag von vor der Migration bzw. ohne Wert: gehört zur ersten Eröffnung
-        if ($this->campaignId && !$this->openedAt) {
-            $this->openedAt = $this->campaignOpenings()['openings'][0]['opened_at'] ?? null;
-        }
     }
 
-    /**
-     * Neuer Kommentar zu einer Eröffnung der Kampagne: ohne Angabe die erste noch nicht
-     * kommentierte. Gibt es dazu schon einen Eintrag, wird dieser bearbeitet.
-     */
-    private function prefillFromOpening(int $campaignId, ?string $openedAt): void
+    private function openings(int $campaignId): array
     {
-        $env        = $this->quickEnvironment ?: $this->selectedEnvironment;
-        $connection = TradePlan::getConnectionForEnvironment($env);
-
-        $campaign = Campaign::on($connection)->find($campaignId);
-        if (!$campaign) {
-            $this->campaignId = null;
-            return;
-        }
-
-        $openings = $this->campaignOpenings()['openings'];
-        $taken    = $this->takenOpenings($connection, $campaignId);
-        $opening  = CampaignOpenings::find($openings, $openedAt)
-            ?? collect($openings)->first(fn($o) => !in_array($o['opened_at'], $taken, true))
-            ?? ($openings[0] ?? null);
-
-        $this->underlying = $campaign->symbol;
-        $this->strategy   = $campaign->strategy;
-        $this->date_open  = $opening
-            ? Carbon::parse($opening['opened_at'])->format('Y-m-d')
-            : ($campaign->start_date ? Carbon::parse($campaign->start_date)->format('Y-m-d') : now()->format('Y-m-d'));
-        $this->openedAt   = $opening['opened_at'] ?? null;
-
-        if ($this->openedAt && in_array($this->openedAt, $taken, true)) {
-            $existing = TradePlan::on($connection)->where('campaign_id', $campaignId)
-                ->where('opened_at', $this->openedAt)->first();
-            if ($existing) {
-                $this->planId = $existing->id;
-                $this->loadPlan($existing->id);
-            }
-        }
-    }
-
-    /** Eröffnungszeitpunkte der Kampagne, zu denen es schon einen Eintrag gibt. */
-    private function takenOpenings(string $connection, int $campaignId): array
-    {
-        return TradePlan::on($connection)->where('campaign_id', $campaignId)
-            ->whereNotNull('opened_at')->get()
-            ->map(fn($p) => $p->opened_at->format('Y-m-d H:i:s'))->all();
-    }
-
-    /** Ergebnis von CampaignOpenings::fromLedger() für die verknüpfte Kampagne. */
-    private function campaignOpenings(): array
-    {
-        $env        = $this->quickEnvironment ?: $this->selectedEnvironment;
-        $connection = TradePlan::getConnectionForEnvironment($env);
-
         return CampaignOpenings::fromLedger(
-            CampaignLedger::on($connection)->where('campaign_id', $this->campaignId)
+            CampaignLedger::on($this->connection())->where('campaign_id', $campaignId)
                 ->orderBy('dateTime')->orderBy('id')->get()
-        );
+        )['openings'];
     }
 
-    /** Die kommentierte Eröffnung, oder null (keine Verknüpfung bzw. Zeitpunkt nicht im Ledger). */
-    private function linkedOpening(): ?array
+    /** Ohne opened_at (vor der Migration) gehört der Eintrag zur ersten Eröffnung. */
+    private function belongsToOpening(): bool
     {
-        if (!$this->campaignId || !$this->openedAt) {
-            return null;
-        }
-        return CampaignOpenings::find($this->campaignOpenings()['openings'], $this->openedAt);
+        $openings = $this->openings($this->campaignId);
+
+        return $this->openedAt
+            ? CampaignOpenings::find($openings, $this->openedAt) !== null
+            : $openings !== [];
     }
 
     public function updatedUnderlying(): void
@@ -274,7 +173,7 @@ class LogForm extends Component
     /**
      * Sucht passende Kampagnen für den aktuellen Underlying — unabhängig von Alter/Status,
      * damit auch länger zurückliegende oder bereits geschlossene Kampagnen nachträglich
-     * verknüpft werden können (die "nicht dokumentiert"-Liste zeigt nur die letzten 30 Tage).
+     * verknüpft werden können.
      */
     private function refreshCampaignCandidates(): void
     {
@@ -283,11 +182,8 @@ class LogForm extends Component
             return;
         }
 
-        $env        = $this->quickEnvironment ?: $this->selectedEnvironment;
-        $connection = TradePlan::getConnectionForEnvironment($env);
-
-        $this->campaignCandidates = Campaign::on($connection)
-            ->where('environment', $env)
+        $this->campaignCandidates = Campaign::on($this->connection())
+            ->where('environment', $this->selectedEnvironment)
             ->where('symbol', strtoupper($this->underlying))
             ->orderByDesc('start_date')
             ->limit(10)
@@ -302,22 +198,23 @@ class LogForm extends Component
     }
 
     /**
-     * Verknüpft nachträglich mit einer bestehenden Kampagne: gehört zur noch nicht
-     * kommentierten Eröffnung, die dem Eintragsdatum am nächsten liegt.
+     * Verknüpft mit einer bestehenden Kampagne: der Eintrag gehört dann zur noch nicht
+     * kommentierten Eröffnung, die seinem Datum am nächsten liegt, und ist dort weiter zu bearbeiten.
      */
     public function linkCampaign(int $campaignId): void
     {
-        $env        = $this->quickEnvironment ?: $this->selectedEnvironment;
-        $connection = TradePlan::getConnectionForEnvironment($env);
+        $taken = TradePlan::on($this->connection())->where('campaign_id', $campaignId)
+            ->whereNotNull('opened_at')->get()
+            ->map(fn($p) => $p->opened_at->format('Y-m-d H:i:s'))->all();
+        $opening = CampaignOpenings::nearest($this->openings($campaignId), $this->date_open ?: now(), $taken);
+        if (!$opening) {
+            return;
+        }
 
-        $this->campaignId = $campaignId;
-        $this->campaignCandidates = [];
-        $opening = CampaignOpenings::nearest(
-            $this->campaignOpenings()['openings'],
-            $this->date_open ?: now(),
-            $this->takenOpenings($connection, $campaignId)
-        );
-        $this->openedAt = $opening['opened_at'] ?? null;
+        TradePlan::on($this->connection())->findOrFail($this->planId)
+            ->update(['campaign_id' => $campaignId, 'opened_at' => $opening['opened_at']]);
+
+        $this->redirect(route('campaigns.campaign.detail', $campaignId), navigate: true);
     }
 
     public function addLeg(): void
@@ -358,19 +255,9 @@ class LogForm extends Component
         $this->underlying = strtoupper(trim($this->underlying));
         $this->validate();
 
-        $env        = $this->quickEnvironment ?: $this->selectedEnvironment;
-        $connection = TradePlan::getConnectionForEnvironment($env);
-
-        if ($opening = $this->linkedOpening()) {
-            $this->saveComment($connection, $env, $opening);
-            $this->redirect(route('log.list'), navigate: true);
-            return;
-        }
-
-        $headerData = [
-            'environment'    => $env,
-            'campaign_id'    => $this->campaignId,
-            'opened_at'      => $this->openedAt,
+        $connection = $this->connection();
+        $plan = TradePlan::on($connection)->findOrFail($this->planId);
+        $plan->update([
             'underlying'     => $this->underlying,
             'date_open'      => $this->date_open,
             'price_open'     => $this->price_open ?: null,
@@ -388,16 +275,9 @@ class LogForm extends Component
             'premium_close'  => $this->premium_close ?: null,
             'fees_close'     => $this->fees_close ?: null,
             'realized_pnl'   => $this->realized_pnl ?: null,
-            'actual_dte'      => $this->actual_dte ?: null,
-            'notes'           => $this->notes ?: null,
-        ];
-
-        if ($this->planId) {
-            $plan = TradePlan::on($connection)->findOrFail($this->planId);
-            $plan->update($headerData);
-        } else {
-            $plan = TradePlan::on($connection)->create($headerData);
-        }
+            'actual_dte'     => $this->actual_dte ?: null,
+            'notes'          => $this->notes ?: null,
+        ]);
 
         TradePlanLeg::on($connection)->where('plan_id', $plan->id)->delete();
         foreach (array_values($this->legs) as $index => $leg) {
@@ -419,54 +299,8 @@ class LogForm extends Component
         $this->redirect(route('log.list'), navigate: true);
     }
 
-    /**
-     * Eintrag zu einer Eröffnung: nur der Kommentar und von Hand eingetragene Kurs-/IV-Werte; alle
-     * übrigen Zahlen kommen aus dem Ledger, bestehende Spalten und Legs bleiben unberührt.
-     */
-    private function saveComment(string $connection, string $env, array $opening): void
-    {
-        $data = [
-            'environment' => $env,
-            'campaign_id' => $this->campaignId,
-            'opened_at'   => $this->openedAt,
-            'underlying'  => $this->underlying,
-            'date_open'   => Carbon::parse($opening['opened_at'])->format('Y-m-d'),
-            'price_open'  => $this->price_open ?: null,
-            'ivp_open'    => $this->ivp_open ?: null,
-            'ivr_open'    => $this->ivr_open ?: null,
-            'price_close' => $this->price_close ?: null,
-            'ivp_close'   => $this->ivp_close ?: null,
-            'ivr_close'   => $this->ivr_close ?: null,
-            'strategy'    => $this->strategy ?: null,
-            'exit_plan'   => $this->exit_plan ?: null,
-            'rationale'   => $this->rationale ?: null,
-            'notes'       => $this->notes ?: null,
-            'status'      => $opening['state'] === 'closed' ? 'closed' : 'open',
-        ];
-
-        if ($this->planId) {
-            TradePlan::on($connection)->findOrFail($this->planId)->update($data);
-        } else {
-            TradePlan::on($connection)->create($data);
-        }
-    }
-
     public function render()
     {
-        $env     = $this->quickEnvironment ?: $this->selectedEnvironment;
-        $opening = $this->linkedOpening();
-        $details = $opening
-            ? (new GreeksLookup(TradePlan::getConnectionForEnvironment($env)))->detailsFor($opening, $this->legs)
-            : null;
-        $data = ['opening' => $opening, 'details' => $details];
-
-        if ($this->isQuick) {
-            return view('livewire.log.log-form', $data)->layout('layouts.minimal', [
-                'quickEnv'    => $this->quickEnvironment ?: $this->selectedEnvironment,
-                'quickPrefix' => $this->quickPrefix ?: (auth()->user()?->table_prefix ?? ''),
-            ]);
-        }
-
-        return view('livewire.log.log-form', $data);
+        return view('livewire.log.log-form');
     }
 }

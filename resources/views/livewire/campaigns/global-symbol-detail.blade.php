@@ -6,9 +6,6 @@
         </h5>
         <div class="d-flex align-items-center gap-3">
             <span class="badge bg-info text-dark">{{ $metrics->campaign_count }} Kampagnen</span>
-            <button wire:click="$dispatch('clear-search')" class="btn btn-sm btn-outline-light">
-                Schließen
-            </button>
         </div>
     </div>
 
@@ -76,6 +73,7 @@
                     <th class="text-end" style="width: 90px;">
                         <i class="bi bi-stack" title="Laufender Aktienbestand"></i> Bestand
                     </th>
+                    <th class="text-center" style="width: 45px;">Log</th>
                 </tr>
             </thead>
             <tbody>
@@ -102,7 +100,7 @@
                     @if($dateKey !== $currentDateKey)
                         @php $currentDateKey = $dateKey; @endphp
                         <tr class="date-separator">
-                            <td colspan="10">
+                            <td colspan="11">
                                 <i class="bi bi-calendar3 me-1"></i>
                                 {{ $entryDt->locale('de')->isoFormat('dddd, D. MMMM YYYY') }}
                             </td>
@@ -158,11 +156,12 @@
                                 </span>
                             @endif
                         </td>
+                        <td class="text-center">@include('livewire.log.partials.opening-button', ['marker' => $openingMarkers[$entry->id] ?? null])</td>
                     </tr>
 
                 @empty
                     <tr>
-                        <td colspan="10" class="text-center text-muted py-5">
+                        <td colspan="11" class="text-center text-muted py-5">
                             Keine Buchungen für diesen Zeitraum.
                         </td>
                     </tr>
@@ -194,6 +193,7 @@
                                 <x-currency-value :value="$pageNetPnlGlobal" :currency="'USD'" :colored="true" />
                             </td>
                             <td></td>
+                            <td></td>
                         </tr>
                     @endif
                     <tr class="table-dark" style="font-size: 0.8rem;">
@@ -216,6 +216,7 @@
                         <td class="text-end">
                             <small class="fw-normal opacity-75">{{ $ledgerEntries->total() }} Buchungen</small>
                         </td>
+                        <td></td>
                     </tr>
                 </tfoot>
             @endif
@@ -328,4 +329,5 @@
             color: #212529;
         }
     </style>
+    <livewire:log.opening-log-modal />
 </div>

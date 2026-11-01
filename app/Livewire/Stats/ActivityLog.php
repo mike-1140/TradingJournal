@@ -3,6 +3,8 @@
 namespace App\Livewire\Stats;
 
 use App\Models\CampaignLedger;
+use App\Models\TradePlan;
+use App\Support\OpeningMarkers;
 use App\Traits\ManagesEnvironment;
 use Carbon\Carbon;
 use Livewire\Component;
@@ -20,6 +22,7 @@ class ActivityLog extends Component
 
     protected $listeners = [
         'environment-changed' => '$refresh',
+        'opening-log-saved'   => '$refresh',
     ];
 
     public function mount()
@@ -186,6 +189,7 @@ class ActivityLog extends Component
 
         return view('livewire.stats.activity-log', [
             'ledgerEntries' => $ledgerEntries,
+            'openingMarkers' => OpeningMarkers::forEntries($ledgerEntries, TradePlan::getConnectionForEnvironment($this->selectedEnvironment), $this->selectedEnvironment),
             'totalEntries'  => (clone $query)->count(),
             'metrics'       => $metrics,
             'periodStart'   => $start,

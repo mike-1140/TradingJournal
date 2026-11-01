@@ -119,16 +119,6 @@
                 </div>
             </div>
 
-            {{-- Trade Log --}}
-            <a href="{{ route('log.list') }}"
-               class="sidebar-link {{ request()->routeIs('log.*') ? 'active' : '' }}">
-                <i class="bi bi-journal-plus"></i>
-                <span class="sidebar-text">Log</span>
-                @if($this->unloggedCount > 0)
-                    <span class="badge bg-warning text-dark ms-auto">{{ $this->unloggedCount }}</span>
-                @endif
-            </a>
-
             {{-- Psychologie --}}
             @php $psychOpen = request()->routeIs('psychology.*'); @endphp
             <a class="sidebar-link sidebar-toggle-btn {{ $psychOpen ? 'active' : '' }}"
@@ -140,16 +130,6 @@
             </a>
             <div id="nav-psychology" class="collapse {{ $psychOpen ? 'show' : '' }}">
                 <div class="sidebar-subnav">
-                    <a href="{{ route('psychology.list') }}"
-                       class="sidebar-link {{ request()->routeIs('psychology.list') ? 'active' : '' }}">
-                        <i class="bi bi-list-ul"></i>
-                        <span class="sidebar-text">Einträge</span>
-                    </a>
-                    <a href="{{ route('psychology.create') }}"
-                       class="sidebar-link {{ request()->routeIs('psychology.create') ? 'active' : '' }}">
-                        <i class="bi bi-plus-circle"></i>
-                        <span class="sidebar-text">Neuer Eintrag</span>
-                    </a>
                     <a href="{{ route('psychology.analytics') }}"
                        class="sidebar-link {{ request()->routeIs('psychology.analytics') ? 'active' : '' }}">
                         <i class="bi bi-graph-up"></i>
@@ -166,7 +146,7 @@
             <div class="sidebar-divider"></div>
 
             {{-- Analyse --}}
-            @php $analyseOpen = request()->routeIs('symbols') || request()->routeIs('symbols.detail') || request()->routeIs('stats.*') || request()->routeIs('trades.fx*') || request()->routeIs('trades.raw*'); @endphp
+            @php $analyseOpen = request()->routeIs('symbols') || request()->routeIs('symbols.detail') || request()->routeIs('stats.*') || request()->routeIs('log.*') || request()->routeIs('trades.fx*') || request()->routeIs('trades.raw*'); @endphp
             <a class="sidebar-link sidebar-toggle-btn {{ $analyseOpen ? 'active' : '' }}"
                data-bs-toggle="collapse" href="#nav-analyse"
                aria-expanded="{{ $analyseOpen ? 'true' : 'false' }}">
@@ -190,6 +170,11 @@
                        class="sidebar-link {{ request()->routeIs('stats.activity') ? 'active' : '' }}">
                         <i class="bi bi-activity"></i>
                         <span class="sidebar-text">Aktivität</span>
+                    </a>
+                    <a href="{{ route('log.list') }}"
+                       class="sidebar-link {{ request()->routeIs('log.*') ? 'active' : '' }}">
+                        <i class="bi bi-journal-text"></i>
+                        <span class="sidebar-text">Trade-Kommentare</span>
                     </a>
                     <a href="{{ route('trades.fx') }}"
                        class="sidebar-link {{ request()->routeIs('trades.fx*') ? 'active' : '' }}">
@@ -224,14 +209,6 @@
     {{-- ── Topbar ───────────────────────────────────────────────────────────── --}}
     <header id="topbar" class="topbar">
         <div class="ms-auto d-flex align-items-center gap-2">
-            {{-- Quick-Entry (immer sichtbar) --}}
-            <a href="{{ route('log.quick', ['env' => $selectedEnvironment]) }}"
-               class="btn btn-sm btn-warning"
-               title="Neuen Log-Eintrag anlegen (Quick-Entry)">
-                <i class="bi bi-journal-plus"></i>
-                <span class="d-none d-md-inline"> Neuer Eintrag</span>
-            </a>
-
             {{-- Zeitraum-Button --}}
             <button wire:click="$toggle('showDatePicker')"
                     class="btn btn-sm btn-outline-secondary">

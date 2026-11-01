@@ -3,10 +3,15 @@
 namespace Tests\Feature\Log;
 
 use App\Livewire\Campaigns\CampaignDetail;
+use App\Livewire\Campaigns\Campaigns;
+use App\Livewire\Campaigns\GlobalSymbolDetail;
 use App\Livewire\Log\LogForm;
 use App\Livewire\Log\LogList;
+use App\Livewire\Log\OpeningLogModal;
+use App\Livewire\Stats\ActivityLog;
 use App\Models\User;
 use App\Support\GreeksLookup;
+use App\Support\OpeningMarkers;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
@@ -15,8 +20,7 @@ use Tests\Concerns\UsesTradingTestConnection;
 use Tests\TestCase;
 
 /**
- * Log als Kommentar je Eröffnung: die Zahlen kommen aus dem Ledger, gespeichert werden nur Texte
- * und von Hand eingetragene Kurs-/IV-Werte.
+ * Log je Eröffnung: Knopf in der Buchungszeile, Eingabe im Fenster, Zahlen aus dem Ledger.
  *
  * mount() verwirft eine offene Transaktion (siehe UsesTradingTestConnection) → ohne Transaktion
  * angelegt und in tearDown() entfernt (nur phpunit_-Tabellen).
@@ -53,29 +57,31 @@ class LogOpeningCommentTest extends TestCase
     }
 
     /** Zwei Bull Put Spreads: 1. geschlossen (Kredit 120 $, P&L +60), 2. noch offen (Kredit 150 $). */
-    private function seedCampaign(): int
+    private function seedCampaign(string $status = 'ACTIVE', string $start = self::FIRST): int
     {
         $db = DB::connection('trading_test');
         $id = $db->table('trading_campaigns')->insertGetId([
-            'name' => 'PHPUNIT ' . self::SYMBOL, 'symbol' => self::SYMBOL, 'status' => 'ACTIVE',
-            'start_date' => self::FIRST, 'environment' => 'TEST',
+            'name' => 'PHPUNIT ' . self::SYMBOL, 'symbol' => self::SYMBOL, 'status' => $status,
+            'start_date' => $start, 'environment' => 'TEST',
         ]);
-        $entry = fn(array $e) => $db->table('campaign_ledger')->insert(array_merge([
-            'campaign_id' => $id, 'assetCategory' => 'OPT', 'environment' => 'TEST', 'multiplier' => 100,
-            'commission' => -0.65, 'realized_pnl' => 0, 'source_table' => 'TRADES_OPEN', 'source_id' => 0,
-        ], $e));
-        $leg = fn(string $action, int $strike, float $qty, float $px, string $dt, float $pnl = 0) => $entry([
-            'action' => $action, 'strike' => $strike, 'conid' => 9000 + $strike, 'tradePrice' => $px,
-            'inventory_delta' => $qty, 'dateTime' => $dt, 'realized_pnl' => $pnl, 'symbol' => self::SYMBOL . " P$strike",
-        ]);
-        $leg('OPT_PUT_SELL', 100, -1, 2.00, self::FIRST);
-        $leg('OPT_PUT_BUY', 95, 1, 0.80, self::FIRST);
-        $leg('OPT_PUT_BUY_CLOSE', 100, 1, 1.35, '2026-03-10 11:00:00', 65);
-        $leg('OPT_PUT_SELL_CLOSE', 95, -1, 0.75, '2026-03-10 11:00:00', -5);
-        $leg('OPT_PUT_SELL', 90, -1, 2.50, self::SECOND);
-        $leg('OPT_PUT_BUY', 85, 1, 1.00, self::SECOND);
+        $this->leg($id, 'OPT_PUT_SELL', 100, -1, 2.00, self::FIRST);
+        $this->leg($id, 'OPT_PUT_BUY', 95, 1, 0.80, self::FIRST);
+        $this->leg($id, 'OPT_PUT_BUY_CLOSE', 100, 1, 1.35, '2026-03-10 11:00:00', 65);
+        $this->leg($id, 'OPT_PUT_SELL_CLOSE', 95, -1, 0.75, '2026-03-10 11:00:00', -5);
+        $this->leg($id, 'OPT_PUT_SELL', 90, -1, 2.50, self::SECOND);
+        $this->leg($id, 'OPT_PUT_BUY', 85, 1, 1.00, self::SECOND);
 
         return $id;
+    }
+
+    private function leg(int $id, string $action, int $strike, float $qty, float $px, string $dt, float $pnl = 0, array $extra = []): void
+    {
+        DB::connection('trading_test')->table('campaign_ledger')->insert(array_merge([
+            'campaign_id' => $id, 'assetCategory' => 'OPT', 'environment' => 'TEST', 'multiplier' => 100,
+            'commission' => -0.65, 'source_table' => 'TRADES_OPEN', 'source_id' => 0,
+            'action' => $action, 'strike' => $strike, 'conid' => 9000 + $strike, 'tradePrice' => $px,
+            'inventory_delta' => $qty, 'dateTime' => $dt, 'realized_pnl' => $pnl, 'symbol' => self::SYMBOL . " P$strike",
+        ], $extra));
     }
 
     private function user(): User
@@ -91,85 +97,162 @@ class LogOpeningCommentTest extends TestCase
         ], $values));
     }
 
-    public function test_neuer_kommentar_zeigt_zahlen_der_eroeffnung_aus_dem_ledger(): void
+    private function modal(int $campaignId, string $openedAt)
     {
-        $id = $this->seedCampaign();
-
-        Livewire::withQueryParams(['campaign_id' => $id, 'opened_at' => self::FIRST])
-            ->actingAs($this->user())->test(LogForm::class)
-            ->assertSet('openedAt', self::FIRST)
-            ->assertSet('date_open', '2026-03-02')
-            ->assertSee('120,00 $ Kredit')
-            ->assertSee('Prämie Close:')
-            ->assertSee('60,00 $')
-            ->assertSee('geschlossen')
-            ->assertSee('Rationale')
-            ->assertDontSee('Trade schließen')
-            ->assertDontSee('Leg hinzufügen');
+        return Livewire::actingAs($this->user())->test(OpeningLogModal::class)
+            ->dispatch('open-opening-log', campaignId: $campaignId, openedAt: $openedAt);
     }
 
-    public function test_ohne_angabe_die_erste_noch_nicht_kommentierte_eroeffnung(): void
+    // ── Knopf in der Zeile ───────────────────────────────────────────────
+
+    /** Ein Spread hat zwei Zeilen, aber einen Knopf; schließende Zeilen haben keinen. */
+    public function test_ein_knopf_je_eroeffnung_mit_status(): void
+    {
+        $id = $this->seedCampaign();
+        $this->plan($id);
+        $ledger = DB::connection('trading_test')->table('campaign_ledger')->where('campaign_id', $id)->orderBy('id')->get();
+
+        $markers = OpeningMarkers::forEntries($ledger, 'trading_test', 'TEST');
+
+        $this->assertCount(4, $markers, 'nur eröffnende Zeilen');
+        $values = array_values($markers);
+        $this->assertSame([true, false, true, false], array_column($values, 'first'));
+        $this->assertSame([true, true, false, false], array_column($values, 'documented'));
+        $this->assertSame(self::SECOND, $values[2]['opened_at']);
+    }
+
+    public function test_seite_zeigt_knopf_nach_status_und_oeffnet_die_richtige_eroeffnung(): void
     {
         $id = $this->seedCampaign();
         $this->plan($id);
 
-        Livewire::withQueryParams(['campaign_id' => $id])->actingAs($this->user())->test(LogForm::class)
-            ->assertSet('openedAt', self::SECOND)
-            ->assertSet('planId', null)
-            ->assertSee('150,00 $ Kredit');
+        Livewire::actingAs($this->user())->test(CampaignDetail::class, ['campaignId' => $id])
+            ->assertSee('1 von 2 Eröffnungen dokumentiert')
+            ->assertSee('btn-success', false)
+            ->assertSee('btn-outline-warning', false)
+            ->assertSee("openedAt: '" . self::SECOND . "'", false)
+            ->assertDontSee('Eröffnungen &amp; Kommentare', false);
     }
 
-    public function test_vorhandener_kommentar_wird_bearbeitet_statt_doppelt_angelegt(): void
+    /** Aktien aus einer Zuteilung sind keine Entscheidung; ein eigener Kauf schon. */
+    public function test_kein_knopf_bei_zuteilung_aber_beim_aktienkauf(): void
+    {
+        $db = DB::connection('trading_test');
+        $id = $db->table('trading_campaigns')->insertGetId(['name' => 'PHPUNIT', 'symbol' => self::SYMBOL, 'status' => 'ACTIVE',
+            'start_date' => self::FIRST, 'environment' => 'TEST']);
+        $stock = ['assetCategory' => 'STK', 'strike' => 0, 'symbol' => self::SYMBOL, 'conid' => 1];
+        $this->leg($id, 'OPT_PUT_SELL', 30, -1, 0.50, self::FIRST);
+        $this->leg($id, 'STK_BUY', 0, 100, 30, '2026-03-20 16:20:00', 0, $stock);
+        $this->leg($id, 'OPTION_EXERCISE', 30, 1, 0, '2026-03-20 16:20:00', 50);
+        $this->leg($id, 'STK_BUY', 0, 50, 28, '2026-04-01 10:00:00', 0, $stock);
+        $ledger = $db->table('campaign_ledger')->where('campaign_id', $id)->orderBy('id')->get();
+
+        $markers = OpeningMarkers::forEntries($ledger, 'trading_test', 'TEST');
+
+        $this->assertSame([self::FIRST, '2026-04-01 10:00:00'], array_column($markers, 'opened_at'));
+    }
+
+    public function test_zuordnung_rechnet_mit_der_ganzen_kampagne_auch_bei_ausschnitt(): void
     {
         $id = $this->seedCampaign();
-        $planId = $this->plan($id, ['rationale' => 'erster Text']);
+        $this->plan($id, ['opened_at' => self::SECOND, 'date_open' => '2026-03-12']);
+        $shown = DB::connection('trading_test')->table('campaign_ledger')->where('campaign_id', $id)
+            ->where('dateTime', self::SECOND)->orderBy('id')->get();
 
-        Livewire::withQueryParams(['campaign_id' => $id, 'opened_at' => self::FIRST])
-            ->actingAs($this->user())->test(LogForm::class)
-            ->assertSet('planId', $planId)
-            ->assertSet('rationale', 'erster Text');
+        $markers = array_values(OpeningMarkers::forEntries($shown, 'trading_test', 'TEST'));
+
+        $this->assertCount(2, $markers);
+        $this->assertTrue($markers[0]['documented']);
     }
 
-    /** Beide Eröffnungen bekommen eigene Einträge; gespeichert werden nur Texte, keine Ledger-Zahlen. */
+    public function test_knopf_auch_in_symbol_ansicht_und_aktivitaet(): void
+    {
+        $id = $this->seedCampaign();
+        $this->plan($id);
+        $today = now()->format('Y-m-d H:i:s');
+        DB::connection('trading_test')->table('campaign_ledger')->where('campaign_id', $id)
+            ->where('dateTime', self::SECOND)->update(['dateTime' => $today]);
+
+        Livewire::actingAs($this->user())->test(GlobalSymbolDetail::class, ['symbol' => self::SYMBOL])
+            ->assertSee('open-opening-log', false)
+            ->assertSee('btn-success', false);
+        Livewire::actingAs($this->user())->test(ActivityLog::class)
+            ->assertSee('open-opening-log', false)
+            ->assertViewHas('openingMarkers', fn($m) => count($m) === 2);
+    }
+
+    // ── Fenster ──────────────────────────────────────────────────────────
+
+    public function test_fenster_zeigt_zahlen_aus_dem_ledger(): void
+    {
+        $id = $this->seedCampaign();
+
+        $this->modal($id, self::FIRST)
+            ->assertSet('show', true)
+            ->assertSet('planId', null)
+            ->assertSee('120,00 $ Kredit')
+            ->assertSee('Prämie Close:')
+            ->assertSee('60,00 $')
+            ->assertSee('geschlossen')
+            ->assertSee('Rationale');
+    }
+
+    /**
+     * Regressionstest: die erfundene Klasse d-contents ließ den Inhalt nicht scrollen, untere Felder
+     * waren unerreichbar. Fenster muss scrollen, sich verschieben und in der Größe ändern lassen.
+     */
+    public function test_fenster_scrollt_und_laesst_sich_verschieben_und_vergroessern(): void
+    {
+        $id = $this->seedCampaign();
+
+        $this->modal($id, self::FIRST)
+            ->assertSee('overflow-y: auto; min-height: 0;', false)
+            ->assertSee('resize: both', false)
+            ->assertSee('@pointerdown', false)
+            ->assertDontSee('d-contents', false);
+    }
+
+    /** Abschluss erst, wenn die Eröffnung geschlossen ist. */
+    public function test_abschlussfeld_erst_nach_dem_schliessen(): void
+    {
+        $id = $this->seedCampaign();
+
+        $this->modal($id, self::FIRST)->assertSee('Abschluss / Lessons Learned');
+        $this->modal($id, self::SECOND)->assertDontSee('Abschluss / Lessons Learned');
+    }
+
+    /** Je Eröffnung ein Eintrag; gespeichert werden nur Eingaben, keine Ledger-Zahlen. */
     public function test_speichern_legt_je_eroeffnung_einen_eintrag_ohne_zahlen_an(): void
     {
         $id = $this->seedCampaign();
-        $user = $this->user();
 
-        foreach ([self::FIRST => 'Text eins', self::SECOND => 'Text zwei'] as $at => $text) {
-            Livewire::withQueryParams(['campaign_id' => $id, 'opened_at' => $at])
-                ->actingAs($user)->test(LogForm::class)
-                ->set('rationale', $text)
-                ->call('savePlan')
-                ->assertHasNoErrors();
-        }
+        $this->modal($id, self::FIRST)->set('rationale', 'Text eins')->set('lessons_learned', 'Gelernt')
+            ->call('save')->assertHasNoErrors()->assertSet('show', false)->assertDispatched('opening-log-saved');
+        $this->modal($id, self::SECOND)->set('rationale', 'Text zwei')->call('save')->assertHasNoErrors();
 
         $db = DB::connection('trading_test');
         $rows = $db->table('trade_planner')->where('campaign_id', $id)->orderBy('opened_at')->get();
         $this->assertCount(2, $rows);
         $this->assertSame(['Text eins', 'Text zwei'], $rows->pluck('rationale')->all());
+        $this->assertSame('Gelernt', $rows[0]->lessons_learned);
         $this->assertSame(['closed', 'open'], $rows->pluck('status')->all());
         $this->assertNull($rows[0]->realized_pnl);
         $this->assertNull($rows[0]->fees_open);
         $this->assertSame(0, $db->table('trade_planner_legs')->whereIn('plan_id', $rows->pluck('id'))->count());
     }
 
-    /** Alte Zahlen und Legs eines bestehenden Eintrags bleiben beim Speichern unberührt. */
-    public function test_speichern_laesst_bestehende_zahlen_und_legs_stehen(): void
+    public function test_vorhandener_eintrag_wird_bearbeitet_statt_doppelt_angelegt(): void
     {
         $id = $this->seedCampaign();
-        $planId = $this->plan($id, ['realized_pnl' => 57.40, 'fees_close' => 2.60]);
-        $db = DB::connection('trading_test');
-        $db->table('trade_planner_legs')->insert(['plan_id' => $planId, 'leg_type' => 'SP', 'strike' => 100, 'delta' => 31, 'premium' => 2.0, 'sort_order' => 0]);
+        $planId = $this->plan($id, ['rationale' => 'erster Text', 'realized_pnl' => 57.40]);
 
-        Livewire::actingAs($this->user())->test(LogForm::class, ['id' => $planId])
-            ->set('notes', 'neu')->call('savePlan')->assertHasNoErrors();
+        $this->modal($id, self::FIRST)->assertSet('planId', $planId)->assertSet('rationale', 'erster Text')
+            ->set('notes', 'neu')->call('save')->assertHasNoErrors();
 
-        $row = $db->table('trade_planner')->where('id', $planId)->first();
-        $this->assertSame('neu', $row->notes);
-        $this->assertEquals(57.40, $row->realized_pnl);
-        $this->assertEquals(2.60, $row->fees_close);
-        $this->assertSame(1, $db->table('trade_planner_legs')->where('plan_id', $planId)->count());
+        $rows = DB::connection('trading_test')->table('trade_planner')->where('campaign_id', $id)->get();
+        $this->assertCount(1, $rows);
+        $this->assertSame('neu', $rows[0]->notes);
+        $this->assertEquals(57.40, $rows[0]->realized_pnl, 'alte Zahl bleibt unberührt');
     }
 
     public function test_eintrag_ohne_opened_at_gehoert_zur_ersten_eroeffnung(): void
@@ -177,97 +260,18 @@ class LogOpeningCommentTest extends TestCase
         $id = $this->seedCampaign();
         $planId = $this->plan($id, ['opened_at' => null]);
 
-        Livewire::actingAs($this->user())->test(LogForm::class, ['id' => $planId])
-            ->assertSet('openedAt', self::FIRST)
-            ->assertSee('120,00 $ Kredit');
+        $this->modal($id, self::FIRST)->assertSet('planId', $planId);
+        $this->modal($id, self::SECOND)->assertSet('planId', null);
     }
 
-    /** Zeitpunkt nicht im Ledger: Texte bleiben erreichbar, Formular zeigt die gespeicherten Werte. */
-    public function test_eintrag_ohne_passende_eroeffnung_bleibt_bearbeitbar(): void
+    public function test_unbekannte_eroeffnung_oeffnet_kein_fenster(): void
     {
         $id = $this->seedCampaign();
-        $planId = $this->plan($id, ['opened_at' => '2020-01-01 00:00:00', 'rationale' => 'alter Text', 'realized_pnl' => 12]);
 
-        Livewire::actingAs($this->user())->test(LogForm::class, ['id' => $planId])
-            ->assertSee('nicht mehr zu finden')
-            ->assertSet('rationale', 'alter Text')
-            ->assertSet('realized_pnl', '12.00');
-
-        Livewire::actingAs($this->user())->test(CampaignDetail::class, ['campaignId' => $id])
-            ->assertSee('ohne passende Eröffnung')
-            ->assertSee('alter Text');
+        $this->modal($id, '2020-01-01 00:00:00')->assertSet('show', false);
     }
 
-    public function test_unverknuepfter_eintrag_behaelt_das_volle_formular(): void
-    {
-        Livewire::actingAs($this->user())->test(LogForm::class)
-            ->assertSee('Leg hinzufügen')
-            ->assertSee('Trade schließen')
-            ->assertDontSee('Prämie Eröffnung')
-            ->set('underlying', self::SYMBOL)
-            ->set('date_open', '2026-03-02')
-            ->set('rationale', 'ohne Kampagne')
-            ->call('toggleClose')
-            ->set('realized_pnl', '42.50')
-            ->call('savePlan')
-            ->assertHasNoErrors();
-
-        $row = DB::connection('trading_test')->table('trade_planner')->where('underlying', self::SYMBOL)->first();
-        $this->assertNull($row->campaign_id);
-        $this->assertEquals(42.50, $row->realized_pnl);
-    }
-
-    public function test_nachtraegliches_verknuepfen_waehlt_die_passende_eroeffnung(): void
-    {
-        $id = $this->seedCampaign();
-        $this->plan($id);
-
-        Livewire::actingAs($this->user())->test(LogForm::class)
-            ->set('underlying', self::SYMBOL)
-            ->set('date_open', '2026-03-03')
-            ->call('linkCampaign', $id)
-            ->assertSet('openedAt', self::SECOND);
-
-        $planId = DB::connection('trading_test')->table('trade_planner')->insertGetId([
-            'environment' => 'TEST', 'underlying' => self::SYMBOL, 'date_open' => '2026-03-11', 'status' => 'open',
-        ]);
-        Livewire::actingAs($this->user())->test(LogList::class)->call('linkPlanToCampaign', $planId, $id);
-        $this->assertSame(self::SECOND, DB::connection('trading_test')->table('trade_planner')->where('id', $planId)->value('opened_at'));
-    }
-
-    public function test_kampagnenseite_zeigt_bloecke_und_zaehlt_kommentare(): void
-    {
-        $id = $this->seedCampaign();
-        $this->plan($id, ['rationale' => 'Warum Spread eins']);
-
-        Livewire::actingAs($this->user())->test(CampaignDetail::class, ['campaignId' => $id])
-            ->assertSee('1 von 2 kommentiert')
-            ->assertSee('120,00 $ Kredit')
-            ->assertSee('150,00 $ Kredit')
-            ->assertSee('Warum Spread eins')
-            ->assertSee('Kommentar')
-            ->assertSee('opened_at=2026-03-12', false);
-    }
-
-    /** Liste und Summen aus dem Ledger, nicht aus den alten Spalten; Filter folgt dem Ledger-Status. */
-    public function test_log_liste_rechnet_aus_dem_ledger(): void
-    {
-        $id = $this->seedCampaign();
-        $this->plan($id, ['status' => 'open', 'realized_pnl' => 999]);
-        $this->plan($id, ['opened_at' => self::SECOND, 'status' => 'closed', 'date_open' => '2026-03-12', 'realized_pnl' => 111]);
-        DB::connection('trading_test')->table('trade_planner')->insert([
-            'environment' => 'TEST', 'underlying' => self::SYMBOL, 'date_open' => '2026-01-01', 'status' => 'closed', 'realized_pnl' => 10,
-        ]);
-
-        $test = Livewire::actingAs($this->user())->test(LogList::class);
-        $test->assertViewHas('statistics', fn($s) => $s['open_count'] === 1 && $s['closed_count'] === 2 && abs($s['realized_pnl'] - 70) < 0.001);
-        $test->assertSee('60,00 $')->assertDontSee('999,00');
-
-        $test->set('filterStatus', 'open')
-            ->assertViewHas('logs', fn($logs) => $logs->total() === 1 && $logs->first()->date_open->format('Y-m-d') === '2026-03-12');
-    }
-
-    /** Berechnete Werte als Vorschlag; von Hand eingetragene gelten; Hinweis nur beim berechneten Wert. */
+    /** Berechnete Werte als Vorschlag; von Hand eingetragene gelten. */
     public function test_kurs_iv_und_delta_aus_enrich_von_hand_eingetragene_gelten(): void
     {
         $id = $this->seedCampaign();
@@ -287,29 +291,146 @@ class LogOpeningCommentTest extends TestCase
             $db->table('iv_history')->insert(['underlying' => self::SYMBOL,
                 'iv_date' => \Carbon\Carbon::parse('2026-03-02')->subDays(20 - $i)->toDateString(), 'iv' => $iv]);
         }
-        $planId = $this->plan($id, ['price_close' => 77.50]);
+        $this->plan($id, ['price_close' => 77.50]);
 
-        $test = Livewire::actingAs($this->user())->test(LogForm::class, ['id' => $planId]);
-        $test->assertViewHas('details', fn($d) => $d['price_open'] == 101.23 && $d['price_close'] == 98.76
+        $this->modal($id, self::FIRST)
+            ->assertViewHas('details', fn($d) => $d['price_open'] == 101.23 && $d['price_close'] == 98.76
                 && $d['ivr_open'] === 50 && $d['ivp_open'] === 50 && $d['deltas'][0] === 32)
-            ->assertSee('aus IBKR berechnet')
+            ->assertSee('berechnet')
             ->assertSee('placeholder="101.23"', false)
             ->assertSet('price_close', '77.50');
-
-        // Auf der Kampagnenseite gilt der eingetragene Kurs vor dem berechneten
-        Livewire::actingAs($this->user())->test(CampaignDetail::class, ['campaignId' => $id])
-            ->assertViewHas('openingsView', fn($v) => $v['rows'][0]['details']['price_close'] == 77.50
-                && $v['rows'][0]['details']['price_open'] == 101.23);
     }
 
     public function test_ohne_enrich_tabellen_kein_fehler(): void
     {
         $id = $this->seedCampaign();
 
-        Livewire::withQueryParams(['campaign_id' => $id])->actingAs($this->user())->test(LogForm::class)
+        $this->modal($id, self::FIRST)
             ->assertOk()
             ->assertViewHas('details', fn($d) => $d['price_open'] === null && $d['ivr_open'] === null)
-            ->assertDontSee('aus IBKR berechnet');
+            ->assertDontSee('berechnet');
+    }
+
+    // ── Kampagnen-Kacheln ────────────────────────────────────────────────
+
+    /** Die Suche zeigt jede Kampagne als eigene Kachel, auch geschlossene bei Filter „Offen“. */
+    public function test_suche_zeigt_mehrere_kacheln_ueber_alle_status(): void
+    {
+        $this->seedCampaign('CLOSED');
+        $this->seedCampaign('ACTIVE');
+
+        Livewire::actingAs($this->user())->test(Campaigns::class)
+            ->assertSet('filterStatus', 'OPEN')
+            ->set('search', self::SYMBOL)
+            ->assertViewHas('campaigns', fn($c) => $c->total() === 2)
+            ->assertSee('Suche über alle Status und Zeiträume')
+            ->assertDontSee('über alle Kampagnen hinweg</h5>', false);
+    }
+
+    public function test_kachel_zeigt_abdeckung_und_filter_nicht_dokumentiert(): void
+    {
+        $partly = $this->seedCampaign();
+        $this->plan($partly);
+        $complete = $this->seedCampaign();
+        $this->plan($complete);
+        $this->plan($complete, ['opened_at' => self::SECOND, 'date_open' => '2026-03-12']);
+
+        $test = Livewire::actingAs($this->user())->test(Campaigns::class)
+            ->set('search', self::SYMBOL)
+            ->assertViewHas('coverage', fn($c) => $c[$partly] === ['documented' => 1, 'total' => 2]
+                && $c[$complete] === ['documented' => 2, 'total' => 2])
+            ->assertSee('1/2');
+
+        $test->call('toggleUndocumented')
+            ->assertViewHas('campaigns', fn($c) => $c->total() === 1 && $c->first()->id === $partly);
+    }
+
+    // ── Trade-Kommentare und Menü ────────────────────────────────────────
+
+    /** Liste und Summen aus dem Ledger, nicht aus den alten Spalten; Filter folgt dem Ledger-Status. */
+    public function test_trade_kommentare_rechnen_aus_dem_ledger(): void
+    {
+        $id = $this->seedCampaign();
+        $this->plan($id, ['status' => 'open', 'realized_pnl' => 999, 'rationale' => 'Warum eins', 'lessons_learned' => 'Gelernt eins']);
+        $this->plan($id, ['opened_at' => self::SECOND, 'status' => 'closed', 'date_open' => '2026-03-12', 'realized_pnl' => 111]);
+        DB::connection('trading_test')->table('trade_planner')->insert([
+            'environment' => 'TEST', 'underlying' => self::SYMBOL, 'date_open' => '2026-01-01', 'status' => 'closed', 'realized_pnl' => 10,
+        ]);
+
+        $test = Livewire::actingAs($this->user())->test(LogList::class);
+        $test->assertViewHas('statistics', fn($s) => $s['open_count'] === 1 && $s['closed_count'] === 2 && abs($s['realized_pnl'] - 70) < 0.001);
+        $test->assertSee('Trade-Kommentare')->assertSee('60,00 $')->assertDontSee('999,00')
+            ->assertSee('Warum eins')->assertSee('Gelernt eins')
+            ->assertSee('open-opening-log', false);
+
+        $test->set('filterStatus', 'open')
+            ->assertViewHas('logs', fn($logs) => $logs->total() === 1 && $logs->first()->date_open->format('Y-m-d') === '2026-03-12');
+    }
+
+    public function test_menue_ohne_log_und_ohne_schnelleingabe(): void
+    {
+        $html = file_get_contents(resource_path('views/livewire/navigation.blade.php'));
+
+        $this->assertStringNotContainsString('log.quick', $html);
+        $this->assertStringNotContainsString('unloggedCount', $html);
+        $this->assertStringContainsString('Trade-Kommentare', $html);
+        $this->assertFalse(\Illuminate\Support\Facades\Route::has('log.create'));
+        $this->assertFalse(\Illuminate\Support\Facades\Route::has('log.quick'));
+    }
+
+    // ── Einträge ohne Eröffnung ──────────────────────────────────────────
+
+    public function test_alter_link_auf_verknuepften_eintrag_fuehrt_zur_kampagne(): void
+    {
+        $id = $this->seedCampaign();
+        $planId = $this->plan($id);
+
+        Livewire::actingAs($this->user())->test(LogForm::class, ['id' => $planId])
+            ->assertRedirect(route('campaigns.campaign.detail', $id));
+    }
+
+    /** Zeitpunkt nicht im Ledger: Texte bleiben erreichbar, kein Kommentar verschwindet. */
+    public function test_eintrag_ohne_passende_eroeffnung_bleibt_sichtbar_und_bearbeitbar(): void
+    {
+        $id = $this->seedCampaign();
+        $planId = $this->plan($id, ['opened_at' => '2020-01-01 00:00:00', 'rationale' => 'alter Text', 'realized_pnl' => 12]);
+
+        Livewire::actingAs($this->user())->test(LogForm::class, ['id' => $planId])
+            ->assertNoRedirect()
+            ->assertSee('nicht mehr zu finden')
+            ->assertSet('rationale', 'alter Text')
+            ->assertSet('realized_pnl', '12.00');
+
+        Livewire::actingAs($this->user())->test(CampaignDetail::class, ['campaignId' => $id])
+            ->assertSee('ohne passende Eröffnung')
+            ->assertSee('alter Text');
+    }
+
+    public function test_eintrag_ohne_kampagne_bleibt_bearbeitbar_und_laesst_sich_verknuepfen(): void
+    {
+        $id = $this->seedCampaign();
+        $this->plan($id);
+        $db = DB::connection('trading_test');
+        $planId = $db->table('trade_planner')->insertGetId([
+            'environment' => 'TEST', 'underlying' => self::SYMBOL, 'date_open' => '2026-03-03', 'status' => 'open',
+        ]);
+
+        $test = Livewire::actingAs($this->user())->test(LogForm::class, ['id' => $planId])
+            ->assertNoRedirect()
+            ->assertSee('Leg hinzufügen')
+            ->assertSee('Trade schließen')
+            ->call('toggleClose')
+            ->set('realized_pnl', '42.50')
+            ->call('savePlan')
+            ->assertHasNoErrors();
+        $this->assertEquals(42.50, $db->table('trade_planner')->where('id', $planId)->value('realized_pnl'));
+
+        Livewire::actingAs($this->user())->test(LogForm::class, ['id' => $planId])
+            ->call('linkCampaign', $id)
+            ->assertRedirect(route('campaigns.campaign.detail', $id));
+        $row = $db->table('trade_planner')->where('id', $planId)->first();
+        $this->assertSame($id, $row->campaign_id);
+        $this->assertSame(self::SECOND, $row->opened_at, 'erste Eröffnung ist schon vergeben');
     }
 
     public function test_formel_gleich_wie_im_weaver(): void

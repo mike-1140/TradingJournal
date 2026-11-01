@@ -1,6 +1,6 @@
 {{--
   Psychologie-Karte für Detail-Views.
-  Variablen: $psychEntry (PsychologyEntry|null), $psychCreateUrl (string)
+  Variablen: $psychEntry (PsychologyEntry|null), $psychSymbol (string)
 --}}
 @php
 $motivationLabels = [
@@ -23,7 +23,7 @@ $errorTypeLabels = [
     <div class="card-header d-flex justify-content-between align-items-center">
         <h6 class="mb-0"><i class="bi bi-journal-check"></i> Psychologie</h6>
         @if ($psychEntry)
-        <a href="{{ route('psychology.edit', $psychEntry->id) }}"
+        <a href="{{ $psychEntry->campaign_id ? route('campaigns.campaign.detail', $psychEntry->campaign_id) : route('psychology.edit', $psychEntry->id) }}"
            class="btn btn-sm btn-outline-secondary py-0">
             <i class="bi bi-pencil"></i> Bearbeiten
         </a>
@@ -35,9 +35,9 @@ $errorTypeLabels = [
         {{-- Kein Eintrag --}}
         <div class="text-center py-3">
             <i class="bi bi-journal-plus fs-3 text-muted d-block mb-2"></i>
-            <p class="text-muted small mb-3">Noch kein Psychologie-Eintrag für diesen Trade.</p>
-            <a href="{{ $psychCreateUrl }}" class="btn btn-sm btn-outline-primary">
-                <i class="bi bi-plus-circle"></i> Psychologie erfassen
+            <p class="text-muted small mb-3">Psychologie erfasst du in der Kampagne über den Knopf in der Buchungszeile der Eröffnung.</p>
+            <a href="{{ route('campaigns.campaigns', ['search' => $psychSymbol]) }}" class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-arrow-right-circle"></i> Zur Kampagne
             </a>
         </div>
         @else

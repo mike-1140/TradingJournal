@@ -6,6 +6,8 @@ use App\Traits\FilterableByTime;
 use Livewire\Component;
 use Livewire\WithPagination;
 use App\Models\CampaignLedger;
+use App\Models\TradePlan;
+use App\Support\OpeningMarkers;
 use App\Traits\ManagesEnvironment;
 
 class GlobalSymbolDetail extends Component
@@ -22,6 +24,7 @@ class GlobalSymbolDetail extends Component
     protected $listeners = [
         'environment-changed' => '$refresh',
         'time-range-changed'  => '$refresh',
+        'opening-log-saved'   => '$refresh',
     ];
 
     public function mount($symbol)
@@ -186,6 +189,7 @@ class GlobalSymbolDetail extends Component
 
         return view('livewire.campaigns.global-symbol-detail', [
             'ledgerEntries' => $ledgerEntries,
+            'openingMarkers' => OpeningMarkers::forEntries($ledgerEntries->items(), TradePlan::getConnectionForEnvironment($this->selectedEnvironment), $this->selectedEnvironment),
             'metrics'       => $metrics,
             'chartData'     => $chartData,
         ]);

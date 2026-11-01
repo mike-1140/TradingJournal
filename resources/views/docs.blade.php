@@ -74,7 +74,7 @@
                 <a class="nav-link" href="#optionen"><i class="bi bi-layers"></i> Optionen</a>
                 <a class="nav-link" href="#kampagnen"><i class="bi bi-currency-exchange"></i> Kampagnen</a>
                 <a class="nav-link" href="#spreads"><i class="bi bi-bezier2"></i> Spreads</a>
-                <a class="nav-link" href="#log"><i class="bi bi-journal-plus"></i> Log</a>
+                <a class="nav-link" href="#log"><i class="bi bi-journal-plus"></i> Log und Trade-Kommentare</a>
                 <a class="nav-link" href="#psychologie"><i class="bi bi-journal-check"></i> Psychologie</a>
                 <a class="nav-link" href="#analyse"><i class="bi bi-speedometer2"></i> Analyse</a>
                 <hr class="my-1">
@@ -125,11 +125,11 @@
                             </p>
                         </div>
                         <div class="col-md-4">
-                            <h3 class="h6"><i class="bi bi-journal-plus text-success"></i> Schnelleintrag</h3>
+                            <h3 class="h6"><i class="bi bi-journal-plus text-success"></i> Dokumentieren in der Zeile</h3>
                             <p class="small text-muted mb-0">
-                                Wenn eine Idee gerade frisch im Kopf ist, soll sie nicht im Menü verloren gehen:
-                                Der gelbe Button oben rechts katapultiert dich ohne Umwege direkt ins
-                                Trade Log, um einen neuen Trade-Plan festzuhalten.
+                                Was du dir bei einem Trade überlegt hast, gehört zu seiner Eröffnung: Der Knopf in
+                                der Buchungszeile öffnet das Log-Fenster direkt dort, grün heißt dokumentiert,
+                                gelb umrandet noch nicht.
                             </p>
                         </div>
                     </div>
@@ -229,6 +229,7 @@
                 </p>
                 <ul class="text-muted">
                     <li class="mb-2"><strong class="text-body">Liste</strong> Eine Karte pro Kampagne mit Symbol, Status (ACTIVE / PENDING / CLOSED), Brutto- und Netto-P&amp;L, aktuellem Bestand, Proceeds, Kommission und einem Badge, das verrät, ob die Kampagne bereits im Log dokumentiert ist; dazu ein Statusfilter und eine Symbolsuche über alle Kampagnen hinweg</li>
+                    <li class="mb-2"><strong class="text-body">Suche und Dokumentation</strong> Die Suche zeigt jede passende Kampagne als eigene Karte, unabhängig von Status und Zeitraum. Jede Karte zeigt, wie viele Eröffnungen dokumentiert sind, und der Knopf „Nicht dokumentiert“ filtert danach</li>
                     <li class="mb-2"><strong class="text-body">Art</strong> Jede Karte trägt ein Etikett, und eine zweite Schaltergruppe filtert danach: <em>Aktien</em> (nur Aktien), <em>Wheel</em> (Aktien und Optionen in derselben Kampagne — ob mit Zuteilung oder Covered Calls auf gekaufte Aktien), <em>Spreads</em> (nur Optionen, mindestens ein erkannter Spread) und <em>Optionen</em> (nur Einzeloptionen). Die Art ergibt sich aus allen Buchungen der Kampagne; Summe und Seitenaufteilung folgen dem Filter</li>
                     <li><span class="docs-detail-tag">Detailseite</span> Hier wird aus Zahlen eine Geschichte: 6 Kennzahlen-Kacheln zu Aktien-/Optionsbestand, Cashflow, Kommission sowie Brutto- und Netto-P&amp;L, ein gestufter P&amp;L-Verlaufschart, eine Tagesübersicht und die vollständige Buchungshistorie (Ledger) mit Klartext-Beschreibung jeder einzelnen Buchung, laufendem Bestand und Farbcodierung für zusammengehörige Buchungen — etwa eine Rollposition, deren Legs sonst leicht auseinanderfallen würden</li>
                 </ul>
@@ -266,34 +267,33 @@
                 <div class="d-flex align-items-start gap-2 mb-1">
                     <i class="bi bi-journal-plus fs-4 text-success"></i>
                     <div>
-                        <h2 class="h4 mb-0">Log</h2>
+                        <h2 class="h4 mb-0">Log und Trade-Kommentare</h2>
                         <div class="docs-route">/log</div>
                     </div>
                 </div>
                 <p class="text-muted" style="max-width: 68ch;">
                     Der eigentliche Kern eines Trading-Journals: nicht das Ergebnis zählt allein, sondern der
-                    Gedanke dahinter. Hier hältst du fest, warum ein Trade überhaupt eingegangen wurde — mit
+                    Gedanke dahinter. Direkt in der Buchungszeile hältst du fest, warum ein Trade überhaupt eingegangen wurde — mit
                     welchem Plan, welcher Erwartung und welchem Ausstiegsszenario — statt nur zu notieren, wie er
                     am Ende ausging.
                 </p>
 
                 <div class="card docs-subcard mb-3">
                     <div class="card-body">
-                        <h3 class="h6 d-flex align-items-baseline gap-2 flex-wrap">Übersicht <span class="docs-route">log.list</span></h3>
+                        <h3 class="h6 d-flex align-items-baseline gap-2 flex-wrap">Knopf und Fenster</h3>
                         <ul class="text-muted mb-0">
-                            <li class="mb-2">Eine Hinweisbox macht sanft darauf aufmerksam, welche Kampagnen noch gar nicht im Log dokumentiert sind, und schlägt gleich passende Verknüpfungen vor, statt dich suchen zu lassen</li>
-                            <li>Kennzahlen-Kacheln für offene, geschlossene und realisierte Einträge, dazu eine Tabelle mit Datum, Underlying, Strategie, Exit-Plan, Legs, Status und Ergebnis</li>
+                            <li class="mb-2">Jede Eröffnung (alle zum selben Zeitpunkt eröffneten Legs oder ein Aktienkauf) hat in der Transaktions-Historie, der Symbol-Ansicht und unter Aktivität einen Knopf: grün = dokumentiert, gelb umrandet = noch nicht; Aktien aus einer Zuteilung haben keinen</li>
+                            <li class="mb-2">Das Fenster zeigt oben die Zahlen aus den Buchungen (Legs, Prämie in Dollar, Gebühren, Ausgang, P&amp;L brutto), darunter Strategie, Exit-Plan, Begründung und Notizen; bei geschlossenen Eröffnungen zusätzlich „Abschluss / Lessons Learned“. Es lässt sich verschieben und vergrößern und hat zusätzlich den Reiter Psychologie</li>
+                            <li>Läuft im Weaver der optionale Schritt „enrich“, stehen Delta je Leg sowie Kurs und IVR/IVP bei Eröffnung und Schließung bereit; eigene Eingaben haben Vorrang</li>
                         </ul>
                     </div>
                 </div>
                 <div class="card docs-subcard">
                     <div class="card-body">
-                        <h3 class="h6 d-flex align-items-baseline gap-2 flex-wrap">Eintrag · Bearbeiten <span class="docs-route">log.create / log.quick / log.edit</span></h3>
+                        <h3 class="h6 d-flex align-items-baseline gap-2 flex-wrap">Trade-Kommentare <span class="docs-route">log.list</span></h3>
                         <ul class="text-muted mb-0">
-                            <li class="mb-2">Ein Eintrag kommentiert eine Eröffnung einer Kampagne: oben die Zahlen aus den Buchungen (Legs, Prämie in Dollar, Prämie beim Schließen, Gebühren, Ausgang, P&amp;L brutto) nur zur Anzeige, darunter Strategie, Exit-Plan, Begründung und Notizen</li>
-                            <li class="mb-2">Jede Eröffnung hat ihren eigenen Eintrag: weitere Eröffnungen derselben Kampagne kommentierst du auf deren Seite über „Kommentar“; Einträge lassen sich dort auch öffnen</li>
-                            <li class="mb-2">Läuft im Weaver der optionale Schritt „enrich“, stehen Delta je Leg sowie Kurs und IVR/IVP bei Eröffnung und Schließung bereit — markiert mit „aus IBKR berechnet“; eigene Eingaben haben Vorrang</li>
-                            <li>Einträge ohne Kampagne behalten das volle Formular mit Kopfdaten, Legs und „Trade schließen“ (Gebühren positiv, Ergebnis brutto); nach dem Verknüpfen gehören sie zur nächstgelegenen freien Eröffnung</li>
+                            <li class="mb-2">Unter Analyse stehen alle Einträge untereinander, mit Filter nach Underlying und Status; Status und P&amp;L kommen aus den Buchungen, hier lassen sich Einträge auch löschen</li>
+                            <li>Einträge ohne Kampagne aus früheren Versionen behalten das volle Formular <span class="docs-route">log.edit</span> und lassen sich dort verknüpfen; neue Einträge entstehen nur über den Knopf in der Zeile</li>
                         </ul>
                     </div>
                 </div>
@@ -305,7 +305,7 @@
                     <i class="bi bi-journal-check fs-4 text-success"></i>
                     <div>
                         <h2 class="h4 mb-0">Psychologie</h2>
-                        <div class="docs-route">/psychology</div>
+                        <div class="docs-route">/psychology/analytics · /psychology/rulesets</div>
                     </div>
                 </div>
                 <p class="text-muted" style="max-width: 68ch;">
@@ -317,19 +317,11 @@
 
                 <div class="card docs-subcard mb-3">
                     <div class="card-body">
-                        <h3 class="h6 d-flex align-items-baseline gap-2 flex-wrap">Einträge <span class="docs-route">psychology.list</span></h3>
+                        <h3 class="h6 d-flex align-items-baseline gap-2 flex-wrap">Reiter im Log-Fenster</h3>
                         <ul class="text-muted mb-0">
-                            <li class="mb-2">Kennzahlen-Kacheln zu Anzahl der Einträge, Gesamt-P&amp;L, Trefferquote und dem Anteil der Trades, bei denen eine Versuchung im Spiel war</li>
-                            <li>Je Eintrag eine Karte mit Datum, Symbol, einem Motivations-Badge (System / FOMO / Revenge / Langeweile / Impuls), der Regel-Compliance in grün oder rot, dem P&amp;L und der daraus gezogenen Lektion</li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="card docs-subcard mb-3">
-                    <div class="card-body">
-                        <h3 class="h6 d-flex align-items-baseline gap-2 flex-wrap">Neuer Eintrag <span class="docs-route">psychology.create</span></h3>
-                        <ul class="text-muted mb-0">
-                            <li class="mb-2">Symbol, Datum, P&amp;L, eine Emotions-Skala von 1 bis 5 vor und nach dem Trade, die Wahl der Motivation und der Marktkontext, in dem die Entscheidung fiel</li>
-                            <li>Eine Regelwerk-Auswahl mit Compliance-Grid und Versuchungs-Checkliste, dazu ein Freitextfeld für die Lektion, die du daraus mitnimmst</li>
+                            <li class="mb-2">Erfasst wird im Log-Fenster einer Eröffnung, Reiter Psychologie: eine Emotions-Skala von 1 bis 5 vor und nach dem Trade, die Motivation, der Marktkontext und ein Regelwerk mit Compliance-Grid und Versuchungs-Checkliste</li>
+                            <li class="mb-2">Nichts ist Pflicht: Ohne Angaben entsteht kein Eintrag, und die Regeln zählen nur, wenn mindestens eine angekreuzt ist. Ein Punkt am Knopf zeigt, dass die Psychologie ausgefüllt ist</li>
+                            <li>Die Lektion steht im Reiter Trade unter „Abschluss / Lessons Learned“; Trade-Kommentare zeigen Motivation, Stimmung und Regeln beim jeweiligen Eintrag</li>
                         </ul>
                     </div>
                 </div>
@@ -337,7 +329,7 @@
                     <div class="card-body">
                         <h3 class="h6 d-flex align-items-baseline gap-2 flex-wrap">Auswertung <span class="docs-route">psychology.analytics</span></h3>
                         <ul class="text-muted mb-0">
-                            <li>Vier Balkendiagramme machen Muster sichtbar, die im Kopf leicht verschwimmen: Ø P&amp;L je Motivation, Ø P&amp;L je Emotionszustand, Ø P&amp;L je Compliance-Grad und die Häufigkeit von Versuchungen je Regel</li>
+                            <li>Vier Balkendiagramme machen Muster sichtbar, die im Kopf leicht verschwimmen: Ø P&amp;L je Motivation, Ø P&amp;L je Emotionszustand, Ø P&amp;L je Compliance-Grad und die Häufigkeit von Versuchungen je Regel. Das P&amp;L kommt aus den Buchungen der Eröffnung; oben steht, zu wie vielen dokumentierten Eröffnungen die Psychologie ausgefüllt ist</li>
                         </ul>
                     </div>
                 </div>

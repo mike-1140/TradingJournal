@@ -27,10 +27,17 @@ class PsychologyEntry extends BaseTradingModel
         return static::$tableExistsCache[$connection] ??= Schema::connection($connection)->hasTable((new static())->getTable());
     }
 
+    public static function forgetTableCache(): void
+    {
+        static::$tableExistsCache = [];
+    }
+
     protected $fillable = [
         'trade_id',
         'opt_strategyID',
         'trade_type',
+        'campaign_id',
+        'opened_at',
         'ruleset_id',
         'symbol',
         'trade_date',
@@ -44,6 +51,7 @@ class PsychologyEntry extends BaseTradingModel
     ];
 
     protected $casts = [
+        'opened_at'    => 'datetime',
         'trade_date'   => 'date',
         'pnl'          => 'decimal:2',
         'emotion_pre'  => 'integer',

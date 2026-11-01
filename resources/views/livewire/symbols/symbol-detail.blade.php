@@ -233,6 +233,8 @@
     @endif
 
     @if(count($chartData) > 2)
+    <livewire:campaigns.global-symbol-detail :symbol="$symbol" :key="'global-'.$symbol" />
+
     @assets
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
     @endassets

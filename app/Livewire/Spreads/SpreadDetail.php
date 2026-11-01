@@ -163,7 +163,6 @@ class SpreadDetail extends Component
         $psychEntry = PsychologyEntry::tableExistsFor($connection)
             ? PsychologyEntry::on($connection)
                 ->where('opt_strategyID', $this->opt_strategyID)
-                ->where('trade_type', $this->status === 'open' ? 'open_spread' : 'spread')
                 ->where('environment', $this->selectedEnvironment)
                 ->with('complianceResults.rule')
                 ->first()

@@ -58,7 +58,33 @@
         </div>
     </div>
 
-    @include('livewire.log.partials.campaign-openings', ['view' => $openingsView, 'campaign' => $campaign])
+    {{-- Dokumentation und Summen der ganzen Kampagne --}}
+    <div class="d-flex flex-wrap gap-3 align-items-center small mb-4 px-1">
+        <span><i class="bi bi-journal-text"></i> {{ $coverage['documented'] }} von {{ $coverage['total'] }} Eröffnungen dokumentiert</span>
+        @if((float) $openingsView['stock_pnl'] != 0 || abs((float) $openingsView['shares_open']) > 0.0001)
+            <span class="text-muted">
+                Optionen {{ number_format($openingsView['option_pnl'], 2, ',', '.') }} $ · Aktien {{ number_format($openingsView['stock_pnl'], 2, ',', '.') }} $ · Gesamt {{ number_format($openingsView['total_pnl'], 2, ',', '.') }} $
+                @if(abs((float) $openingsView['shares_open']) > 0.0001)
+                    · {{ rtrim(rtrim(number_format(abs((float) $openingsView['shares_open']), 4, ',', ''), '0'), ',') }} Aktien offen
+                @endif
+            </span>
+        @endif
+    </div>
+
+    @foreach($openingsView['orphans'] as $orphan)
+        <div class="alert alert-warning py-2 small d-flex justify-content-between align-items-start gap-2">
+            <div>
+                <i class="bi bi-exclamation-triangle"></i>
+                Eintrag vom {{ $orphan->date_open->format('d.m.Y') }} ohne passende Eröffnung
+                @if($orphan->rationale)
+                    <div><span class="text-muted">Rationale:</span> {{ $orphan->rationale }}</div>
+                @endif
+            </div>
+            <a href="{{ route('log.edit', $orphan->id) }}" class="btn btn-sm btn-outline-secondary py-0 text-nowrap">
+                <i class="bi bi-pencil"></i> Bearbeiten
+            </a>
+        </div>
+    @endforeach
 
     {{-- P&L-Verlauf --}}
     @if(count($chartData) > 2)
@@ -161,6 +187,7 @@
                         <th class="text-end" style="width: 90px;">
                             <i class="bi bi-stack" title="Laufender Aktienbestand"></i> Bestand
                         </th>
+                        <th class="text-center" style="width: 45px;">Log</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -186,7 +213,7 @@
 
                     @if($groupedEntries->isEmpty())
                         <tr>
-                            <td colspan="9" class="text-center text-muted py-5">
+                            <td colspan="10" class="text-center text-muted py-5">
                                 Keine Buchungen für diesen Zeitraum.
                             </td>
                         </tr>
@@ -203,7 +230,7 @@
 
                             {{-- Tages-Trennzeile --}}
                             <tr class="date-separator">
-                                <td colspan="9">
+                                <td colspan="10">
                                     <i class="bi bi-calendar3 me-1"></i>
                                     {{ $firstEntryDt->locale('de')->isoFormat('dddd, D. MMMM YYYY') }}
                                 </td>
@@ -290,6 +317,7 @@
                                             </span>
                                         @endif
                                     </td>
+                                    <td class="text-center">@include('livewire.log.partials.opening-button', ['marker' => $openingMarkers[$entry->id] ?? null])</td>
                                 </tr>
 
                             @endforeach
@@ -321,6 +349,7 @@
                                     @endif
                                 </td>
                                 <td></td>
+                                <td></td>
                             </tr>
 
                         @endforeach
@@ -348,6 +377,7 @@
                             <td class="text-end">
                                 <small class="fw-normal opacity-75">{{ $totalEntries }} Buchungen</small>
                             </td>
+                            <td></td>
                         </tr>
                     </tfoot>
                 @endif
@@ -360,6 +390,8 @@
             </div>
         @endif
     </div>
+
+    <livewire:log.opening-log-modal />
 
     @assets
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>

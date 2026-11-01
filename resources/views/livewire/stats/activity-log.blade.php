@@ -72,6 +72,7 @@
                         <th class="text-end" style="width: 100px;">Commission</th>
                         <th class="text-end" style="width: 95px;">Brutto PnL</th>
                         <th class="text-end" style="width: 95px;">Netto PnL</th>
+                        <th class="text-center" style="width: 45px;">Log</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -94,7 +95,7 @@
 
                     @if($groupedEntries->isEmpty())
                         <tr>
-                            <td colspan="9" class="text-center text-muted py-5">
+                            <td colspan="10" class="text-center text-muted py-5">
                                 Keine Buchungen für diesen Zeitraum.
                             </td>
                         </tr>
@@ -110,7 +111,7 @@
 
                             {{-- Tages-Trennzeile --}}
                             <tr wire:key="sep-{{ $dateKey }}" class="date-separator">
-                                <td colspan="9">
+                                <td colspan="10">
                                     <i class="bi bi-calendar3 me-1"></i>
                                     {{ $firstEntryDt->locale('de')->isoFormat('dddd, D. MMMM YYYY') }}
                                 </td>
@@ -189,6 +190,7 @@
                                             <span class="text-muted">—</span>
                                         @endif
                                     </td>
+                                    <td class="text-center">@include('livewire.log.partials.opening-button', ['marker' => $openingMarkers[$entry->id] ?? null])</td>
                                 </tr>
 
                             @endforeach
@@ -219,6 +221,7 @@
                                         <span class="text-muted">—</span>
                                     @endif
                                 </td>
+                                <td></td>
                             </tr>
 
                         @endforeach
@@ -243,6 +246,7 @@
                             <td class="text-end fw-bold">
                                 <x-currency-value :value="$metrics->total_net_pnl ?? 0" :currency="'USD'" :colored="true" />
                             </td>
+                            <td></td>
                         </tr>
                     </tfoot>
                 @endif
@@ -316,4 +320,5 @@
             padding-bottom: 4px;
         }
     </style>
+    <livewire:log.opening-log-modal />
 </div>

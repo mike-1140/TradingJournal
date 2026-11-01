@@ -1,11 +1,9 @@
 <div>
-    <x-page-header title="Psychologie — Auswertung" icon="graph-up">
-        <x-slot:actions>
-            <a href="{{ route('psychology.create') }}" class="btn btn-sm btn-primary">
-                <i class="bi bi-plus-lg"></i> Neuer Eintrag
-            </a>
-        </x-slot:actions>
-    </x-page-header>
+    <x-page-header title="Psychologie — Auswertung" icon="graph-up" />
+
+    <p class="text-muted small mb-3">
+        <i class="bi bi-journal-check"></i> Psychologie zu {{ $covered }} von {{ $documented }} dokumentierten Eröffnungen
+    </p>
 
     {{-- ── Metriken ──────────────────────────────────────────────────────── --}}
     <div class="row g-3 mb-4">
@@ -46,7 +44,9 @@
     <div class="text-center text-muted py-5">
         <i class="bi bi-graph-up fs-2 d-block mb-2"></i>
         Noch keine Einträge für den gewählten Zeitraum.
-        <a href="{{ route('psychology.create') }}" class="d-block mt-2">Ersten Eintrag erfassen</a>
+        <a href="{{ route('campaigns.campaigns') }}" class="btn btn-primary">
+            <i class="bi bi-arrow-right-circle"></i> Zu den Kampagnen
+        </a>
     </div>
     @else
 

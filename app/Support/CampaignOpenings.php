@@ -13,7 +13,9 @@ use Illuminate\Support\Collection;
  *
  * Schließungen werden je Kontrakt (conid) nach Menge der ältesten offenen Eröffnung zugeordnet.
  * Aktien-P&L steht nur in der Kampagnen-Summe; eine Zuordnung zu Put oder Call wäre willkürlich.
- * Ausnahme: In einer reinen Aktien-Kampagne trägt die erste Eröffnung die ganze Summe.
+ * Ausnahmen: In einer reinen Aktien-Kampagne trägt die erste Eröffnung die ganze Summe, und ist eine
+ * Zuteilung im selben Moment wieder glatt (Spread beidseitig ausgeübt), gehört ihr Aktien-P&L zur
+ * Eröffnung des zugeteilten Spreads, wie in der Spreadliste.
  */
 class CampaignOpenings
 {
@@ -122,6 +124,21 @@ class CampaignOpenings
             }
         }
 
+        foreach ($exerciseTimes as $time) {
+            $stock = $ledger->where('assetCategory', 'STK')->filter(fn($e) => self::timeKey($e->dateTime) === $time);
+            if ($stock->isEmpty() || abs((float) $stock->sum('inventory_delta')) >= 0.0001) {
+                continue;
+            }
+            foreach ($openings as $key => $opening) {
+                $exercised = collect($opening['closes'])->contains(fn($e) => $e->action === 'OPTION_EXERCISE'
+                    && self::timeKey($e->dateTime) === $time);
+                if ($exercised) {
+                    $openings[$key]['assignment_pnl'] += (float) $stock->sum('realized_pnl');
+                    break;
+                }
+            }
+        }
+
         ksort($openings);
         $openings = array_map(fn($o) => self::finish($o, $shares), array_values($openings));
 
@@ -137,6 +154,26 @@ class CampaignOpenings
             'total_pnl'   => round($optionPnl + $stockPnl, 2),
             'shares_open' => $shares,
         ];
+    }
+
+    /** Buchungen, die eine Eröffnung bilden: ledger-id → Eröffnungszeitpunkt (ohne Zuteilungs-Aktien). */
+    public static function openingRows(Collection $ledger): array
+    {
+        $exerciseTimes = $ledger->where('action', 'OPTION_EXERCISE')
+            ->map(fn($e) => self::timeKey($e->dateTime))->unique()->all();
+
+        $rows = [];
+        foreach ($ledger as $entry) {
+            $time    = self::timeKey($entry->dateTime);
+            $isStock = $entry->assetCategory === 'STK' && in_array($entry->action, ['STK_BUY', 'STK_SELL'], true)
+                && !in_array($time, $exerciseTimes, true);
+            $isOption = $entry->assetCategory === 'OPT' && isset(self::LEG_TYPES[$entry->action]);
+            if ($isStock || $isOption) {
+                $rows[$entry->id] = $time;
+            }
+        }
+
+        return $rows;
     }
 
     /** Eröffnung zum Zeitpunkt, sonst null. */
@@ -187,6 +224,7 @@ class CampaignOpenings
             'fees_open'      => 0.0,
             'fees_close'     => 0.0,
             'pnl'            => 0.0,
+            'assignment_pnl' => 0.0,
             'closes'         => [],
             'closed_at'      => null,
             'open_quantity'  => 0.0,
@@ -216,7 +254,7 @@ class CampaignOpenings
             'closing_cost'  => $isOption && $o['closes'] ? round($o['closed_premium'] - $o['pnl'], 2) : null,
             'fees_open'     => round($o['fees_open'], 2),
             'fees_close'    => round($o['fees_close'], 2),
-            'pnl'           => $isOption ? round($o['pnl'], 2) : null,
+            'pnl'           => $isOption ? round($o['pnl'] + $o['assignment_pnl'], 2) : null,
             'closes'        => $o['closes'],
             'closed_at'     => $state === 'closed' ? $o['closed_at'] : null,
             'state'         => $state,

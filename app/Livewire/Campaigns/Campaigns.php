@@ -7,8 +7,8 @@ use Livewire\Component;
 use Livewire\WithPagination;
 use App\Models\Campaign;
 use App\Models\TradePlan;
+use App\Support\OpeningMarkers;
 use App\Traits\ManagesEnvironment;
-use Livewire\Attributes\On;
 
 class Campaigns extends Component
 {
@@ -17,12 +17,14 @@ class Campaigns extends Component
     public $search = '';
     public $filterStatus = 'OPEN';
     public $filterType = 'ALL';   // ALL oder Schluessel aus Campaign::TYPES
+    public bool $onlyUndocumented = false;
     public $perPage = 20;
 
     protected $queryString = [
         'search'       => ['except' => ''],
         'filterStatus' => ['except' => 'OPEN'],
         'filterType'   => ['except' => 'ALL'],
+        'onlyUndocumented' => ['except' => false],
     ];
 
     public function setStatus($status)
@@ -47,12 +49,17 @@ class Campaigns extends Component
         $this->mountManagesEnvironment();
     }
 
+    public function toggleUndocumented()
+    {
+        $this->onlyUndocumented = !$this->onlyUndocumented;
+        $this->resetPage();
+    }
+
     public function updatingSearch()
     {
         $this->resetPage();
     }
 
-    #[On('clear-search')]
     public function resetFilters()
     {
         $this->reset(['search']);
@@ -64,18 +71,24 @@ class Campaigns extends Component
         $query = Campaign::query()
             ->where('environment', $this->selectedEnvironment);
 
+        // Die Suche gilt über alle Status und Zeiträume, sonst fehlen geschlossene Kampagnen
+        $search = trim((string) $this->search);
+        if ($search !== '') {
+            $query->where(fn($q) => $q->where('symbol', 'like', "%{$search}%")->orWhere('name', 'like', "%{$search}%"));
+        }
+
         // Status-Filter
-        if ($this->filterStatus === 'OPEN') {
+        if ($search === '' && $this->filterStatus === 'OPEN') {
             $query->whereIn('status', ['ACTIVE', 'PENDING']);
-        } elseif ($this->filterStatus === 'CLOSED') {
+        } elseif ($search === '' && $this->filterStatus === 'CLOSED') {
             $query->where('status', 'CLOSED');
         }
 
         // Zeitfilter: OPEN-Kampagnen haben kein end_date — würden sonst herausgefiltert
         // CLOSED → end_date, ALL → start_date, OPEN → kein Filter
-        if ($this->filterStatus === 'CLOSED') {
+        if ($search === '' && $this->filterStatus === 'CLOSED') {
             $query = $this->applyTimeFilter($query, 'end_date');
-        } elseif ($this->filterStatus === 'ALL') {
+        } elseif ($search === '' && $this->filterStatus === 'ALL') {
             $query = $this->applyTimeFilter($query, 'start_date');
         }
 
@@ -84,6 +97,13 @@ class Campaigns extends Component
         // Art-Filter (Aktien / Wheel / Optionen / Spreads) -- vor der Summe, damit sie mitfiltert
         if (array_key_exists($this->filterType, Campaign::TYPES)) {
             $query->ofType($this->filterType, $env);
+        }
+
+        $connection = TradePlan::getConnectionForEnvironment($env);
+
+        if ($this->onlyUndocumented) {
+            $coverage = OpeningMarkers::coverage((clone $query)->pluck('id')->all(), $connection, $env);
+            $query->whereIn('id', array_keys(array_filter($coverage, fn($c) => $c['documented'] < $c['total'])));
         }
 
         // Aggregat-PnL über alle gefilterten Kampagnen (alle Seiten)
@@ -100,22 +120,15 @@ class Campaigns extends Component
             ->withSum(['ledgerEntries as total_commission' => fn($q) => $q->where('environment', $env)], 'commission')
             ->withTypeFlags($env);
 
-        $globalView = !empty($this->search) && strlen($this->search) >= 2;
-
         $campaigns = $query->orderBy('symbol', 'asc')
             ->orderBy('start_date', 'desc')
             ->paginate($this->perPage);
 
-        $loggedCampaignIds = TradePlan::whereIn('campaign_id', $campaigns->pluck('id'))
-            ->where('environment', $env)
-            ->pluck('campaign_id');
-
         return view('livewire.campaigns.campaigns-index', [
             'campaigns'         => $campaigns,
-            'globalView'        => $globalView,
-            'searchTerm'        => strtoupper($this->search),
+            'searching'         => $search !== '',
             'summary'           => $summary,
-            'loggedCampaignIds' => $loggedCampaignIds,
+            'coverage'          => OpeningMarkers::coverage($campaigns->pluck('id')->all(), $connection, $env),
         ]);
     }
 }

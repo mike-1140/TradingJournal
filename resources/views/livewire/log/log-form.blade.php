@@ -1,6 +1,6 @@
 <div>
 <x-page-header
-        :title="$planId ? 'Eintrag bearbeiten' : 'Neuer Eintrag'"
+        title="Eintrag bearbeiten"
         icon="journal-plus">
         <x-slot:actions>
             <a href="{{ route('log.list') }}" class="btn btn-sm btn-outline-secondary">
@@ -9,12 +9,12 @@
         </x-slot:actions>
     </x-page-header>
 
-    @if($campaignId && !$opening)
+    @if($campaignId)
         <div class="alert alert-warning py-2 d-flex align-items-center gap-2 mb-3">
             <i class="bi bi-exclamation-triangle"></i>
             Die Eröffnung dieses Eintrags ist in den Buchungen der Kampagne nicht mehr zu finden — die Werte unten sind gespeicherte Eingaben.
         </div>
-    @elseif(!$campaignId && count($campaignCandidates) > 0)
+    @elseif(count($campaignCandidates) > 0)
         <div class="alert alert-info py-2 mb-3">
             <div class="d-flex align-items-center gap-2 mb-2">
                 <i class="bi bi-search"></i>
@@ -33,9 +33,6 @@
         </div>
     @endif
 
-    @if($opening)
-        @include('livewire.log.partials.opening-comment-form')
-    @else
     <form wire:submit="savePlan">
 
         {{-- ── Sektion 1: Kopfdaten ──────────────────────────────────────────── --}}
@@ -317,5 +314,4 @@
         </div>
 
     </form>
-    @endif
 </div>
